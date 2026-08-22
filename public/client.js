@@ -33,6 +33,7 @@ class F1LiveClient {
         this.ws.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
+                console.log("Received message:", message);
 
                 if (message.type === 3 && message.result) {
                     this.applySnapshot(message.result);
@@ -125,6 +126,7 @@ class F1LiveClient {
                 break;
             case "TimingData":
                 if (data.Lines) {
+                    console.log("Received TimingData:", data.Lines);
                     this.mergeLines(this.timingData, data.Lines);
                     this.scheduleUIRefresh();
                 }
@@ -302,6 +304,29 @@ class F1LiveClient {
         };
     }
 
+    parseTimeToSeconds(valStr) {
+        if (!valStr || valStr === '-' || typeof valStr !== 'string') return Infinity;
+        valStr = valStr.trim();
+        const parts = valStr.split(':');
+        try {
+            if (parts.length === 3) {
+                return Number(parts[0]) * 3600 + Number(parts[1]) * 60 + parseFloat(parts[2]);
+            } else if (parts.length === 2) {
+                return Number(parts[0]) * 60 + parseFloat(parts[1]);
+            } else if (parts.length === 1) {
+                return parseFloat(parts[0]) || Infinity;
+            }
+        } catch (e) {
+            return Infinity;
+        }
+        return Infinity;
+    }
+
+    formatSecondsToGap(diffSec) {
+        if (diffSec === Infinity || isNaN(diffSec) || diffSec <= 0) return "";
+        return `+${diffSec.toFixed(3)}`;
+    }
+
     getDriverData(driverNum) {
         const info = this.timingData[driverNum] || {};
         const stats = this.timingStats[driverNum] || {};
@@ -326,20 +351,52 @@ class F1LiveClient {
 
         const currentTyre = stints.length ? stints[stints.length - 1] : null;
 
-        const gap =
-            kind === "race"
-                ? info.GapToLeader
-                : info.GapToLeader ||
-                  info.TimeDiffToFastest ||
-                  info.TimeDiffToLeader ||
-                  "";
+        let gap = "";
+        let diff = "";
 
-        const diff =
-            kind === "race"
-                ? info.IntervalToPositionAhead?.Value
-                : info.IntervalToPositionAhead?.Value ||
-                  info.TimeDiffToPositionAhead ||
-                  "";
+        if (kind === "race") {
+            gap = info.GapToLeader || "";
+            diff = info.IntervalToPositionAhead?.Value || info.TimeDiffToPositionAhead || "";
+        } else {
+            const allDrivers = Object.keys(this.timingData);
+            const driverBestSec = this.parseTimeToSeconds(bestLap.Value);
+
+            let fastestSec = Infinity;
+            allDrivers.forEach(num => {
+                const dStats = this.timingStats[num] || {};
+                const dInfo = this.timingData[num] || {};
+                const dBest = dStats.PersonalBestLapTime?.Value || dInfo.BestLapTime?.Value;
+                const sec = this.parseTimeToSeconds(dBest);
+                if (sec < fastestSec) fastestSec = sec;
+            });
+
+            if (driverBestSec !== Infinity && fastestSec !== Infinity) {
+                if (driverBestSec === fastestSec) {
+                    gap = ""; 
+                } else {
+                    gap = this.formatSecondsToGap(driverBestSec - fastestSec);
+                }
+            }
+
+            const sortedDrivers = allDrivers.sort((a, b) => {
+                const posA = Number(this.timingData[a]?.Position) || 999;
+                const posB = Number(this.timingData[b]?.Position) || 999;
+                return posA - posB;
+            });
+
+            const myIndex = sortedDrivers.indexOf(String(driverNum));
+            if (myIndex > 0) {
+                const prevDriverNum = sortedDrivers[myIndex - 1];
+                const prevInfo = this.timingData[prevDriverNum] || {};
+                const prevStats = this.timingStats[prevDriverNum] || {};
+                const prevBest = prevStats.PersonalBestLapTime?.Value || prevInfo.BestLapTime?.Value;
+                
+                const prevSec = this.parseTimeToSeconds(prevBest);
+                if (driverBestSec !== Infinity && prevSec !== Infinity && driverBestSec >= prevSec) {
+                    diff = this.formatSecondsToGap(driverBestSec - prevSec);
+                }
+            }
+        }
 
         return {
             racingNumber: driverNum,
@@ -359,6 +416,9 @@ class F1LiveClient {
             inPit: info.InPit,
             pitOut: info.PitOut,
             lastLap: info.LastLapTime,
+            knockedOut: info.KnockedOut,
+            cutOff: info.CutOff, 
+            lapFlags: info.LapFlags, 
             bestLap,
             lastS1: sectors[0] || {},
             lastS2: sectors[1] || {},
@@ -366,7 +426,6 @@ class F1LiveClient {
             bestS1: bestSectors[0] || {},
             bestS2: bestSectors[1] || {},
             bestS3: bestSectors[2] || {},
-            knockedOut: info.KnockedOut
         };
     }
 }
