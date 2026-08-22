@@ -366,6 +366,7 @@ class F1LiveClient {
             bestS1: bestSectors[0] || {},
             bestS2: bestSectors[1] || {},
             bestS3: bestSectors[2] || {},
+            knockedOut: info.KnockedOut
         };
     }
 }
