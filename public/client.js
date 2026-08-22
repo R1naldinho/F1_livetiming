@@ -20,8 +20,8 @@ class F1LiveClient {
             this.ws.onclose = null;
             this.ws.close();
         }
-
-        this.ws = new WebSocket(`ws://${window.location.host}`);
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        this.ws = new WebSocket(`${protocol}//${window.location.host}`);
 
         this.ws.onopen = () => {
             if (this.reconnectTimer) {
