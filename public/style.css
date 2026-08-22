@@ -734,3 +734,13 @@ body.light-mode .badge-pit {
 body.light-mode .wind-indicator {
     color: #2563eb;
 }
+
+.timing-table tr.driver-knocked-out td {
+    background-color: rgba(248, 81, 73, 0.15) !important;
+    color: #f85149 !important;
+}
+
+body.light-mode .timing-table tr.driver-knocked-out td {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #dc2626 !important;
+}
