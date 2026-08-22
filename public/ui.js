@@ -71,6 +71,7 @@ class SessionInfoUI {
         this.trackTempEl = this.createWeatherItem('Track', '--°C');
         this.windEl = this.createWeatherItem('Wind', '-- m/s');
         this.rainEl = this.createWeatherItem('Rain', 'No');
+        this.rainEl.container.style.display = 'none';
 
         this.weatherGrid.appendChild(this.airTempEl.container);
         this.weatherGrid.appendChild(this.trackTempEl.container);
@@ -103,7 +104,7 @@ class SessionInfoUI {
 
         const valueEl = document.createElement('span');
         valueEl.className = 'weather-value';
-        valueEl.textContent = initialValue;
+        valueEl.innerHTML = initialValue;
 
         container.appendChild(labelEl);
         container.appendChild(valueEl);
@@ -150,6 +151,7 @@ class SessionInfoUI {
         this.modalHumidity = this.createWeatherItem('Humidity', '--%');
         this.modalPressure = this.createWeatherItem('Pressure', '-- hPa');
         this.modalRain = this.createWeatherItem('Rain', 'No');
+        this.modalRain.container.style.display = 'none';
 
         this.fullWeatherGrid.appendChild(this.modalAir.container);
         this.fullWeatherGrid.appendChild(this.modalTrack.container);
@@ -336,23 +338,30 @@ class SessionInfoUI {
     updateWeather(data) {
         this.airTempEl.valueEl.textContent = `${data.AirTemp}°C`;
         this.trackTempEl.valueEl.textContent = `${data.TrackTemp}°C`;
-        this.windEl.valueEl.textContent = `${data.WindSpeed} m/s`;
+        
+        const windDeg = Number(data.WindDirection) || 0;
+        const windHtml = `${data.WindSpeed} m/s <span class="wind-indicator" style="transform: rotate(${windDeg}deg);">➔</span>`;
+        
+        this.windEl.valueEl.innerHTML = windHtml;
+        this.modalWind.valueEl.innerHTML = windHtml;
 
         this.modalAir.valueEl.textContent = `${data.AirTemp}°C`;
         this.modalTrack.valueEl.textContent = `${data.TrackTemp}°C`;
-        this.modalWind.valueEl.textContent = `${data.WindSpeed} m/s (${data.WindDirection}°)`;
         this.modalHumidity.valueEl.textContent = `${data.Humidity}%`;
         this.modalPressure.valueEl.textContent = `${data.Pressure} hPa`;
 
-        if (data.Rainfall === '1' || data.Rainfall === 1) {
+        const isRaining = data.Rainfall === '1' || data.Rainfall === 1;
+        if (isRaining) {
             this.rainEl.valueEl.textContent = 'Rain ☔︎︎';
+            this.rainEl.container.style.display = 'flex';
             this.rainEl.container.classList.add('rain-active');
             this.modalRain.valueEl.textContent = 'Rain ☔︎︎';
+            this.modalRain.container.style.display = 'flex';
             this.modalRain.container.classList.add('rain-active');
         } else {
-            this.rainEl.valueEl.textContent = 'No Rain ';
+            this.rainEl.container.style.display = 'none';
+            this.modalRain.container.style.display = 'none';
             this.rainEl.container.classList.remove('rain-active');
-            this.modalRain.valueEl.textContent = 'No Rain ';
             this.modalRain.container.classList.remove('rain-active');
         }
     }
