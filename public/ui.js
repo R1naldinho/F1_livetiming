@@ -375,7 +375,7 @@ class F1LiveTimingUI {
         const thead = document.createElement('thead');
         const tr = document.createElement('tr');
         const headers = [
-            'Driver', 'Tyres', 'Gap', 'Diff', 'Last Lap', 
+            'Pos', 'Driver', 'Tyres', 'Gap', 'Diff', 'Last Lap', 
             'Last S1', 'Last S2', 'Last S3', 
             'Best Lap', 'Best S1', 'Best S2', 'Best S3', 
             'Pit Stops', 'Laps'
@@ -628,6 +628,11 @@ class F1LiveTimingUI {
             row = document.createElement('tr');
             row.id = rowId;
 
+            const posCell = document.createElement('td');
+            const posSpan = document.createElement('span');
+            posSpan.className = 'driver-position';
+            posCell.appendChild(posSpan);
+
             const driverCell = document.createElement('td');
             const driverContainer = document.createElement('div');
             driverContainer.className = 'driver-cell-container';
@@ -686,6 +691,7 @@ class F1LiveTimingUI {
             const pitStopsCell = document.createElement('td');
             const lapsCell = document.createElement('td');
 
+            row.appendChild(posCell);
             row.appendChild(driverCell);
             row.appendChild(tyreCell);
             row.appendChild(gapCell);
@@ -702,6 +708,7 @@ class F1LiveTimingUI {
             row.appendChild(lapsCell);
 
             row.cache = {
+                posSpan,
                 numberSpan,
                 nameSpan,
                 badgeContainer,
@@ -727,6 +734,7 @@ class F1LiveTimingUI {
 
         const c = row.cache;
 
+        c.posSpan.textContent = driverData.position !== undefined ? driverData.position : '-';
         c.numberSpan.textContent = `#${driverData.racingNumber}`;
         const displayName = driverData.tLA || driverData.lastName || driverData.racingNumber;
         if (displayName) {
