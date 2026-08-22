@@ -44,7 +44,10 @@ class F1LiveClient {
                     const streamData = message.arguments[1];
                     
                     this.handleStream(streamType, streamData);
+                    return;
                 }
+
+                this.handleStream(message.streamType, message.data);
             } catch (error) {
                 console.error(error);
             }
