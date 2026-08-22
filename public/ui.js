@@ -741,6 +741,12 @@ class F1LiveTimingUI {
             };
         }
 
+        if (driverData.knockedOut) {
+            row.classList.add('driver-knocked-out');
+        } else {
+            row.classList.remove('driver-knocked-out');
+        }
+
         const c = row.cache;
 
         c.posSpan.textContent = driverData.position !== undefined ? driverData.position : '-';
@@ -833,7 +839,6 @@ class F1LiveTimingUI {
 
         this.tbody.appendChild(row);
     }
-
     refreshTable(clientOrData) {
         let timingData = {};
         
