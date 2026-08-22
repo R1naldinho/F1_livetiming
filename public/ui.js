@@ -383,21 +383,25 @@ class F1LiveTimingUI {
         table.className = 'timing-table';
         const thead = document.createElement('thead');
         const tr = document.createElement('tr');
+        
+        // Aggiunta intestazione iniziale per la bandiera a scacchi (fissa) per mantenere l'allineamento
         const headers = [
-            'Pos', 'Driver', 'Tyres', 'Gap', 'Diff', 'Last Lap', 
+            '', 'Pos', 'Driver', 'Tyres', 'Gap', 'Diff', 'Last Lap', 
             'Last S1', 'Last S2', 'Last S3', 
             'Best Lap', 'Best S1', 'Best S2', 'Best S3', 
             'Pit Stops', 'Laps'
         ];
 
-        headers.forEach(text => {
+        headers.forEach((text, idx) => {
             const th = document.createElement('th');
             th.textContent = text;
+            if (idx === 0) {
+                th.style.width = '24px'; // Spazio colonna bandiera compatto
+            }
             tr.appendChild(th);
         });
 
         thead.appendChild(tr);
-        table.appendChild(thead);
         this.tbody = document.createElement('tbody');
         this.tbody.id = 'driver-rows';
         table.appendChild(this.tbody);
@@ -637,6 +641,14 @@ class F1LiveTimingUI {
             row = document.createElement('tr');
             row.id = rowId;
 
+            // Cella bandiera a scacchi (Colonna 0 a larghezza fissa)
+            const flagCell = document.createElement('td');
+            flagCell.style.width = '24px';
+            flagCell.style.textAlign = 'center';
+            const flagSpan = document.createElement('span');
+            flagSpan.className = 'flag-cell-span';
+            flagCell.appendChild(flagSpan);
+
             const posCell = document.createElement('td');
             const posSpan = document.createElement('span');
             posSpan.className = 'driver-position';
@@ -700,6 +712,7 @@ class F1LiveTimingUI {
             const pitStopsCell = document.createElement('td');
             const lapsCell = document.createElement('td');
 
+            row.appendChild(flagCell);
             row.appendChild(posCell);
             row.appendChild(driverCell);
             row.appendChild(tyreCell);
@@ -717,6 +730,7 @@ class F1LiveTimingUI {
             row.appendChild(lapsCell);
 
             row.cache = {
+                flagSpan,
                 posSpan,
                 numberSpan,
                 nameSpan,
@@ -741,13 +755,29 @@ class F1LiveTimingUI {
             };
         }
 
+        const c = row.cache;
+
+        // Gestione LapFlags (Bandiera a scacchi: 1)
+        if (driverData.lapFlags === 1 || driverData.lapFlags === "1") {
+            c.flagSpan.textContent = "🏁";
+            c.flagSpan.title = "Checked flag received";
+        } else {
+            c.flagSpan.textContent = "";
+            c.flagSpan.title = "";
+        }
+
+        // Gestione CutOff (Zona eliminazione track limits o taglia-fuori)
+        if (driverData.cutOff) {
+            row.classList.add('driver-cutoff');
+        } else {
+            row.classList.remove('driver-cutoff');
+        }
+
         if (driverData.knockedOut) {
             row.classList.add('driver-knocked-out');
         } else {
             row.classList.remove('driver-knocked-out');
         }
-
-        const c = row.cache;
 
         c.posSpan.textContent = driverData.position !== undefined ? driverData.position : '-';
         c.numberSpan.textContent = `#${driverData.racingNumber}`;
@@ -839,6 +869,7 @@ class F1LiveTimingUI {
 
         this.tbody.appendChild(row);
     }
+
     refreshTable(clientOrData) {
         let timingData = {};
         
