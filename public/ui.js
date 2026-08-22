@@ -384,7 +384,6 @@ class F1LiveTimingUI {
         const thead = document.createElement('thead');
         const tr = document.createElement('tr');
         
-        // Aggiunta intestazione iniziale per la bandiera a scacchi (fissa) per mantenere l'allineamento
         const headers = [
             '', 'Pos', 'Driver', 'Tyres', 'Gap', 'Diff', 'Last Lap', 
             'Last S1', 'Last S2', 'Last S3', 
@@ -396,7 +395,7 @@ class F1LiveTimingUI {
             const th = document.createElement('th');
             th.textContent = text;
             if (idx === 0) {
-                th.style.width = '24px'; // Spazio colonna bandiera compatto
+                th.style.width = '24px';  
             }
             tr.appendChild(th);
         });
@@ -641,7 +640,6 @@ class F1LiveTimingUI {
             row = document.createElement('tr');
             row.id = rowId;
 
-            // Cella bandiera a scacchi (Colonna 0 a larghezza fissa)
             const flagCell = document.createElement('td');
             flagCell.style.width = '24px';
             flagCell.style.textAlign = 'center';
@@ -757,7 +755,6 @@ class F1LiveTimingUI {
 
         const c = row.cache;
 
-        // Gestione LapFlags (Bandiera a scacchi: 1)
         if (driverData.lapFlags === 1 || driverData.lapFlags === "1") {
             c.flagSpan.textContent = "🏁";
             c.flagSpan.title = "Checked flag received";
@@ -766,7 +763,6 @@ class F1LiveTimingUI {
             c.flagSpan.title = "";
         }
 
-        // Gestione CutOff (Zona eliminazione track limits o taglia-fuori)
         if (driverData.cutOff) {
             row.classList.add('driver-cutoff');
         } else {
