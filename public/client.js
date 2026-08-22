@@ -20,8 +20,8 @@ class F1LiveClient {
             this.ws.onclose = null;
             this.ws.close();
         }
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        this.ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+        this.ws = new WebSocket(`ws://${window.location.host}`);
 
         this.ws.onopen = () => {
             if (this.reconnectTimer) {
@@ -30,7 +30,7 @@ class F1LiveClient {
             }
         };
 
-        this.ws.onmessage = event => {
+        this.ws.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
 
@@ -39,8 +39,11 @@ class F1LiveClient {
                     return;
                 }
 
-                if (message.streamType) {
-                    this.handleStream(message.streamType, message.data);
+                if (message.type === 1 && Array.isArray(message.arguments) && message.arguments.length >= 2) {
+                    const streamType = message.arguments[0];
+                    const streamData = message.arguments[1];
+                    
+                    this.handleStream(streamType, streamData);
                 }
             } catch (error) {
                 console.error(error);
@@ -64,11 +67,11 @@ class F1LiveClient {
         this.sessionData = this.normalize(snapshot.SessionData || {});
         this.sessionInfo = snapshot.SessionInfo || null;
 
-        this.handleStream('SessionInfo', snapshot.SessionInfo);
-        this.handleStream('ExtrapolatedClock', snapshot.ExtrapolatedClock);
-        this.handleStream('SessionStatus', snapshot.SessionStatus);
-        this.handleStream('TrackStatus', snapshot.TrackStatus);
-        this.handleStream('WeatherData', snapshot.WeatherData);
+        this.handleStream("SessionInfo", snapshot.SessionInfo);
+        this.handleStream("ExtrapolatedClock", snapshot.ExtrapolatedClock);
+        this.handleStream("SessionStatus", snapshot.SessionStatus);
+        this.handleStream("TrackStatus", snapshot.TrackStatus);
+        this.handleStream("WeatherData", snapshot.WeatherData);
         this.scheduleUIRefresh();
     }
 
@@ -90,46 +93,46 @@ class F1LiveClient {
         if (!data) {
             return;
         }
-
+        
         switch (streamType) {
-            case 'SessionInfo':
+            case "SessionInfo":
                 this.sessionInfo = this.normalize(data);
                 this.ui.updateSession(this.sessionInfo);
                 this.scheduleUIRefresh();
                 break;
-            case 'ExtrapolatedClock':
+            case "ExtrapolatedClock":
                 this.ui.updateClock(data);
                 break;
-            case 'SessionStatus':
+            case "SessionStatus":
                 this.ui.updateSessionStatus(data);
                 break;
-            case 'TrackStatus':
+            case "TrackStatus":
                 this.ui.updateTrackStatus(data);
                 break;
-            case 'WeatherData':
+            case "WeatherData":
                 this.ui.updateWeather(data);
                 break;
-            case 'DriverList':
+            case "DriverList":
                 this.drivers = this.mergeState(this.drivers, data);
                 this.scheduleUIRefresh();
                 break;
-            case 'SessionData':
+            case "SessionData":
                 this.sessionData = this.mergeState(this.sessionData, data);
                 this.scheduleUIRefresh();
                 break;
-            case 'TimingData':
+            case "TimingData":
                 if (data.Lines) {
                     this.mergeLines(this.timingData, data.Lines);
                     this.scheduleUIRefresh();
                 }
                 break;
-            case 'TimingStats':
+            case "TimingStats":
                 if (data.Lines) {
                     this.mergeLines(this.timingStats, data.Lines);
                     this.scheduleUIRefresh();
                 }
                 break;
-            case 'TimingAppData':
+            case "TimingAppData":
                 if (data.Lines) {
                     this.mergeLines(this.timingAppData, data.Lines);
                     this.scheduleUIRefresh();
@@ -139,8 +142,11 @@ class F1LiveClient {
     }
 
     mergeLines(target, lines) {
-        Object.keys(lines).forEach(driverNumber => {
-            target[driverNumber] = this.mergeState(target[driverNumber] || {}, lines[driverNumber]);
+        Object.keys(lines).forEach((driverNumber) => {
+            target[driverNumber] = this.mergeState(
+                target[driverNumber] || {},
+                lines[driverNumber],
+            );
         });
     }
 
@@ -153,26 +159,29 @@ class F1LiveClient {
             return this.normalize(source);
         }
 
-        if (typeof source !== 'object') {
+        if (typeof source !== "object") {
             return source;
         }
 
         if (Array.isArray(target)) {
-            Object.keys(source).forEach(key => {
+            Object.keys(source).forEach((key) => {
                 const index = Number(key);
                 if (!Number.isInteger(index) || index < 0) {
                     return;
                 }
-                target[index] = this.mergeState(target[index] || {}, source[key]);
+                target[index] = this.mergeState(
+                    target[index] || {},
+                    source[key],
+                );
             });
             return target;
         }
 
-        if (!target || typeof target !== 'object') {
+        if (!target || typeof target !== "object") {
             target = {};
         }
 
-        Object.keys(source).forEach(key => {
+        Object.keys(source).forEach((key) => {
             const value = source[key];
 
             if (value === null || value === undefined) {
@@ -181,7 +190,7 @@ class F1LiveClient {
 
             if (Array.isArray(value)) {
                 target[key] = this.normalize(value);
-            } else if (typeof value === 'object') {
+            } else if (typeof value === "object") {
                 target[key] = this.mergeState(target[key], value);
             } else {
                 target[key] = value;
@@ -193,27 +202,32 @@ class F1LiveClient {
 
     normalize(value) {
         if (Array.isArray(value)) {
-            return value.map(item => this.normalize(item));
+            return value.map((item) => this.normalize(item));
         }
 
-        if (!value || typeof value !== 'object') {
+        if (!value || typeof value !== "object") {
             return value;
         }
 
         const keys = Object.keys(value);
-        const numericKeys = keys.length > 0 && keys.every(key => /^\d+$/.test(key));
+        const numericKeys =
+            keys.length > 0 && keys.every((key) => /^\d+$/.test(key));
 
         if (numericKeys) {
             const indexes = keys.map(Number);
-            const isDense = indexes.length === 0 || indexes.every((index, position) => index === position);
+            const isDense =
+                indexes.length === 0 ||
+                indexes.every((index, position) => index === position);
 
             if (isDense) {
-                return indexes.sort((a, b) => a - b).map(index => this.normalize(value[String(index)]));
+                return indexes
+                    .sort((a, b) => a - b)
+                    .map((index) => this.normalize(value[String(index)]));
             }
         }
 
         const result = {};
-        keys.forEach(key => {
+        keys.forEach((key) => {
             result[key] = this.normalize(value[key]);
         });
         return result;
@@ -225,7 +239,7 @@ class F1LiveClient {
             return result;
         }
 
-        Object.keys(data.Lines).forEach(driverNumber => {
+        Object.keys(data.Lines).forEach((driverNumber) => {
             result[driverNumber] = this.normalize(data.Lines[driverNumber]);
         });
 
@@ -233,18 +247,28 @@ class F1LiveClient {
     }
 
     getSessionKind() {
-        const type = String(this.sessionInfo?.Type || '').toLowerCase();
-        const name = String(this.sessionInfo?.Name || '').toLowerCase();
+        const type = String(this.sessionInfo?.Type || "").toLowerCase();
+        const name = String(this.sessionInfo?.Name || "").toLowerCase();
 
-        if (type === 'race' || type === 'sprint' || name.includes('sprint') || name.includes('race')) {
-            return 'race';
+        if (
+            type === "race" ||
+            type === "sprint" ||
+            name.includes("sprint") ||
+            name.includes("race")
+        ) {
+            return "race";
         }
 
-        if (type === 'qualifying' || type === 'qualification' || name.includes('qualifying') || name.includes('qualification')) {
-            return 'qualifying';
+        if (
+            type === "qualifying" ||
+            type === "qualification" ||
+            name.includes("qualifying") ||
+            name.includes("qualification")
+        ) {
+            return "qualifying";
         }
 
-        return 'practice';
+        return "practice";
     }
 
     getSessionProgress() {
@@ -256,37 +280,22 @@ class F1LiveClient {
         }, 0);
 
         const series = this.sessionData?.Series;
-        const seriesValues = Array.isArray(series)
-            ? series
-            : (series && typeof series === 'object' ? Object.values(series) : []);
+        const seriesValues =
+            series && typeof series === "object" ? Object.values(series) : [];
         const latestSeries = seriesValues
-            .filter(item => item && item.Lap !== undefined)
+            .filter((item) => item && item.Lap !== undefined)
             .sort((a, b) => new Date(a.Utc || 0) - new Date(b.Utc || 0))
             .pop();
 
-        const currentLapFromSeries = Number(latestSeries?.Lap);
-        const currentLap = Number.isFinite(currentLapFromSeries)
-            ? currentLapFromSeries
-            : (completedLaps > 0 ? completedLaps + 1 : 0);
-
-        const candidates = [
-            this.sessionInfo?.TotalLaps,
-            this.sessionInfo?.RaceLaps,
-            this.sessionInfo?.NumberOfLaps,
-            this.sessionInfo?.Laps,
-            this.sessionData?.TotalLaps,
-            this.sessionData?.RaceLaps,
-            this.sessionData?.NumberOfLaps
-        ];
-        let totalLaps = candidates.map(Number).find(Number.isFinite);
-        if (!Number.isFinite(totalLaps) || totalLaps <= 0) totalLaps = null;
+        const currentLap = latestSeries?.Lap
+            ? Number(latestSeries.Lap)
+            : completedLaps + 1;
 
         return {
             kind,
             completedLaps,
             currentLap: Number.isFinite(currentLap) ? currentLap : 0,
-            totalLaps,
-            remaining: this.ui?.sessionUI?.clockElement?.textContent || '--:--'
+            remaining: this.ui?.sessionUI?.clockElement?.textContent || "--:--",
         };
     }
 
@@ -302,27 +311,38 @@ class F1LiveClient {
             : info.BestLapTime || stats.PersonalBestLapTime || {};
 
         const sectors = Array.isArray(info.Sectors) ? info.Sectors : [];
-        const bestSectors = Array.isArray(stats.BestSectors) ? stats.BestSectors : [];
+        const bestSectors = Array.isArray(stats.BestSectors)
+            ? stats.BestSectors
+            : [];
 
         const stints = Array.isArray(appData.Stints)
             ? appData.Stints
-            : appData.Stints && typeof appData.Stints === 'object'
-                ? Object.values(appData.Stints)
-                : [];
+            : appData.Stints && typeof appData.Stints === "object"
+              ? Object.values(appData.Stints)
+              : [];
 
         const currentTyre = stints.length ? stints[stints.length - 1] : null;
 
-        const gap = kind === 'race'
-            ? info.GapToLeader
-            : info.GapToLeader || info.TimeDiffToFastest || info.TimeDiffToLeader || '';
+        const gap =
+            kind === "race"
+                ? info.GapToLeader
+                : info.GapToLeader ||
+                  info.TimeDiffToFastest ||
+                  info.TimeDiffToLeader ||
+                  "";
 
-        const diff = kind === 'race'
-            ? info.IntervalToPositionAhead?.Value
-            : info.IntervalToPositionAhead?.Value || info.TimeDiffToPositionAhead || '';
+        const diff =
+            kind === "race"
+                ? info.IntervalToPositionAhead?.Value
+                : info.IntervalToPositionAhead?.Value ||
+                  info.TimeDiffToPositionAhead ||
+                  "";
 
         return {
             racingNumber: driverNum,
-            position: Number.isFinite(Number(info.Position)) ? Number(info.Position) : Number(driverObj.Line || 999),
+            position: Number.isFinite(Number(info.Position))
+                ? Number(info.Position)
+                : Number(driverObj.Line || 999),
             tLA: driverObj.Tla,
             lastName: driverObj.LastName,
             teamColour: driverObj.TeamColour,
@@ -335,8 +355,6 @@ class F1LiveClient {
             retired: info.Retired,
             inPit: info.InPit,
             pitOut: info.PitOut,
-            stopped: info.Stopped,
-            status: Number(info.Status),
             lastLap: info.LastLapTime,
             bestLap,
             lastS1: sectors[0] || {},
@@ -344,12 +362,12 @@ class F1LiveClient {
             lastS3: sectors[2] || {},
             bestS1: bestSectors[0] || {},
             bestS2: bestSectors[1] || {},
-            bestS3: bestSectors[2] || {}
+            bestS3: bestSectors[2] || {},
         };
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const ui = new F1LiveTimingUI('app');
+document.addEventListener("DOMContentLoaded", () => {
+    const ui = new F1LiveTimingUI("app");
     window.f1Client = new F1LiveClient(ui);
 });

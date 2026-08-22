@@ -86,6 +86,9 @@ class SessionInfoUI {
         this.root.appendChild(this.mainContentRow);
         container.appendChild(this.root);
 
+        this.clockData = null;
+        this.clockInterval = null;
+
         this.initWeatherModal();
         this.fetchForecast();
     }
@@ -170,7 +173,7 @@ class SessionInfoUI {
         this.radarContainer.className = 'radar-container';
         const radarTitle = document.createElement('div');
         radarTitle.className = 'forecast-title';
-        radarTitle.textContent = 'Live Rain Radar (Zandvoort)';
+        radarTitle.textContent = 'Live Rain Radar';
         const radarWrapper = document.createElement('div');
         radarWrapper.className = 'radar-map-wrapper';
         
@@ -258,8 +261,48 @@ class SessionInfoUI {
         this.sessionType.dataset.name = name;
     }
 
+    parseTime(str) {
+        if (!str) return 0;
+        const parts = str.split(':').map(Number);
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        return 0;
+    }
+
+    formatTime(seconds) {
+        if (seconds <= 0) return '00:00';
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        if (h > 0) {
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
     updateClock(data) {
-        this.clockElement.textContent = data?.Remaining || '--:--';
+        if (!data) return;
+        
+        this.clockData = data;
+        const remainingSeconds = this.parseTime(data.Remaining);
+        this.clockData.targetMs = Date.now() + (remainingSeconds * 1000);
+        
+        if (!this.clockInterval) {
+            this.clockInterval = setInterval(() => this.tickClock(), 1000);
+        }
+        this.tickClock();
+    }
+
+    tickClock() {
+        if (!this.clockData) return;
+        
+        if (this.clockData.Extrapolating === false || this.clockData.Extrapolating === '0') {
+            this.clockElement.textContent = this.clockData.Remaining || '--:--';
+            return;
+        }
+
+        const diffSeconds = Math.max(0, (this.clockData.targetMs - Date.now()) / 1000);
+        this.clockElement.textContent = this.formatTime(diffSeconds);
     }
 
     updateSessionStatus(data) {
@@ -270,22 +313,18 @@ class SessionInfoUI {
     }
 
     updateSessionProgress(data) {
-        if (!data) {
-            return;
-        }
+        if (!data) return;
 
         if (data.kind === 'race') {
-            if (data.currentLap > 0 && data.totalLaps > 0) {
-                this.progressElement.textContent = `Lap ${data.currentLap} / ${data.totalLaps}`;
-            } else {
-                this.progressElement.textContent = data.currentLap > 0
-                    ? `Lap ${data.currentLap}`
-                    : 'Lap --';
-            }
+            this.clockElement.style.display = 'none';
+            this.progressElement.style.display = 'block';
+            this.progressElement.className = 'clock-pill';
+            this.progressElement.textContent = data.currentLap > 0 ? `Lap ${data.currentLap}` : 'Lap --';
         } else {
-            this.progressElement.textContent = data.kind === 'qualifying'
-                ? 'Qualifying'
-                : 'Practice';
+            this.clockElement.style.display = 'block';
+            this.progressElement.style.display = 'block';
+            this.progressElement.className = 'session-progress';
+            this.progressElement.textContent = data.kind === 'qualifying' ? 'Qualifying' : 'Practice';
         }
     }
 
@@ -328,6 +367,9 @@ class F1LiveTimingUI {
     }
 
     initTable() {
+        this.tableWrapper = document.createElement('div');
+        this.tableWrapper.className = 'table-wrapper';
+
         const table = document.createElement('table');
         table.className = 'timing-table';
         const thead = document.createElement('thead');
@@ -350,7 +392,8 @@ class F1LiveTimingUI {
         this.tbody = document.createElement('tbody');
         this.tbody.id = 'driver-rows';
         table.appendChild(this.tbody);
-        this.container.appendChild(table);
+        this.tableWrapper.appendChild(table);
+        this.container.appendChild(this.tableWrapper);
     }
 
     initModal() {
@@ -467,41 +510,61 @@ class F1LiveTimingUI {
         this.sessionUI.updateWeather(data);
     }
 
+    updateSessionProgress(data) {
+        this.sessionUI.updateSessionProgress(data);
+    }
+
+    parseTimeToSeconds(valStr) {
+        if (!valStr || valStr === '-' || typeof valStr !== 'string') return Infinity;
+        valStr = valStr.trim();
+        const parts = valStr.split(':');
+        try {
+            if (parts.length === 3) {
+                return Number(parts[0]) * 3600 + Number(parts[1]) * 60 + parseFloat(parts[2]);
+            } else if (parts.length === 2) {
+                return Number(parts[0]) * 60 + parseFloat(parts[1]);
+            } else if (parts.length === 1) {
+                return parseFloat(parts[0]) || Infinity;
+            }
+        } catch (e) {
+            return Infinity;
+        }
+        return Infinity;
+    }
+
     getTimingClass(item) {
-        if (!item || !item.Value || item.Value === '-') {
-            return '';
-        }
-
-        if (item.OverallFastest === true) {
-            return 'color-purple';
-        }
-
-        if (item.PersonalFastest === true) {
-            return 'color-green';
-        }
-
+        if (!item || !item.Value || item.Value === '-') return '';
+        if (item.OverallFastest === true) return 'color-purple';
+        if (item.PersonalFastest === true) return 'color-green';
         return 'color-yellow';
+    }
+
+    getBestTimingClass(item, allValuesArray) {
+        if (!item || !item.Value || item.Value === '-') return '';
+        const currentValSec = this.parseTimeToSeconds(item.Value);
+        if (currentValSec === Infinity) return '';
+
+        if (allValuesArray && allValuesArray.length > 0) {
+            const validSecs = allValuesArray
+                .map(v => this.parseTimeToSeconds(v))
+                .filter(v => v !== Infinity);
+
+            if (validSecs.length > 0) {
+                const minSec = Math.min(...validSecs);
+                if (Math.abs(currentValSec - minSec) < 0.0001) {
+                    return 'color-purple';
+                }
+            }
+        }
+        return 'color-green';
     }
 
     getSegmentClass(status) {
         const value = Number(status);
-
-        if (value === 2051 || value === 4 || value === 8) {
-            return 'seg-purple';
-        }
-
-        if (value === 2049 || value === 2) {
-            return 'seg-green';
-        }
-
-        if (value === 2064 || value === 1) {
-            return 'seg-pit';
-        }
-
-        if (value === 2048) {
-            return 'seg-yellow';
-        }
-
+        if (value === 2051 || value === 4 || value === 8) return 'seg-purple';
+        if (value === 2049 || value === 2) return 'seg-green';
+        if (value === 2064 || value === 1) return 'seg-pit';
+        if (value === 2048) return 'seg-yellow';
         return 'seg-default';
     }
 
@@ -529,9 +592,7 @@ class F1LiveTimingUI {
             node.segContainer.removeChild(node.segContainer.firstChild);
         }
 
-        if (!hasSegments || !sectorData?.Segments) {
-            return;
-        }
+        if (!hasSegments || !sectorData?.Segments) return;
 
         const segments = Array.isArray(sectorData.Segments)
             ? sectorData.Segments
@@ -553,13 +614,13 @@ class F1LiveTimingUI {
         return { td, valueSpan };
     }
 
-    updateBestSectorCellNode(node, sectorData) {
+    updateBestSectorCellNode(node, sectorData, allValuesArray) {
         const val = sectorData && sectorData.Value ? sectorData.Value : '-';
         node.valueSpan.textContent = val;
-        node.valueSpan.className = this.getTimingClass(sectorData);
+        node.valueSpan.className = this.getBestTimingClass(sectorData, allValuesArray);
     }
 
-    updateDriverRow(driverData) {
+    updateDriverRow(driverData, globalBests = {}) {
         const rowId = `driver-${driverData.racingNumber}`;
         let row = this.tbody.querySelector(`#${rowId}`);
 
@@ -679,29 +740,20 @@ class F1LiveTimingUI {
             c.badgeContainer.removeChild(c.badgeContainer.firstChild);
         }
 
-        const statusCode = Number(driverData.status);
-        let statusLabel = null;
-        let statusClass = null;
-
-        // F1 TimingData status codes: 80 = pit, 96 = pit out/outlap, 32 = DNF.
-        if (statusCode === 32 || driverData.retired) {
-            statusLabel = 'DNF';
-            statusClass = 'badge-dnf';
-        } else if (statusCode === 80 || driverData.inPit) {
-            statusLabel = 'PIT';
-            statusClass = 'badge-pit';
-        } else if (statusCode === 96 || driverData.pitOut) {
-            statusLabel = 'OUTLAP';
-            statusClass = 'badge-outlap';
-        } else if (driverData.stopped) {
-            statusLabel = 'STOPPED';
-            statusClass = 'badge-stopped';
-        }
-
-        if (statusLabel) {
+        if (driverData.retired) {
             const badge = document.createElement('span');
-            badge.className = `status-badge ${statusClass}`;
-            badge.textContent = statusLabel;
+            badge.className = 'status-badge badge-retired';
+            badge.textContent = 'RET';
+            c.badgeContainer.appendChild(badge);
+        } else if (driverData.inPit) {
+            const badge = document.createElement('span');
+            badge.className = 'status-badge badge-pit';
+            badge.textContent = 'PIT';
+            c.badgeContainer.appendChild(badge);
+        } else if (driverData.pitOut) {
+            const badge = document.createElement('span');
+            badge.className = 'status-badge badge-out';
+            badge.textContent = 'OUT';
             c.badgeContainer.appendChild(badge);
         }
 
@@ -747,7 +799,7 @@ class F1LiveTimingUI {
         const bestVal = driverData.bestLap && driverData.bestLap.Value ? driverData.bestLap.Value : '-';
         if (bestVal !== '-') {
             c.bestLapValSpan.textContent = bestVal;
-            c.bestLapValSpan.className = this.getTimingClass(driverData.bestLap);
+            c.bestLapValSpan.className = this.getBestTimingClass(driverData.bestLap, globalBests.allBestLaps);
             c.bestLapNumSpan.textContent = driverData.bestLap.Lap ? ` (Lap ${driverData.bestLap.Lap})` : '';
         } else {
             c.bestLapValSpan.textContent = '-';
@@ -755,9 +807,9 @@ class F1LiveTimingUI {
             c.bestLapNumSpan.textContent = '';
         }
 
-        this.updateBestSectorCellNode(c.bestS1, driverData.bestS1);
-        this.updateBestSectorCellNode(c.bestS2, driverData.bestS2);
-        this.updateBestSectorCellNode(c.bestS3, driverData.bestS3);
+        this.updateBestSectorCellNode(c.bestS1, driverData.bestS1, globalBests.allBestS1);
+        this.updateBestSectorCellNode(c.bestS2, driverData.bestS2, globalBests.allBestS2);
+        this.updateBestSectorCellNode(c.bestS3, driverData.bestS3, globalBests.allBestS3);
 
         c.pitStopsCell.textContent = driverData.pitStops !== undefined ? driverData.pitStops : '-';
         c.lapsCell.textContent = driverData.numberOfLaps !== undefined ? driverData.numberOfLaps : '-';
@@ -765,18 +817,51 @@ class F1LiveTimingUI {
         this.tbody.appendChild(row);
     }
 
-    refreshTable() {
-        const driverNums = Object.keys(window.f1Client.timingData);
+    refreshTable(clientOrData) {
+        let timingData = {};
         
+        if (clientOrData && clientOrData.timingData) {
+            timingData = clientOrData.timingData;
+        } else if (window.f1Client && window.f1Client.timingData) {
+            timingData = window.f1Client.timingData;
+        } else if (clientOrData && typeof clientOrData === 'object') {
+            timingData = clientOrData;
+        }
+
+        const driverNums = Object.keys(timingData);
+        
+        const getDriver = (num) => {
+            if (clientOrData && typeof clientOrData.getDriverData === 'function') {
+                return clientOrData.getDriverData(num);
+            }
+            if (window.f1Client && typeof window.f1Client.getDriverData === 'function') {
+                return window.f1Client.getDriverData(num);
+            }
+            return timingData[num] || {};
+        };
+
+        const allBestLaps = [];
+        const allBestS1 = [];
+        const allBestS2 = [];
+        const allBestS3 = [];
+
+        driverNums.forEach(num => {
+            const d = getDriver(num);
+            if (d.bestLap?.Value) allBestLaps.push(d.bestLap.Value);
+            if (d.bestS1?.Value) allBestS1.push(d.bestS1.Value);
+            if (d.bestS2?.Value) allBestS2.push(d.bestS2.Value);
+            if (d.bestS3?.Value) allBestS3.push(d.bestS3.Value);
+        });
+
         driverNums.sort((a, b) => {
-            const dataA = window.f1Client.getDriverData(a);
-            const dataB = window.f1Client.getDriverData(b);
-            return dataA.position - dataB.position;
+            const dataA = getDriver(a);
+            const dataB = getDriver(b);
+            return (dataA.position || 99) - (dataB.position || 99);
         });
 
         driverNums.forEach(driverNum => {
-            const driverData = window.f1Client.getDriverData(driverNum);
-            this.updateDriverRow(driverData);
+            const driverData = getDriver(driverNum);
+            this.updateDriverRow(driverData, { allBestLaps, allBestS1, allBestS2, allBestS3 });
         });
     }
 }

@@ -8,45 +8,93 @@ body {
 }
 
 body.light-mode {
-    background-color: #f0f2f5;
-    color: #1f2328;
+    background-color: #f4f6f8;
+    color: #18202a;
 }
 
 body.light-mode .session-header,
-body.light-mode .timing-table,
+body.light-mode .weather-card,
 body.light-mode .stints-modal-content,
-body.light-mode .weather-modal-content {
+body.light-mode .weather-modal-content,
+body.light-mode .forecast-container,
+body.light-mode .radar-container {
     background: #ffffff;
-    border-color: #d0d7de;
+    border-color: #d7dce2;
+}
+
+body.light-mode .table-wrapper {
+    border-color: #d7dce2;
+    background: #ffffff;
 }
 
 body.light-mode .session-badge,
 body.light-mode .clock-pill,
-body.light-mode .weather-card,
+body.light-mode .track-status-badge,
 body.light-mode .weather-item,
 body.light-mode .forecast-item,
-body.light-mode .forecast-container,
-body.light-mode .radar-container,
 body.light-mode .driver-number,
-body.light-mode .timing-table th,
 body.light-mode .stint-item {
-    background: #f6f8fa;
-    border-color: #d0d7de;
-    color: #1f2328;
+    background: #eef1f4;
+    border-color: #cbd2d9;
+    color: #18202a;
 }
 
-body.light-mode .timing-table tr:hover {
-    background: #f3f4f6;
+body.light-mode .timing-table th {
+    background: #eef1f4;
+    border-color: #d7dce2;
+    color: #303944;
 }
 
-body.light-mode .timing-table td,
-body.light-mode .session-header h1 {
-    color: #1f2328;
+body.light-mode .timing-table td {
+    background: #ffffff;
+    border-color: #e1e5e9;
+    color: #252d37;
 }
 
+body.light-mode .timing-table tbody tr:nth-child(even) td {
+    background: #f8f9fa;
+}
+
+body.light-mode .timing-table tr:hover td {
+    background: #eef3f7;
+}
+
+body.light-mode .session-header h1,
 body.light-mode .weather-value,
-body.light-mode .forecast-temp {
-    color: #1f2328;
+body.light-mode .forecast-temp,
+body.light-mode .stints-modal-header,
+body.light-mode .forecast-title,
+body.light-mode .session-progress {
+    color: #18202a;
+}
+
+body.light-mode .weather-label {
+    color: #66717d;
+}
+
+body.light-mode .theme-toggle-btn {
+    background: #ffffff;
+    color: #18202a;
+    border-color: #cbd2d9;
+}
+
+body.light-mode .theme-toggle-btn:hover {
+    background: #eef1f4;
+}
+
+body.light-mode .color-purple {
+    color: #8250df;
+    font-weight: bold;
+}
+
+body.light-mode .color-green {
+    color: #2da44e;
+    font-weight: bold;
+}
+
+body.light-mode .color-yellow {
+    color: #b38600;
+    font-weight: bold;
 }
 
 .theme-toggle-btn {
@@ -63,16 +111,6 @@ body.light-mode .forecast-temp {
 
 .theme-toggle-btn:hover {
     background: #30363d;
-}
-
-body.light-mode .theme-toggle-btn {
-    background: #f6f8fa;
-    color: #1f2328;
-    border-color: #d0d7de;
-}
-
-body.light-mode .theme-toggle-btn:hover {
-    background: #eaeef2;
 }
 
 .session-header {
@@ -155,6 +193,12 @@ body.light-mode .theme-toggle-btn:hover {
     padding: 10px 20px;
     border-radius: 6px;
     border: 1px solid #30363d;
+}
+
+.session-progress {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
 }
 
 .weather-card {
@@ -303,13 +347,18 @@ body.light-mode .theme-toggle-btn:hover {
     border-color: #f85149;
 }
 
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 8px;
+    background: #161b22;
+    border: 1px solid #30363d;
+}
+
 .timing-table {
     width: 100%;
     border-collapse: collapse;
-    background: #161b22;
-    border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #30363d;
 }
 
 .timing-table th, .timing-table td {
@@ -365,10 +414,16 @@ body.light-mode .theme-toggle-btn:hover {
 }
 
 .status-badge {
-    font-size: 0.7rem;
-    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 18px;
     padding: 2px 6px;
     border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    line-height: 1;
     text-transform: uppercase;
 }
 
@@ -388,6 +443,33 @@ body.light-mode .theme-toggle-btn:hover {
     background: rgba(88, 166, 255, 0.2);
     color: #58a6ff;
     border: 1px solid #58a6ff;
+}
+
+.badge-dnf {
+    background: #d92d20;
+    color: #ffffff;
+}
+
+.badge-outlap {
+    background: #2f80ed;
+    color: #ffffff;
+}
+
+.badge-stopped {
+    background: #6b7280;
+    color: #ffffff;
+}
+
+body.light-mode .badge-pit {
+    color: #111111;
+    background: #f0a500;
+    border-color: #f0a500;
+}
+
+body.light-mode .badge-dnf,
+body.light-mode .badge-outlap,
+body.light-mode .badge-stopped {
+    color: #ffffff;
 }
 
 .tyre-fixed-badge {
@@ -587,122 +669,52 @@ body.light-mode .theme-toggle-btn:hover {
     font-weight: bold;
 }
 
-body.light-mode {
-    background: #f4f6f8;
-    color: #18202a;
-}
+/* MEDIA QUERIES MOBILE */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .session-top-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .session-main-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .weather-card {
+        min-width: 100%;
+        box-sizing: border-box;
+    }
 
-body.light-mode .session-header,
-body.light-mode .timing-table,
-body.light-mode .weather-card,
-body.light-mode .stints-modal-content,
-body.light-mode .weather-modal-content {
-    background: #ffffff;
-    color: #18202a;
-    border-color: #d7dce2;
-}
-
-body.light-mode .timing-table th {
-    background: #eef1f4;
-    color: #303944;
-    border-color: #d7dce2;
-}
-
-body.light-mode .timing-table td {
-    background: #ffffff;
-    color: #252d37;
-    border-color: #e1e5e9;
-}
-
-body.light-mode .timing-table tbody tr:nth-child(even) td {
-    background: #f8f9fa;
-}
-
-body.light-mode .timing-table tbody tr:hover td {
-    background: #eef3f7;
-}
-
-body.light-mode .driver-number {
-    color: #18202a;
-}
-
-body.light-mode .session-badge,
-body.light-mode .clock-pill,
-body.light-mode .track-status-badge,
-body.light-mode .session-progress {
-    border-color: #cbd2d9;
-    background: #eef1f4;
-    color: #18202a;
-}
-
-body.light-mode .theme-toggle-btn {
-    background: #ffffff;
-    color: #18202a;
-    border-color: #cbd2d9;
-}
-
-body.light-mode .weather-item {
-    background: #f4f6f8;
-    color: #18202a;
-}
-
-body.light-mode .weather-label {
-    color: #66717d;
-}
-
-body.light-mode .weather-value {
-    color: #18202a;
-}
-
-body.light-mode .stints-modal-header,
-body.light-mode .forecast-title {
-    color: #18202a;
-}
-
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 18px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .04em;
-    line-height: 1;
-}
-
-.badge-dnf {
-    background: #d92d20;
-    color: #ffffff;
-}
-
-.badge-pit {
-    background: #f0a500;
-    color: #111111;
-}
-
-.badge-outlap {
-    background: #2f80ed;
-    color: #ffffff;
-}
-
-.badge-stopped {
-    background: #6b7280;
-    color: #ffffff;
-}
-
-body.light-mode .badge-pit {
-    color: #111111;
-}
-
-body.light-mode .badge-dnf,
-body.light-mode .badge-outlap,
-body.light-mode .badge-stopped {
-    color: #ffffff;
-}
-
-.session-progress {
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
+    .weather-grid-compact {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .clock-pill {
+        font-size: 1.8rem;
+        padding: 8px 16px;
+    }
+    
+    .timing-table th, .timing-table td {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+    }
+    
+    .tyre-fixed-badge {
+        width: 65px;
+        height: 22px;
+        font-size: 0.7rem;
+        gap: 4px;
+    }
+    
+    .driver-name {
+        width: 40px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
