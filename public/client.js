@@ -21,7 +21,7 @@ class F1LiveClient {
             this.ws.close();
         }
 
-        this.ws = new WebSocket(`wss://${window.location.host}`);
+        this.ws = new WebSocket(`ws://${window.location.host}`);
 
         this.ws.onopen = () => {
             if (this.reconnectTimer) {
