@@ -703,7 +703,7 @@ class F1LiveTimingUI {
     }
 
     updateDriverGps(driverNum, driverData) {
-        if (!this.activeCircuitData || !this.activeCircuitData.candidateLap) return;
+        /*if (!this.activeCircuitData || !this.activeCircuitData.candidateLap) return;
 
         let dot = this.gpsCarsLayer.querySelector(`#gps-car-${driverNum}`);
         if (!dot) {
@@ -762,7 +762,7 @@ class F1LiveTimingUI {
 
         dot.style.display = 'block';
         dot.style.left = `${xPct}%`;
-        dot.style.top = `${yPct}%`;
+        dot.style.top = `${yPct}%`;*/
     }
 
     initModal() {
