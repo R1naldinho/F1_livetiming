@@ -21,7 +21,7 @@ class F1LiveClient {
             this.ws.close();
         }
 
-        this.ws = new WebSocket(`wss://${window.location.host}`);
+        this.ws = new WebSocket(`ws://${window.location.host}`);
 
         this.ws.onopen = () => {
             if (this.reconnectTimer) {
@@ -33,7 +33,6 @@ class F1LiveClient {
         this.ws.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
-                console.log("Received message:", message);
 
                 if (message.type === 3 && message.result) {
                     this.applySnapshot(message.result);
@@ -43,15 +42,12 @@ class F1LiveClient {
                 if (message.type === 1 && Array.isArray(message.arguments) && message.arguments.length >= 2) {
                     const streamType = message.arguments[0];
                     const streamData = message.arguments[1];
-                    
                     this.handleStream(streamType, streamData);
                     return;
                 }
 
                 this.handleStream(message.streamType, message.data);
-            } catch (error) {
-                console.error(error);
-            }
+            } catch (error) {}
         };
 
         this.ws.onerror = () => {
@@ -126,7 +122,6 @@ class F1LiveClient {
                 break;
             case "TimingData":
                 if (data.Lines) {
-                    console.log("Received TimingData:", data.Lines);
                     this.mergeLines(this.timingData, data.Lines);
                     this.scheduleUIRefresh();
                 }
@@ -255,21 +250,11 @@ class F1LiveClient {
         const type = String(this.sessionInfo?.Type || "").toLowerCase();
         const name = String(this.sessionInfo?.Name || "").toLowerCase();
 
-        if (
-            type === "race" ||
-            type === "sprint" ||
-            name.includes("sprint") ||
-            name.includes("race")
-        ) {
+        if (type === "race" || type === "sprint" || name.includes("sprint") || name.includes("race")) {
             return "race";
         }
 
-        if (
-            type === "qualifying" ||
-            type === "qualification" ||
-            name.includes("qualifying") ||
-            name.includes("qualification")
-        ) {
+        if (type === "qualifying" || type === "qualification" || name.includes("qualifying") || name.includes("qualification")) {
             return "qualifying";
         }
 
@@ -285,16 +270,13 @@ class F1LiveClient {
         }, 0);
 
         const series = this.sessionData?.Series;
-        const seriesValues =
-            series && typeof series === "object" ? Object.values(series) : [];
+        const seriesValues = series && typeof series === "object" ? Object.values(series) : [];
         const latestSeries = seriesValues
             .filter((item) => item && item.Lap !== undefined)
             .sort((a, b) => new Date(a.Utc || 0) - new Date(b.Utc || 0))
             .pop();
 
-        const currentLap = latestSeries?.Lap
-            ? Number(latestSeries.Lap)
-            : completedLaps + 1;
+        const currentLap = latestSeries?.Lap ? Number(latestSeries.Lap) : completedLaps + 1;
 
         return {
             kind,
@@ -339,9 +321,7 @@ class F1LiveClient {
             : info.BestLapTime || stats.PersonalBestLapTime || {};
 
         const sectors = Array.isArray(info.Sectors) ? info.Sectors : [];
-        const bestSectors = Array.isArray(stats.BestSectors)
-            ? stats.BestSectors
-            : [];
+        const bestSectors = Array.isArray(stats.BestSectors) ? stats.BestSectors : [];
 
         const stints = Array.isArray(appData.Stints)
             ? appData.Stints
@@ -400,9 +380,7 @@ class F1LiveClient {
 
         return {
             racingNumber: driverNum,
-            position: Number.isFinite(Number(info.Position))
-                ? Number(info.Position)
-                : Number(driverObj.Line || 999),
+            position: Number.isFinite(Number(info.Position)) ? Number(info.Position) : Number(driverObj.Line || 999),
             tLA: driverObj.Tla,
             lastName: driverObj.LastName,
             teamColour: driverObj.TeamColour,
@@ -429,8 +407,3 @@ class F1LiveClient {
         };
     }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const ui = new F1LiveTimingUI("app");
-    window.f1Client = new F1LiveClient(ui);
-});
