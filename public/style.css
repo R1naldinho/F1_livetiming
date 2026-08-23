@@ -17,7 +17,8 @@ body.light-mode .weather-card,
 body.light-mode .stints-modal-content,
 body.light-mode .weather-modal-content,
 body.light-mode .forecast-container,
-body.light-mode .radar-container {
+body.light-mode .radar-container,
+body.light-mode .gps-map-container {
     background: #ffffff;
     border-color: #d1d5db;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -89,21 +90,6 @@ body.light-mode .theme-toggle-btn {
 
 body.light-mode .theme-toggle-btn:hover {
     background: #f3f4f6;
-}
-
-body.light-mode .color-purple {
-    color: #7c3aed;
-    font-weight: bold;
-}
-
-body.light-mode .color-green {
-    color: #16a34a;
-    font-weight: bold;
-}
-
-body.light-mode .color-yellow {
-    color: #ca8a04;
-    font-weight: bold;
 }
 
 .theme-toggle-btn {
@@ -384,6 +370,18 @@ body.light-mode .color-yellow {
     color: #8b949e;
 }
 
+.timing-table th.col-s1 {
+    color: #ff4b4b;
+}
+
+.timing-table th.col-s2 {
+    color: #58a6ff;
+}
+
+.timing-table th.col-s3 {
+    color: #e3b341;
+}
+
 .timing-table tr:hover {
     background: #1c2128;
 }
@@ -452,27 +450,6 @@ body.light-mode .color-yellow {
     background: rgba(88, 166, 255, 0.2);
     color: #58a6ff;
     border: 1px solid #58a6ff;
-}
-
-.badge-dnf {
-    background: #d92d20;
-    color: #ffffff;
-}
-
-.badge-outlap {
-    background: #2f80ed;
-    color: #ffffff;
-}
-
-.badge-stopped {
-    background: #6b7280;
-    color: #ffffff;
-}
-
-body.light-mode .badge-pit {
-    color: #111111;
-    background: #f0a500;
-    border-color: #f0a500;
 }
 
 .tyre-fixed-badge {
@@ -672,75 +649,42 @@ body.light-mode .badge-pit {
     font-weight: bold;
 }
 
-@media (max-width: 768px) {
-    body {
-        padding: 10px;
-    }
-    
-    .session-top-left {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .session-main-row {
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .weather-card {
-        min-width: 100%;
-        box-sizing: border-box;
-    }
-
-    .weather-grid-compact {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .clock-pill {
-        font-size: 1.8rem;
-        padding: 8px 16px;
-    }
-    
-    .timing-table th, .timing-table td {
-        padding: 8px 6px;
-        font-size: 0.85rem;
-    }
-    
-    .tyre-fixed-badge {
-        width: 65px;
-        height: 22px;
-        font-size: 0.7rem;
-        gap: 4px;
-    }
-    
-    .driver-name {
-        width: 40px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+.gps-map-container {
+    width: 100%;
+    height: 400px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    margin-top: 20px;
+    position: relative;
+    overflow: hidden;
 }
 
-.wind-indicator {
-    display: inline-block;
-    font-size: 1.3rem;
-    line-height: 1;
-    margin-left: 6px;
-    vertical-align: middle;
-    transition: transform 0.3s ease;
-    color: #58a6ff;
+.gps-map-svg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
-body.light-mode .wind-indicator {
-    color: #2563eb;
+.gps-cars-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
 }
 
-.timing-table tr.driver-knocked-out td {
-    background-color: rgba(248, 81, 73, 0.15) !important;
-    color: #f85149 !important;
-}
-
-body.light-mode .timing-table tr.driver-knocked-out td {
-    background-color: rgba(239, 68, 68, 0.1) !important;
-    color: #dc2626 !important;
+.gps-car-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ffffff;
+    border: 2px solid #111827;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 0.3s ease, top 0.3s ease;
+    z-index: 20;
 }
