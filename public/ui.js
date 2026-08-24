@@ -27,7 +27,9 @@ class SessionInfoUI {
         this.themeBtn.onclick = () => {
             document.body.classList.toggle("light-mode");
             const lightActive = document.body.classList.contains("light-mode");
-            this.themeBtn.textContent = lightActive ? "☾ Dark Mode" : "☀ Light Mode";
+            this.themeBtn.textContent = lightActive
+                ? "☾ Dark Mode"
+                : "☀ Light Mode";
             localStorage.setItem("theme", lightActive ? "light" : "dark");
             if (this.baseMapLayer) {
                 const newUrl = lightActive
@@ -53,7 +55,8 @@ class SessionInfoUI {
         this.leftColumn.appendChild(this.progressElement);
         this.weatherCard = document.createElement("div");
         this.weatherCard.className = "weather-card clickable-card";
-        this.weatherCard.title = "Click to open weather details, forecast & radar";
+        this.weatherCard.title =
+            "Click to open weather details, forecast & radar";
         this.weatherCard.onclick = () => this.showWeatherModal();
         this.weatherTitle = document.createElement("div");
         this.weatherTitle.className = "weather-title";
@@ -168,11 +171,13 @@ class SessionInfoUI {
         radarWrapper.style.backgroundColor = "#222";
         this.mapWindOverlay = document.createElement("div");
         this.mapWindOverlay.className = "map-wind-overlay";
-        this.mapWindOverlay.style.cssText = "position: absolute; top: 40px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;";
+        this.mapWindOverlay.style.cssText =
+            "position: absolute; top: 40px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;";
         this.mapWindSpeed = document.createElement("span");
         this.mapWindSpeed.textContent = "-- m/s";
         this.mapWindArrow = document.createElement("span");
-        this.mapWindArrow.style.cssText = "display:inline-block; transition: transform 0.3s; font-size: 18px;";
+        this.mapWindArrow.style.cssText =
+            "display:inline-block; transition: transform 0.3s; font-size: 18px;";
         this.mapWindArrow.textContent = "↑";
         this.mapWindOverlay.appendChild(this.mapWindSpeed);
         this.mapWindOverlay.appendChild(this.mapWindArrow);
@@ -199,11 +204,17 @@ class SessionInfoUI {
         if (this.map) {
             setTimeout(() => {
                 this.map.invalidateSize();
-                const targetZoom = this.currentCircuit?.weatherZoom || this.currentCircuit?.zoom || 14;
+                const targetZoom =
+                    this.currentCircuit?.weatherZoom ||
+                    this.currentCircuit?.zoom ||
+                    14;
                 if (this.circuitCenter) {
                     this.map.setView(this.circuitCenter, targetZoom);
                 } else if (this.currentCircuit) {
-                    this.map.setView([this.currentCircuit.lat, this.currentCircuit.lon], targetZoom);
+                    this.map.setView(
+                        [this.currentCircuit.lat, this.currentCircuit.lon],
+                        targetZoom,
+                    );
                 }
             }, 150);
         }
@@ -211,7 +222,9 @@ class SessionInfoUI {
 
     async fetchForecast(lat, lon) {
         try {
-            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,rain&timezone=auto`);
+            const res = await fetch(
+                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,rain&timezone=auto`,
+            );
             const data = await res.json();
             const nowIdx = new Date().getHours();
             while (this.forecastItems.firstChild) {
@@ -219,11 +232,18 @@ class SessionInfoUI {
             }
             for (let i = 1; i <= 3; i++) {
                 const index = nowIdx + i;
-                if (!data.hourly || !data.hourly.temperature_2m || index >= data.hourly.temperature_2m.length) {
+                if (
+                    !data.hourly ||
+                    !data.hourly.temperature_2m ||
+                    index >= data.hourly.temperature_2m.length
+                ) {
                     continue;
                 }
                 const timeDate = new Date(data.hourly.time[index]);
-                const timeStr = timeDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                const timeStr = timeDate.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                });
                 const temp = data.hourly.temperature_2m[index];
                 const rainProb = data.hourly.precipitation_probability[index];
                 const item = document.createElement("div");
@@ -253,7 +273,8 @@ class SessionInfoUI {
     }
 
     update(data) {
-        const meetingName = data?.Meeting?.OfficialName || data?.Meeting?.Name || "Formula 1";
+        const meetingName =
+            data?.Meeting?.OfficialName || data?.Meeting?.Name || "Formula 1";
         const type = data?.Type || "Session";
         const name = data?.Name || "";
         const status = data?.SessionStatus || "Unknown";
@@ -270,29 +291,46 @@ class SessionInfoUI {
             return;
         }
         const locationName = data?.Meeting?.Location || "";
-        const meetingName = data?.Meeting?.OfficialName || data?.Meeting?.Name || "";
+        const meetingName =
+            data?.Meeting?.OfficialName || data?.Meeting?.Name || "";
         let circuit = this.f1Circuits.find(
             (c) =>
-                (locationName && c.location && locationName.toLowerCase() === c.location.toLowerCase()) ||
-                (meetingName && c.name && meetingName.toLowerCase().includes(c.name.toLowerCase())) ||
-                (meetingName && c.location && meetingName.toLowerCase().includes(c.location.toLowerCase()))
+                (locationName &&
+                    c.location &&
+                    locationName.toLowerCase() === c.location.toLowerCase()) ||
+                (meetingName &&
+                    c.name &&
+                    meetingName.toLowerCase().includes(c.name.toLowerCase())) ||
+                (meetingName &&
+                    c.location &&
+                    meetingName
+                        .toLowerCase()
+                        .includes(c.location.toLowerCase())),
         );
         if (!circuit) {
             circuit = this.f1Circuits[0];
         }
-        if (this.currentCircuit && this.currentCircuit.id === circuit.id && this.map) {
+        if (
+            this.currentCircuit &&
+            this.currentCircuit.id === circuit.id &&
+            this.map
+        ) {
             return;
         }
         this.currentCircuit = circuit;
         this.fetchForecast(circuit.lat, circuit.lon);
         if (!this.map) {
-            this.map = L.map("leaflet-map-container", { zoomControl: false }).setView([circuit.lat, circuit.lon], circuit.zoom);
+            this.map = L.map("leaflet-map-container", {
+                zoomControl: false,
+            }).setView([circuit.lat, circuit.lon], circuit.zoom);
             L.control.zoom({ position: "bottomright" }).addTo(this.map);
             const isLight = document.body.classList.contains("light-mode");
             const tileUrl = isLight
                 ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                 : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-            this.baseMapLayer = L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(this.map);
+            this.baseMapLayer = L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(
+                this.map,
+            );
             this.loadRainViewerRadar();
         } else {
             this.map.setView([circuit.lat, circuit.lon], circuit.zoom);
@@ -302,17 +340,22 @@ class SessionInfoUI {
 
     async loadRainViewerRadar() {
         try {
-            const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
+            const res = await fetch(
+                "https://api.rainviewer.com/public/weather-maps.json",
+            );
             const data = await res.json();
             if (data.radar && data.radar.past && data.radar.past.length > 0) {
                 const latestRadar = data.radar.past[data.radar.past.length - 1];
-                L.tileLayer(`https://tilecache.rainviewer.com${latestRadar.path}/512/{z}/{x}/{y}/2/1_1.png`, {
-                    tileSize: 256,
-                    maxNativeZoom: 7,
-                    maxZoom: 19,
-                    opacity: 0.65,
-                    zIndex: 10,
-                }).addTo(this.map);
+                L.tileLayer(
+                    `https://tilecache.rainviewer.com${latestRadar.path}/512/{z}/{x}/{y}/2/1_1.png`,
+                    {
+                        tileSize: 256,
+                        maxNativeZoom: 7,
+                        maxZoom: 19,
+                        opacity: 0.65,
+                        zIndex: 10,
+                    },
+                ).addTo(this.map);
             }
         } catch (err) {}
     }
@@ -343,7 +386,8 @@ class SessionInfoUI {
     parseTime(str) {
         if (!str) return 0;
         const parts = str.split(":").map(Number);
-        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 3)
+            return parts[0] * 3600 + parts[1] * 60 + parts[2];
         if (parts.length === 2) return parts[0] * 60 + parts[1];
         return 0;
     }
@@ -372,11 +416,17 @@ class SessionInfoUI {
 
     tickClock() {
         if (!this.clockData) return;
-        if (this.clockData.Extrapolating === false || this.clockData.Extrapolating === "0") {
+        if (
+            this.clockData.Extrapolating === false ||
+            this.clockData.Extrapolating === "0"
+        ) {
             this.clockElement.textContent = this.clockData.Remaining || "--:--";
             return;
         }
-        const diffSeconds = Math.max(0, (this.clockData.targetMs - Date.now()) / 1000);
+        const diffSeconds = Math.max(
+            0,
+            (this.clockData.targetMs - Date.now()) / 1000,
+        );
         this.clockElement.textContent = this.formatTime(diffSeconds);
     }
 
@@ -393,12 +443,14 @@ class SessionInfoUI {
             this.clockElement.style.display = "none";
             this.progressElement.style.display = "block";
             this.progressElement.className = "clock-pill";
-            this.progressElement.textContent = data.currentLap > 0 ? `Lap ${data.currentLap}` : "Lap --";
+            this.progressElement.textContent =
+                data.currentLap > 0 ? `Lap ${data.currentLap}` : "Lap --";
         } else {
             this.clockElement.style.display = "block";
             this.progressElement.style.display = "block";
             this.progressElement.className = "session-progress";
-            this.progressElement.textContent = data.kind === "qualifying" ? "Qualifying" : "Practice";
+            this.progressElement.textContent =
+                data.kind === "qualifying" ? "Qualifying" : "Practice";
         }
     }
 
@@ -424,7 +476,8 @@ class SessionInfoUI {
         }
         windArrow.style.transform = `rotate(${windDeg}deg)`;
         this.modalWind.valueEl.textContent = `${data.WindSpeed} m/s `;
-        let modalWindArrow = this.modalWind.valueEl.querySelector(".wind-indicator");
+        let modalWindArrow =
+            this.modalWind.valueEl.querySelector(".wind-indicator");
         if (!modalWindArrow) {
             modalWindArrow = document.createElement("span");
             modalWindArrow.className = "wind-indicator";
@@ -465,6 +518,7 @@ class F1LiveTimingUI {
         this.activeCircuitData = null;
         this.gpsPoints = [];
         this.gpsBounds = null;
+        this.hasRestoredScroll = false;
         this.initTable();
         this.initModal();
         this.initGpsMap();
@@ -477,7 +531,24 @@ class F1LiveTimingUI {
         table.className = "timing-table";
         const thead = document.createElement("thead");
         const tr = document.createElement("tr");
-        const headers = ["", "Pos", "Driver", "Tyres", "Gap", "Diff", "Last Lap", "Last S1", "Last S2", "Last S3", "Best Lap", "Best S1", "Best S2", "Best S3", "Pit Stops", "Laps"];
+        const headers = [
+            "",
+            "Pos",
+            "Driver",
+            "Tyres",
+            "Gap",
+            "Diff",
+            "Last Lap",
+            "Last S1",
+            "Last S2",
+            "Last S3",
+            "Best Lap",
+            "Best S1",
+            "Best S2",
+            "Best S3",
+            "Pit Stops",
+            "Laps",
+        ];
         headers.forEach((text, idx) => {
             const th = document.createElement("th");
             th.textContent = text;
@@ -499,7 +570,10 @@ class F1LiveTimingUI {
     initGpsMap() {
         this.gpsMapContainer = document.createElement("div");
         this.gpsMapContainer.className = "gps-map-container";
-        this.gpsSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        this.gpsSvg = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+        );
         this.gpsSvg.setAttribute("class", "gps-map-svg");
         this.gpsMapContainer.appendChild(this.gpsSvg);
         this.gpsCarsLayer = document.createElement("div");
@@ -513,28 +587,50 @@ class F1LiveTimingUI {
         if (this.isFetchingCircuit) return;
         this.isFetchingCircuit = true;
         const circuits = [
-            { location: "Melbourne", circuitKey: 10 }, { location: "Shanghai", circuitKey: 49 },
-            { location: "Suzuka", circuitKey: 46 }, { location: "Sakhir", circuitKey: 63 },
-            { location: "Jeddah", circuitKey: 149 }, { location: "Miami", circuitKey: 151 },
-            { location: "Montreal", circuitKey: 23 }, { location: "Monte-Carlo", circuitKey: 22 },
-            { location: "Montmeló", circuitKey: 15 }, { location: "Spielberg", circuitKey: 19 },
-            { location: "Silverstone", circuitKey: 2 }, { location: "Spa", circuitKey: 7 },
-            { location: "Budapest", circuitKey: 4 }, { location: "Zandvoort", circuitKey: 55 },
-            { location: "Monza", circuitKey: 39 }, { location: "Baku", circuitKey: 144 },
-            { location: "Marina Bay", circuitKey: 61 }, { location: "Austin", circuitKey: 9 },
-            { location: "Mexico City", circuitKey: 65 }, { location: "São Paulo", circuitKey: 14 },
-            { location: "Las Vegas", circuitKey: 152 }, { location: "Al Daayen", circuitKey: 150 },
-            { location: "Yas Marina", circuitKey: 70 }
+            { location: "Melbourne", circuitKey: 10 },
+            { location: "Shanghai", circuitKey: 49 },
+            { location: "Suzuka", circuitKey: 46 },
+            { location: "Sakhir", circuitKey: 63 },
+            { location: "Jeddah", circuitKey: 149 },
+            { location: "Miami", circuitKey: 151 },
+            { location: "Montreal", circuitKey: 23 },
+            { location: "Monte-Carlo", circuitKey: 22 },
+            { location: "Montmeló", circuitKey: 15 },
+            { location: "Spielberg", circuitKey: 19 },
+            { location: "Silverstone", circuitKey: 2 },
+            { location: "Spa", circuitKey: 7 },
+            { location: "Budapest", circuitKey: 4 },
+            { location: "Zandvoort", circuitKey: 55 },
+            { location: "Monza", circuitKey: 39 },
+            { location: "Baku", circuitKey: 144 },
+            { location: "Marina Bay", circuitKey: 61 },
+            { location: "Austin", circuitKey: 9 },
+            { location: "Mexico City", circuitKey: 65 },
+            { location: "São Paulo", circuitKey: 14 },
+            { location: "Las Vegas", circuitKey: 152 },
+            { location: "Al Daayen", circuitKey: 150 },
+            { location: "Yas Marina", circuitKey: 70 },
         ];
-        const locationName = forcedLocation || window.f1Client?.sessionInfo?.Meeting?.Location || "Zandvoort";
-        const normalizedLocation = locationName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const locationName =
+            forcedLocation ||
+            window.f1Client?.sessionInfo?.Meeting?.Location ||
+            "Zandvoort";
+        const normalizedLocation = locationName
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
         const matchedCircuit = circuits.find((c) => {
-            const circuitLocation = c.location.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const circuitLocation = c.location
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase();
             return circuitLocation === normalizedLocation;
         });
         const circuitKey = matchedCircuit ? matchedCircuit.circuitKey : 55;
         try {
-            const response = await fetch(`https://api.multiviewer.app/api/v1/circuits/${circuitKey}/2026`);
+            const response = await fetch(
+                `https://api.multiviewer.app/api/v1/circuits/${circuitKey}/2026`,
+            );
             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
             const data = await response.json();
             this.activeCircuitData = data;
@@ -545,30 +641,74 @@ class F1LiveTimingUI {
         }
     }
 
+    getSectorColor(sector, microsector, index, totalPoints) {
+        if (sector !== undefined && sector !== null) {
+            const s = String(sector).toLowerCase();
+            if (s.includes("1") || s === "s1") return "#ff1e27";
+            if (s.includes("2") || s === "s2") return "#00b0ff";
+            if (s.includes("3") || s === "s3") return "#ffe600";
+        }
+
+        if (microsector !== undefined && microsector !== null) {
+            const ms = Number(microsector);
+            if (ms <= 7) return "#ff1e27";
+            if (ms <= 15) return "#00b0ff";
+            return "#ffe600";
+        }
+
+        const ratio = index / totalPoints;
+        if (ratio < 0.33) return "#ff1e27";
+        if (ratio < 0.66) return "#00b0ff";
+        return "#ffe600";
+    }
+
     extractCircuitPoints(data) {
         const candidates = [];
         if (data?.x && data?.y) {
-            candidates.push({ x: data.x, y: data.y });
+            candidates.push(data);
         }
         for (const candidate of candidates) {
             if (Array.isArray(candidate)) {
-                const points = candidate.map((p) => {
-                    if (!p) return null;
-                    const x = -Number(p.x ?? p.X);
-                    const y = Number(p.y ?? p.Y);
-                    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-                    return { x, y };
-                }).filter(Boolean);
+                const points = candidate
+                    .map((p) => {
+                        if (!p) return null;
+                        const x = -Number(p.x ?? p.X);
+                        const y = Number(p.y ?? p.Y);
+                        if (!Number.isFinite(x) || !Number.isFinite(y))
+                            return null;
+                        return {
+                            x,
+                            y,
+                            sector: p.sector ?? p.Sector ?? p.s,
+                            microsector: p.microsector ?? p.Microsector ?? p.ms,
+                        };
+                    })
+                    .filter(Boolean);
                 if (points.length > 2) return points;
             }
-            if (candidate && Array.isArray(candidate.x) && Array.isArray(candidate.y)) {
+            if (
+                candidate &&
+                Array.isArray(candidate.x) &&
+                Array.isArray(candidate.y)
+            ) {
                 const length = Math.min(candidate.x.length, candidate.y.length);
                 const points = [];
                 for (let i = 0; i < length; i++) {
                     const x = -Number(candidate.x[i]);
                     const y = Number(candidate.y[i]);
                     if (Number.isFinite(x) && Number.isFinite(y)) {
-                        points.push({ x, y });
+                        points.push({
+                            x,
+                            y,
+                            sector:
+                                candidate.sector?.[i] ??
+                                candidate.Sector?.[i] ??
+                                candidate.s?.[i],
+                            microsector:
+                                candidate.microsector?.[i] ??
+                                candidate.Microsector?.[i] ??
+                                candidate.ms?.[i],
+                        });
                     }
                 }
                 if (points.length > 2) return points;
@@ -590,9 +730,24 @@ class F1LiveTimingUI {
                 const t = step / subdivisions;
                 const t2 = t * t;
                 const t3 = t2 * t;
-                const x = 0.5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
-                const y = 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
-                result.push({ x, y });
+                const x =
+                    0.5 *
+                    (2 * p1.x +
+                        (-p0.x + p2.x) * t +
+                        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+                        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+                const y =
+                    0.5 *
+                    (2 * p1.y +
+                        (-p0.y + p2.y) * t +
+                        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+                        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+                result.push({
+                    x,
+                    y,
+                    sector: p1.sector,
+                    microsector: p1.microsector,
+                });
             }
         }
         return result;
@@ -604,13 +759,18 @@ class F1LiveTimingUI {
         if (!points || points.length < 3) return;
         this.originalGpsPoints = points;
         this.gpsPoints = this.interpolateCircuitPoints(points, 5);
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+        let minX = Infinity,
+            maxX = -Infinity,
+            minY = Infinity,
+            maxY = -Infinity;
         points.forEach((p) => {
             if (p.x < minX) minX = p.x;
             if (p.x > maxX) maxX = p.x;
             if (p.y < minY) minY = p.y;
             if (p.y > maxY) maxY = p.y;
         });
+
         const paddingX = (maxX - minX) * 0.035;
         const paddingY = (maxY - minY) * 0.035;
         minX -= paddingX;
@@ -620,19 +780,27 @@ class F1LiveTimingUI {
         const width = maxX - minX;
         const height = maxY - minY;
         this.gpsBounds = { minX, maxX, minY, maxY, width, height };
-        this.gpsSvg.setAttribute("viewBox", `${minX} ${minY} ${width} ${height}`);
+        this.gpsSvg.setAttribute(
+            "viewBox",
+            `${minX} ${minY} ${width} ${height}`,
+        );
+
         while (this.gpsSvg.firstChild) {
             this.gpsSvg.removeChild(this.gpsSvg.firstChild);
         }
-        let pathData = "";
-        this.gpsPoints.forEach((point, index) => {
-            if (index === 0) pathData = `M ${point.x} ${point.y}`;
-            else pathData += ` L ${point.x} ${point.y}`;
-        });
-        if (this.gpsPoints.length > 2) pathData += " Z";
 
-        const shadowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        shadowPath.setAttribute("d", pathData);
+        let fullPathData = "";
+        this.gpsPoints.forEach((point, index) => {
+            if (index === 0) fullPathData = `M ${point.x} ${point.y}`;
+            else fullPathData += ` L ${point.x} ${point.y}`;
+        });
+        if (this.gpsPoints.length > 2) fullPathData += " Z";
+
+        const shadowPath = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+        );
+        shadowPath.setAttribute("d", fullPathData);
         shadowPath.setAttribute("fill", "none");
         shadowPath.setAttribute("stroke", "rgba(0,0,0,0.35)");
         shadowPath.setAttribute("stroke-width", "190");
@@ -640,17 +808,61 @@ class F1LiveTimingUI {
         shadowPath.setAttribute("stroke-linejoin", "round");
         this.gpsSvg.appendChild(shadowPath);
 
-        const trackPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        trackPath.setAttribute("d", pathData);
-        trackPath.setAttribute("fill", "none");
-        trackPath.setAttribute("stroke", "#ff4b4b");
-        trackPath.setAttribute("stroke-width", "120");
-        trackPath.setAttribute("stroke-linecap", "round");
-        trackPath.setAttribute("stroke-linejoin", "round");
-        this.gpsSvg.appendChild(trackPath);
+        const total = this.gpsPoints.length;
+        const segments = [];
+        let currentSegment = { color: null, points: [] };
 
-        const innerPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        innerPath.setAttribute("d", pathData);
+        this.gpsPoints.forEach((pt, i) => {
+            const color = this.getSectorColor(
+                pt.sector,
+                pt.microsector,
+                i,
+                total,
+            );
+
+            if (!currentSegment.color) {
+                currentSegment.color = color;
+                currentSegment.points.push(pt);
+            } else if (currentSegment.color === color) {
+                currentSegment.points.push(pt);
+            } else {
+                currentSegment.points.push(pt);
+                segments.push(currentSegment);
+                currentSegment = { color: color, points: [pt] };
+            }
+        });
+
+        if (currentSegment.points.length > 0) {
+            currentSegment.points.push(this.gpsPoints[0]);
+            segments.push(currentSegment);
+        }
+
+        segments.forEach((seg) => {
+            if (seg.points.length < 2) return;
+            let d = "";
+            seg.points.forEach((p, idx) => {
+                if (idx === 0) d = `M ${p.x} ${p.y}`;
+                else d += ` L ${p.x} ${p.y}`;
+            });
+
+            const trackPath = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "path",
+            );
+            trackPath.setAttribute("d", d);
+            trackPath.setAttribute("fill", "none");
+            trackPath.setAttribute("stroke", seg.color);
+            trackPath.setAttribute("stroke-width", "120");
+            trackPath.setAttribute("stroke-linecap", "round");
+            trackPath.setAttribute("stroke-linejoin", "round");
+            this.gpsSvg.appendChild(trackPath);
+        });
+
+        const innerPath = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+        );
+        innerPath.setAttribute("d", fullPathData);
         innerPath.setAttribute("fill", "none");
         innerPath.setAttribute("stroke", "rgba(255,255,255,0.14)");
         innerPath.setAttribute("stroke-width", "28");
@@ -658,8 +870,11 @@ class F1LiveTimingUI {
         innerPath.setAttribute("stroke-linejoin", "round");
         this.gpsSvg.appendChild(innerPath);
 
-        const center = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        center.setAttribute("d", pathData);
+        const center = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+        );
+        center.setAttribute("d", fullPathData);
         center.setAttribute("fill", "none");
         center.setAttribute("stroke", "rgba(255,255,255,0.18)");
         center.setAttribute("stroke-width", "4");
@@ -673,13 +888,20 @@ class F1LiveTimingUI {
 
     getGpsPointForDriver(driverData) {
         if (!this.gpsPoints || this.gpsPoints.length === 0) return null;
-        const sectors = [driverData?.lastS1, driverData?.lastS2, driverData?.lastS3];
+        const sectors = [
+            driverData?.lastS1,
+            driverData?.lastS2,
+            driverData?.lastS3,
+        ];
         let activeSegmentsCount = 0;
         sectors.forEach((sec) => {
             if (!sec || !sec.Segments) return;
-            const segments = Array.isArray(sec.Segments) ? sec.Segments : Object.values(sec.Segments);
+            const segments = Array.isArray(sec.Segments)
+                ? sec.Segments
+                : Object.values(sec.Segments);
             segments.forEach((segment) => {
-                if (segment && Number(segment.Status) > 0) activeSegmentsCount++;
+                if (segment && Number(segment.Status) > 0)
+                    activeSegmentsCount++;
             });
         });
         const totalSegments = 24;
@@ -730,11 +952,171 @@ class F1LiveTimingUI {
         return { wrapper, dot, label };
     }
 
-    updateDriverGps(driverNum, driverData) {
+    /*updateDriverGps(driverNum, driverData) {
         if (!this.activeCircuitData || !this.gpsPoints || this.gpsPoints.length === 0) return;
+        
         const stopped = driverData.lastS1?.Stopped || driverData.lastS2?.Stopped || driverData.lastS3?.Stopped;
+        let car = this.gpsCarsLayer.querySelector(`#gps-car-${driverNum}`);
+
         if (driverData?.retired || driverData?.inPit || driverData?.pitOut || stopped) {
-            const existingCar = this.gpsCarsLayer.querySelector(`#gps-car-${driverNum}`);
+            if (car && car._animFrame) {
+                cancelAnimationFrame(car._animFrame);
+                car._animFrame = null;
+            }
+            if (car) car.style.display = "none";
+            return;
+        }
+
+        if (!car) {
+            car = this.createGpsCar(driverNum);
+            this.gpsCarsLayer.appendChild(car.wrapper);
+            car.wrapper._gpsElements = car;
+        } else if (!car._gpsElements) {
+            const marker = car.querySelector(".gps-car-marker");
+            const label = car.querySelector(".gps-car-label");
+            car._gpsElements = { wrapper: car, dot: marker, label };
+        }
+
+        const elements = car._gpsElements;
+        if (!elements || !elements.label || !elements.dot) return;
+
+        const displayName = driverData?.tLA || driverData?.lastName || driverData?.name || `#${driverNum}`;
+        elements.label.textContent = displayName;
+
+        if (driverData?.teamColour) {
+            const colour = `#${String(driverData.teamColour).replace("#", "")}`;
+            elements.dot.style.borderColor = colour;
+            elements.dot.style.boxShadow = `0 0 8px ${colour}`;
+            elements.label.style.borderColor = colour;
+        }
+
+        const point = this.getGpsPointForDriver(driverData);
+        if (!point) {
+            if (car._animFrame) {
+                cancelAnimationFrame(car._animFrame);
+                car._animFrame = null;
+            }
+            elements.wrapper.style.display = "none";
+            return;
+        }
+
+        const bounds = this.gpsBounds;
+        if (!bounds) return;
+
+        if (!this.driverLastIndices) {
+            this.driverLastIndices = new Map();
+        }
+
+        const total = this.gpsPoints.length;
+
+        let targetIndex = this.gpsPoints.indexOf(point);
+        if (targetIndex === -1) {
+            targetIndex = this.gpsPoints.findIndex(p => p.x === point.x && p.y === point.y);
+        }
+        if (targetIndex === -1) {
+            let minDist = Infinity;
+            for (let i = 0; i < total; i++) {
+                const p = this.gpsPoints[i];
+                const dx = p.x - point.x;
+                const dy = p.y - point.y;
+                const dist = dx * dx + dy * dy;
+                if (dist < minDist) {
+                    minDist = dist;
+                    targetIndex = i;
+                }
+            }
+        }
+
+        const renderAtPoint = (pt) => {
+            const svgRect = this.gpsSvg.getBoundingClientRect();
+            const svgW = svgRect.width;
+            const svgH = svgRect.height;
+
+            const scale = Math.min(svgW / bounds.width, svgH / bounds.height);
+
+            const trackPixelW = bounds.width * scale;
+            const trackPixelH = bounds.height * scale;
+
+            const offsetX = (svgW - trackPixelW) / 2;
+            const offsetY = (svgH - trackPixelH) / 2;
+
+            const rawX = pt.x;
+            const rawY = pt.y;
+
+            const pixelX = ((rawX - bounds.minX) * scale) + offsetX;
+            const pixelY = ((rawY - bounds.minY) * scale) + offsetY;
+
+            elements.wrapper.style.left = `${pixelX}px`;
+            elements.wrapper.style.top = `${pixelY}px`;
+            elements.wrapper.style.display = "block";
+        };
+
+        if (!this.driverLastIndices.has(driverNum)) {
+            this.driverLastIndices.set(driverNum, targetIndex);
+            renderAtPoint(this.gpsPoints[targetIndex]);
+            return;
+        }
+
+        car._targetIndex = targetIndex;
+
+        if (car._animFrame) return;
+
+        const animate = () => {
+            const currentIdx = this.driverLastIndices.get(driverNum);
+            const targetIdx = car._targetIndex;
+
+            if (currentIdx === targetIdx) {
+                car._animFrame = null;
+                return;
+            }
+
+            const diff = (targetIdx - currentIdx + total) % total;
+            const step = Math.max(1, Math.min(diff, Math.ceil(diff / 3)));
+
+            const stepSize = 5;
+
+            for (let i = stepSize; i <= step; i += stepSize) {
+                const intermediateIdx = (currentIdx + i) % total;
+                renderAtPoint(this.gpsPoints[intermediateIdx]);
+            }
+
+            const nextIdx = (currentIdx + step) % total;
+
+            if (step % stepSize !== 0) {
+                renderAtPoint(this.gpsPoints[nextIdx]);
+            }
+
+            this.driverLastIndices.set(driverNum, nextIdx);
+
+            if (nextIdx !== targetIdx) {
+                car._animFrame = requestAnimationFrame(animate);
+            } else {
+                car._animFrame = null;
+            }
+        };
+
+        car._animFrame = requestAnimationFrame(animate);
+    }*/
+    updateDriverGps(driverNum, driverData) {
+        if (
+            !this.activeCircuitData ||
+            !this.gpsPoints ||
+            this.gpsPoints.length === 0
+        )
+            return;
+        const stopped =
+            driverData.lastS1?.Stopped ||
+            driverData.lastS2?.Stopped ||
+            driverData.lastS3?.Stopped;
+        if (
+            driverData?.retired ||
+            driverData?.inPit ||
+            driverData?.pitOut ||
+            stopped
+        ) {
+            const existingCar = this.gpsCarsLayer.querySelector(
+                `#gps-car-${driverNum}`,
+            );
             if (existingCar) existingCar.style.display = "none";
             return;
         }
@@ -750,7 +1132,11 @@ class F1LiveTimingUI {
         }
         const elements = car._gpsElements;
         if (!elements || !elements.label || !elements.dot) return;
-        const displayName = driverData?.tLA || driverData?.lastName || driverData?.name || `#${driverNum}`;
+        const displayName =
+            driverData?.tLA ||
+            driverData?.lastName ||
+            driverData?.name ||
+            `#${driverNum}`;
         elements.label.textContent = displayName;
         if (driverData?.teamColour) {
             const colour = `#${String(driverData.teamColour).replace("#", "")}`;
@@ -781,8 +1167,8 @@ class F1LiveTimingUI {
         const rawX = -point.x;
         const rawY = point.y;
 
-        const pixelX = ((rawX - bounds.minX) * scale) + offsetX;
-        const pixelY = ((rawY - bounds.minY) * scale) + offsetY;
+        const pixelX = (rawX - bounds.minX) * scale + offsetX;
+        const pixelY = (rawY - bounds.minY) * scale + offsetY;
 
         elements.wrapper.style.left = `${pixelX}px`;
         elements.wrapper.style.top = `${pixelY}px`;
@@ -794,8 +1180,12 @@ class F1LiveTimingUI {
         if (!client) return;
         const timingData = client.timingData || {};
         Object.keys(timingData).forEach((driverNum) => {
-            let driverData = typeof client.getDriverData === "function" ? client.getDriverData(driverNum) || {} : timingData[driverNum] || {};
-            if (driverData && driverData.racingNumber === undefined) driverData.racingNumber = driverNum;
+            let driverData =
+                typeof client.getDriverData === "function"
+                    ? client.getDriverData(driverNum) || {}
+                    : timingData[driverNum] || {};
+            if (driverData && driverData.racingNumber === undefined)
+                driverData.racingNumber = driverNum;
             this.updateDriverGps(driverNum, driverData);
         });
     }
@@ -812,7 +1202,9 @@ class F1LiveTimingUI {
         const closeBtn = document.createElement("button");
         closeBtn.className = "stints-close-btn";
         closeBtn.textContent = "×";
-        closeBtn.onclick = () => { this.modal.style.display = "none"; };
+        closeBtn.onclick = () => {
+            this.modal.style.display = "none";
+        };
         modalHeader.appendChild(this.modalTitle);
         modalHeader.appendChild(closeBtn);
         this.stintsBody = document.createElement("div");
@@ -828,7 +1220,11 @@ class F1LiveTimingUI {
     }
 
     showStintsModal(driverNum, driverName, stintsInput) {
-        const stints = Array.isArray(stintsInput) ? stintsInput : stintsInput ? Object.values(stintsInput) : [];
+        const stints = Array.isArray(stintsInput)
+            ? stintsInput
+            : stintsInput
+              ? Object.values(stintsInput)
+              : [];
         while (this.stintsBody.firstChild) {
             this.stintsBody.removeChild(this.stintsBody.firstChild);
         }
@@ -847,13 +1243,17 @@ class F1LiveTimingUI {
                 const total = parseInt(stint.TotalLaps, 10) || 0;
                 const start = parseInt(stint.StartLaps, 10) || 0;
                 const stintLaps = total - start;
-                const notChanged = stint.TyresNotChanged === "1" || stint.TyresNotChanged === 1;
+                const notChanged =
+                    stint.TyresNotChanged === "1" ||
+                    stint.TyresNotChanged === 1;
                 const item = document.createElement("div");
                 item.className = `stint-item tyre-${comp.toLowerCase()}`;
                 const img = document.createElement("img");
                 img.src = `img/tyre_${comp.toLowerCase()}.svg`;
                 img.className = "stint-svg-icon";
-                img.onerror = () => { img.src = "img/tyre_unknown.svg"; };
+                img.onerror = () => {
+                    img.src = "img/tyre_unknown.svg";
+                };
                 const stintNumSpan = document.createElement("span");
                 stintNumSpan.className = "stint-num";
                 stintNumSpan.textContent = `Stint ${idx + 1} (${comp})`;
@@ -881,19 +1281,36 @@ class F1LiveTimingUI {
         }
     }
 
-    updateClock(data) { this.sessionUI.updateClock(data); }
-    updateSessionStatus(data) { this.sessionUI.updateSessionStatus(data); }
-    updateTrackStatus(data) { this.sessionUI.updateTrackStatus(data); }
-    updateWeather(data) { this.sessionUI.updateWeather(data); }
-    updateSessionProgress(data) { this.sessionUI.updateSessionProgress(data); }
+    updateClock(data) {
+        this.sessionUI.updateClock(data);
+    }
+    updateSessionStatus(data) {
+        this.sessionUI.updateSessionStatus(data);
+    }
+    updateTrackStatus(data) {
+        this.sessionUI.updateTrackStatus(data);
+    }
+    updateWeather(data) {
+        this.sessionUI.updateWeather(data);
+    }
+    updateSessionProgress(data) {
+        this.sessionUI.updateSessionProgress(data);
+    }
 
     parseTimeToSeconds(valStr) {
-        if (!valStr || valStr === "-" || typeof valStr !== "string") return Infinity;
+        if (!valStr || valStr === "-" || typeof valStr !== "string")
+            return Infinity;
         valStr = valStr.trim();
         const parts = valStr.split(":");
         try {
-            if (parts.length === 3) return Number(parts[0]) * 3600 + Number(parts[1]) * 60 + parseFloat(parts[2]);
-            if (parts.length === 2) return Number(parts[0]) * 60 + parseFloat(parts[1]);
+            if (parts.length === 3)
+                return (
+                    Number(parts[0]) * 3600 +
+                    Number(parts[1]) * 60 +
+                    parseFloat(parts[2])
+                );
+            if (parts.length === 2)
+                return Number(parts[0]) * 60 + parseFloat(parts[1]);
             if (parts.length === 1) return parseFloat(parts[0]) || Infinity;
         } catch (e) {
             return Infinity;
@@ -913,10 +1330,13 @@ class F1LiveTimingUI {
         const currentValSec = this.parseTimeToSeconds(item.Value);
         if (currentValSec === Infinity) return "";
         if (allValuesArray && allValuesArray.length > 0) {
-            const validSecs = allValuesArray.map((v) => this.parseTimeToSeconds(v)).filter((v) => v !== Infinity);
+            const validSecs = allValuesArray
+                .map((v) => this.parseTimeToSeconds(v))
+                .filter((v) => v !== Infinity);
             if (validSecs.length > 0) {
                 const minSec = Math.min(...validSecs);
-                if (Math.abs(currentValSec - minSec) < 0.0001) return "color-purple";
+                if (Math.abs(currentValSec - minSec) < 0.0001)
+                    return "color-purple";
             }
         }
         return "color-green";
@@ -954,7 +1374,9 @@ class F1LiveTimingUI {
         if (!hasSegments || !sectorData?.Segments) return;
         const segments = Array.isArray(sectorData.Segments)
             ? sectorData.Segments
-            : Object.keys(sectorData.Segments).sort((a, b) => Number(a) - Number(b)).map((key) => sectorData.Segments[key]);
+            : Object.keys(sectorData.Segments)
+                  .sort((a, b) => Number(a) - Number(b))
+                  .map((key) => sectorData.Segments[key]);
         segments.forEach((segment) => {
             const segmentElement = document.createElement("div");
             segmentElement.className = `micro-segment ${this.getSegmentClass(segment?.Status)}`;
@@ -972,10 +1394,13 @@ class F1LiveTimingUI {
     updateBestSectorCellNode(node, sectorData, allValuesArray) {
         const val = sectorData && sectorData.Value ? sectorData.Value : "-";
         node.valueSpan.textContent = val;
-        node.valueSpan.className = this.getBestTimingClass(sectorData, allValuesArray);
+        node.valueSpan.className = this.getBestTimingClass(
+            sectorData,
+            allValuesArray,
+        );
     }
 
-    updateDriverRow(driverData, globalBests = {}) {
+    updateDriverRow(driverData, globalBests = {}, targetIndex) {
         const rowId = `driver-${driverData.racingNumber}`;
         let row = this.tbody.querySelector(`#${rowId}`);
         if (!row) {
@@ -1009,7 +1434,9 @@ class F1LiveTimingUI {
             tyreBadge.className = "tyre-fixed-badge";
             const tyreImg = document.createElement("img");
             tyreImg.className = "tyre-svg-icon";
-            tyreImg.onerror = () => { tyreImg.src = "img/tyre_unknown.svg"; };
+            tyreImg.onerror = () => {
+                tyreImg.src = "img/tyre_unknown.svg";
+            };
             const tyreText = document.createElement("span");
             tyreText.className = "tyre-text";
             const tyreCompB = document.createElement("b");
@@ -1052,10 +1479,28 @@ class F1LiveTimingUI {
             row.appendChild(pitStopsCell);
             row.appendChild(lapsCell);
             row.cache = {
-                flagSpan, posSpan, numberSpan, nameSpan, badgeContainer, tyreBadge, tyreImg, tyreCompB, tyreLapsSpan,
-                gapCell, diffCell, lastLapCell, lastS1: lastS1Cell, lastS2: lastS2Cell, lastS3: lastS3Cell,
-                bestLapValSpan, bestLapNumSpan, bestS1: bestS1Cell, bestS2: bestS2Cell, bestS3: bestS3Cell,
-                pitStopsCell, lapsCell,
+                flagSpan,
+                posSpan,
+                numberSpan,
+                nameSpan,
+                badgeContainer,
+                tyreBadge,
+                tyreImg,
+                tyreCompB,
+                tyreLapsSpan,
+                gapCell,
+                diffCell,
+                lastLapCell,
+                lastS1: lastS1Cell,
+                lastS2: lastS2Cell,
+                lastS3: lastS3Cell,
+                bestLapValSpan,
+                bestLapNumSpan,
+                bestS1: bestS1Cell,
+                bestS2: bestS2Cell,
+                bestS3: bestS3Cell,
+                pitStopsCell,
+                lapsCell,
             };
         }
         const c = row.cache;
@@ -1066,9 +1511,11 @@ class F1LiveTimingUI {
             c.flagSpan.textContent = "";
             c.flagSpan.title = "";
         }
-        c.posSpan.textContent = driverData.position !== undefined ? driverData.position : "-";
+        c.posSpan.textContent =
+            driverData.position !== undefined ? driverData.position : "-";
         c.numberSpan.textContent = `#${driverData.racingNumber}`;
-        const displayName = driverData.tLA || driverData.lastName || driverData.racingNumber;
+        const displayName =
+            driverData.tLA || driverData.lastName || driverData.racingNumber;
         if (displayName) c.nameSpan.textContent = displayName;
         if (driverData.teamColour) {
             c.nameSpan.style.color = `#${String(driverData.teamColour).replace("#", "")}`;
@@ -1076,7 +1523,10 @@ class F1LiveTimingUI {
         while (c.badgeContainer.firstChild) {
             c.badgeContainer.removeChild(c.badgeContainer.firstChild);
         }
-        const stopped = driverData.lastS1?.Stopped || driverData.lastS2?.Stopped || driverData.lastS3?.Stopped;
+        const stopped =
+            driverData.lastS1?.Stopped ||
+            driverData.lastS2?.Stopped ||
+            driverData.lastS3?.Stopped;
         if (driverData.retired || stopped) {
             const badge = document.createElement("span");
             badge.className = "status-badge badge-retired";
@@ -1110,7 +1560,11 @@ class F1LiveTimingUI {
             c.tyreLapsSpan.textContent = ` (${tyreLaps})`;
             c.tyreBadge.title = `Click to view all stints (${compound} - ${tyreLaps} laps)`;
             c.tyreBadge.onclick = () => {
-                this.showStintsModal(driverData.racingNumber, c.nameSpan.textContent, driverData.allStints);
+                this.showStintsModal(
+                    driverData.racingNumber,
+                    c.nameSpan.textContent,
+                    driverData.allStints,
+                );
             };
         } else {
             c.tyreBadge.className = "tyre-fixed-badge tyre-unknown";
@@ -1122,41 +1576,91 @@ class F1LiveTimingUI {
         }
         c.gapCell.textContent = driverData.gap || "-";
         c.diffCell.textContent = driverData.diff || "-";
-        c.lastLapCell.textContent = driverData.lastLap && driverData.lastLap.Value ? driverData.lastLap.Value : "-";
+        c.lastLapCell.textContent =
+            driverData.lastLap && driverData.lastLap.Value
+                ? driverData.lastLap.Value
+                : "-";
         this.updateSectorCellNode(c.lastS1, driverData.lastS1, true);
         this.updateSectorCellNode(c.lastS2, driverData.lastS2, true);
         this.updateSectorCellNode(c.lastS3, driverData.lastS3, true);
-        const bestVal = driverData.bestLap && driverData.bestLap.Value ? driverData.bestLap.Value : "-";
+        const bestVal =
+            driverData.bestLap && driverData.bestLap.Value
+                ? driverData.bestLap.Value
+                : "-";
         if (bestVal !== "-") {
             c.bestLapValSpan.textContent = bestVal;
-            c.bestLapValSpan.className = this.getBestTimingClass(driverData.bestLap, globalBests.allBestLaps);
-            c.bestLapNumSpan.textContent = driverData.bestLap.Lap ? ` (Lap ${driverData.bestLap.Lap})` : "";
+            c.bestLapValSpan.className = this.getBestTimingClass(
+                driverData.bestLap,
+                globalBests.allBestLaps,
+            );
+            c.bestLapNumSpan.textContent = driverData.bestLap.Lap
+                ? ` (Lap ${driverData.bestLap.Lap})`
+                : "";
         } else {
             c.bestLapValSpan.textContent = "-";
             c.bestLapValSpan.className = "";
             c.bestLapNumSpan.textContent = "";
         }
-        this.updateBestSectorCellNode(c.bestS1, driverData.bestS1, globalBests.allBestS1);
-        this.updateBestSectorCellNode(c.bestS2, driverData.bestS2, globalBests.allBestS2);
-        this.updateBestSectorCellNode(c.bestS3, driverData.bestS3, globalBests.allBestS3);
-        c.pitStopsCell.textContent = driverData.pitStops !== undefined ? driverData.pitStops : "-";
-        c.lapsCell.textContent = driverData.numberOfLaps !== undefined ? driverData.numberOfLaps : "-";
+        this.updateBestSectorCellNode(
+            c.bestS1,
+            driverData.bestS1,
+            globalBests.allBestS1,
+        );
+        this.updateBestSectorCellNode(
+            c.bestS2,
+            driverData.bestS2,
+            globalBests.allBestS2,
+        );
+        this.updateBestSectorCellNode(
+            c.bestS3,
+            driverData.bestS3,
+            globalBests.allBestS3,
+        );
+        c.pitStopsCell.textContent =
+            driverData.pitStops !== undefined ? driverData.pitStops : "-";
+        c.lapsCell.textContent =
+            driverData.numberOfLaps !== undefined
+                ? driverData.numberOfLaps
+                : "-";
         this.updateDriverGps(driverData.racingNumber, driverData);
-        this.tbody.appendChild(row);
+
+        const currentChild = this.tbody.children[targetIndex];
+        if (currentChild !== row) {
+            this.tbody.insertBefore(row, currentChild || null);
+        }
     }
 
     refreshTable(clientOrData) {
+        const pageScroll = window.scrollY || document.documentElement.scrollTop;
+        const wrapperScroll = this.tableWrapper
+            ? this.tableWrapper.scrollTop
+            : 0;
+
         let timingData = {};
-        if (clientOrData && clientOrData.timingData) timingData = clientOrData.timingData;
-        else if (window.f1Client && window.f1Client.timingData) timingData = window.f1Client.timingData;
-        else if (clientOrData && typeof clientOrData === "object") timingData = clientOrData;
+        if (clientOrData && clientOrData.timingData)
+            timingData = clientOrData.timingData;
+        else if (window.f1Client && window.f1Client.timingData)
+            timingData = window.f1Client.timingData;
+        else if (clientOrData && typeof clientOrData === "object")
+            timingData = clientOrData;
         const driverNums = Object.keys(timingData);
         const getDriver = (num) => {
-            if (clientOrData && typeof clientOrData.getDriverData === "function") return clientOrData.getDriverData(num) || {};
-            if (window.f1Client && typeof window.f1Client.getDriverData === "function") return window.f1Client.getDriverData(num) || {};
+            if (
+                clientOrData &&
+                typeof clientOrData.getDriverData === "function"
+            )
+                return clientOrData.getDriverData(num) || {};
+            if (
+                window.f1Client &&
+                typeof window.f1Client.getDriverData === "function"
+            )
+                return window.f1Client.getDriverData(num) || {};
             return timingData[num] || {};
         };
-        const allBestLaps = [], allBestS1 = [], allBestS2 = [], allBestS3 = [];
+        const allBestLaps = [],
+            allBestS1 = [],
+            allBestS2 = [],
+            allBestS3 = [];
         driverNums.forEach((num) => {
             const d = getDriver(num);
             if (d.bestLap?.Value) allBestLaps.push(d.bestLap.Value);
@@ -1169,15 +1673,77 @@ class F1LiveTimingUI {
             const dataB = getDriver(b);
             return (dataA.position || 99) - (dataB.position || 99);
         });
-        driverNums.forEach((driverNum) => {
+        driverNums.forEach((driverNum, index) => {
             const driverData = getDriver(driverNum);
-            this.updateDriverRow(driverData, { allBestLaps, allBestS1, allBestS2, allBestS3 });
+            this.updateDriverRow(
+                driverData,
+                { allBestLaps, allBestS1, allBestS2, allBestS3 },
+                index,
+            );
         });
         this.updateAllDriverGps();
+
+        if (this.tableWrapper) this.tableWrapper.scrollTop = wrapperScroll;
+        window.scrollTo(0, pageScroll);
     }
+}
+
+if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+}
+
+window.addEventListener(
+    "scroll",
+    () => {
+        const pos = window.scrollY || document.documentElement.scrollTop;
+        if (pos > 0) {
+            sessionStorage.setItem("pageScrollPos", pos);
+        }
+    },
+    { passive: true },
+);
+
+document.addEventListener(
+    "scroll",
+    (e) => {
+        if (
+            e.target &&
+            e.target.classList &&
+            e.target.classList.contains("table-wrapper")
+        ) {
+            if (e.target.scrollTop > 0) {
+                sessionStorage.setItem("wrapperScrollPos", e.target.scrollTop);
+            }
+        }
+    },
+    true,
+);
+
+function restoreScrollPosition() {
+    const pagePos = parseInt(sessionStorage.getItem("pageScrollPos"), 10);
+    const wrapperPos = parseInt(sessionStorage.getItem("wrapperScrollPos"), 10);
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+        attempts++;
+
+        if (pagePos) {
+            window.scrollTo(0, pagePos);
+        }
+
+        const wrapper = document.querySelector(".table-wrapper");
+        if (wrapper && wrapperPos) {
+            wrapper.scrollTop = wrapperPos;
+        }
+
+        if (attempts > 25) {
+            clearInterval(timer);
+        }
+    }, 100);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     const ui = new F1LiveTimingUI("app");
     window.f1Client = new F1LiveClient(ui);
+    restoreScrollPosition();
 });
