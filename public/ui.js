@@ -613,8 +613,7 @@ class F1LiveTimingUI {
         ];
         const locationName =
             forcedLocation ||
-            window.f1Client?.sessionInfo?.Meeting?.Location ||
-            "Zandvoort";
+            window.f1Client?.sessionInfo?.Meeting?.Location;
         const normalizedLocation = locationName
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
