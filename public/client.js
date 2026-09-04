@@ -1,5 +1,5 @@
 class F1LiveClient {
-    constructor(uiManager) {
+    constructor(uiManager = null) {
         this.ui = uiManager;
         this.drivers = {};
         this.timingData = {};
@@ -9,6 +9,10 @@ class F1LiveClient {
         this.sessionInfo = null;
         this.isRefreshPending = false;
         this.reconnectTimer = null;
+        this._resolveSessionReady = null;
+        this.sessionReadyPromise = new Promise((resolve) => {
+            this._resolveSessionReady = resolve;
+        });
         this.initWebSocket();
     }
 
@@ -21,7 +25,7 @@ class F1LiveClient {
             this.ws.close();
         }
 
-        this.ws = new WebSocket(`wss://${window.location.host}`);
+        this.ws = new WebSocket(`ws://${window.location.host}`);
 
         this.ws.onopen = () => {
             if (this.reconnectTimer) {
@@ -75,8 +79,23 @@ class F1LiveClient {
         this.scheduleUIRefresh();
     }
 
+    async setUI(uiManager) {
+        this.ui = uiManager;
+        if (!this.ui) return;
+
+        if (this.sessionInfo) {
+            await this.ui.updateSession(this.sessionInfo);
+        }
+        if (this.lastExtrapolatedClock) this.ui.updateClock(this.lastExtrapolatedClock);
+        if (this.lastSessionStatus) this.ui.updateSessionStatus(this.lastSessionStatus);
+        if (this.lastTrackStatus) this.ui.updateTrackStatus(this.lastTrackStatus);
+        if (this.lastWeatherData) this.ui.updateWeather(this.lastWeatherData);
+
+        this.scheduleUIRefresh();
+    }
+
     scheduleUIRefresh() {
-        if (this.isRefreshPending) {
+        if (!this.ui || this.isRefreshPending) {
             return;
         }
 
@@ -97,20 +116,28 @@ class F1LiveClient {
         switch (streamType) {
             case "SessionInfo":
                 this.sessionInfo = this.normalize(data);
-                this.ui.updateSession(this.sessionInfo);
+                if (this._resolveSessionReady) {
+                    this._resolveSessionReady(this.sessionInfo);
+                    this._resolveSessionReady = null;
+                }
+                if (this.ui) this.ui.updateSession(this.sessionInfo);
                 this.scheduleUIRefresh();
                 break;
             case "ExtrapolatedClock":
-                this.ui.updateClock(data);
+                this.lastExtrapolatedClock = data;
+                if (this.ui) this.ui.updateClock(data);
                 break;
             case "SessionStatus":
-                this.ui.updateSessionStatus(data);
+                this.lastSessionStatus = data;
+                if (this.ui) this.ui.updateSessionStatus(data);
                 break;
             case "TrackStatus":
-                this.ui.updateTrackStatus(data);
+                this.lastTrackStatus = data;
+                if (this.ui) this.ui.updateTrackStatus(data);
                 break;
             case "WeatherData":
-                this.ui.updateWeather(data);
+                this.lastWeatherData = data;
+                if (this.ui) this.ui.updateWeather(data);
                 break;
             case "DriverList":
                 this.drivers = this.mergeState(this.drivers, data);
