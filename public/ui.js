@@ -272,7 +272,7 @@ class SessionInfoUI {
         }
     }
 
-    update(data) {
+    async update(data) {
         const meetingName =
             data?.Meeting?.OfficialName || data?.Meeting?.Name || "Formula 1";
         const type = data?.Type || "Session";
@@ -282,7 +282,7 @@ class SessionInfoUI {
         this.sessionType.textContent = `${type} - ${name} (${status})`;
         this.sessionType.dataset.type = type;
         this.sessionType.dataset.name = name;
-        this.initOrUpdateMap(data);
+        await this.initOrUpdateMap(data);
     }
 
     async initOrUpdateMap(data) {
@@ -580,7 +580,6 @@ class F1LiveTimingUI {
         this.gpsCarsLayer.className = "gps-cars-layer";
         this.gpsMapContainer.appendChild(this.gpsCarsLayer);
         this.container.appendChild(this.gpsMapContainer);
-        this.fetchCircuitFromMultiViewer();
     }
 
     async fetchCircuitFromMultiViewer(forcedLocation) {
@@ -951,151 +950,6 @@ class F1LiveTimingUI {
         return { wrapper, dot, label };
     }
 
-    /*updateDriverGps(driverNum, driverData) {
-        if (!this.activeCircuitData || !this.gpsPoints || this.gpsPoints.length === 0) return;
-        
-        const stopped = driverData.lastS1?.Stopped || driverData.lastS2?.Stopped || driverData.lastS3?.Stopped;
-        let car = this.gpsCarsLayer.querySelector(`#gps-car-${driverNum}`);
-
-        if (driverData?.retired || driverData?.inPit || driverData?.pitOut || stopped) {
-            if (car && car._animFrame) {
-                cancelAnimationFrame(car._animFrame);
-                car._animFrame = null;
-            }
-            if (car) car.style.display = "none";
-            return;
-        }
-
-        if (!car) {
-            car = this.createGpsCar(driverNum);
-            this.gpsCarsLayer.appendChild(car.wrapper);
-            car.wrapper._gpsElements = car;
-        } else if (!car._gpsElements) {
-            const marker = car.querySelector(".gps-car-marker");
-            const label = car.querySelector(".gps-car-label");
-            car._gpsElements = { wrapper: car, dot: marker, label };
-        }
-
-        const elements = car._gpsElements;
-        if (!elements || !elements.label || !elements.dot) return;
-
-        const displayName = driverData?.tLA || driverData?.lastName || driverData?.name || `#${driverNum}`;
-        elements.label.textContent = displayName;
-
-        if (driverData?.teamColour) {
-            const colour = `#${String(driverData.teamColour).replace("#", "")}`;
-            elements.dot.style.borderColor = colour;
-            elements.dot.style.boxShadow = `0 0 8px ${colour}`;
-            elements.label.style.borderColor = colour;
-        }
-
-        const point = this.getGpsPointForDriver(driverData);
-        if (!point) {
-            if (car._animFrame) {
-                cancelAnimationFrame(car._animFrame);
-                car._animFrame = null;
-            }
-            elements.wrapper.style.display = "none";
-            return;
-        }
-
-        const bounds = this.gpsBounds;
-        if (!bounds) return;
-
-        if (!this.driverLastIndices) {
-            this.driverLastIndices = new Map();
-        }
-
-        const total = this.gpsPoints.length;
-
-        let targetIndex = this.gpsPoints.indexOf(point);
-        if (targetIndex === -1) {
-            targetIndex = this.gpsPoints.findIndex(p => p.x === point.x && p.y === point.y);
-        }
-        if (targetIndex === -1) {
-            let minDist = Infinity;
-            for (let i = 0; i < total; i++) {
-                const p = this.gpsPoints[i];
-                const dx = p.x - point.x;
-                const dy = p.y - point.y;
-                const dist = dx * dx + dy * dy;
-                if (dist < minDist) {
-                    minDist = dist;
-                    targetIndex = i;
-                }
-            }
-        }
-
-        const renderAtPoint = (pt) => {
-            const svgRect = this.gpsSvg.getBoundingClientRect();
-            const svgW = svgRect.width;
-            const svgH = svgRect.height;
-
-            const scale = Math.min(svgW / bounds.width, svgH / bounds.height);
-
-            const trackPixelW = bounds.width * scale;
-            const trackPixelH = bounds.height * scale;
-
-            const offsetX = (svgW - trackPixelW) / 2;
-            const offsetY = (svgH - trackPixelH) / 2;
-
-            const rawX = pt.x;
-            const rawY = pt.y;
-
-            const pixelX = ((rawX - bounds.minX) * scale) + offsetX;
-            const pixelY = ((rawY - bounds.minY) * scale) + offsetY;
-
-            elements.wrapper.style.left = `${pixelX}px`;
-            elements.wrapper.style.top = `${pixelY}px`;
-            elements.wrapper.style.display = "block";
-        };
-
-        if (!this.driverLastIndices.has(driverNum)) {
-            this.driverLastIndices.set(driverNum, targetIndex);
-            renderAtPoint(this.gpsPoints[targetIndex]);
-            return;
-        }
-
-        car._targetIndex = targetIndex;
-
-        if (car._animFrame) return;
-
-        const animate = () => {
-            const currentIdx = this.driverLastIndices.get(driverNum);
-            const targetIdx = car._targetIndex;
-
-            if (currentIdx === targetIdx) {
-                car._animFrame = null;
-                return;
-            }
-
-            const diff = (targetIdx - currentIdx + total) % total;
-            const step = Math.max(1, Math.min(diff, Math.ceil(diff / 3)));
-
-            const stepSize = 5;
-
-            for (let i = stepSize; i <= step; i += stepSize) {
-                const intermediateIdx = (currentIdx + i) % total;
-                renderAtPoint(this.gpsPoints[intermediateIdx]);
-            }
-
-            const nextIdx = (currentIdx + step) % total;
-
-            if (step % stepSize !== 0) {
-                renderAtPoint(this.gpsPoints[nextIdx]);
-            }
-
-            this.driverLastIndices.set(driverNum, nextIdx);
-
-            if (nextIdx !== targetIdx) {
-                car._animFrame = requestAnimationFrame(animate);
-            } else {
-                car._animFrame = null;
-            }
-        };
-
-        car._animFrame = requestAnimationFrame(animate);
-    }*/
     updateDriverGps(driverNum, driverData) {
         if (
             !this.activeCircuitData ||
@@ -1271,13 +1125,20 @@ class F1LiveTimingUI {
         this.modal.style.display = "flex";
     }
 
-    updateSession(data) {
-        this.sessionUI.update(data);
+    async updateSession(data) {
         const location = data?.Meeting?.Location;
+        const mapPromise = this.sessionUI.update(data);
+
         if (location && this.currentLocation !== location) {
             this.currentLocation = location;
-            this.fetchCircuitFromMultiViewer(location);
+            await Promise.all([
+                mapPromise,
+                this.fetchCircuitFromMultiViewer(location),
+            ]);
+            return;
         }
+
+        await mapPromise;
     }
 
     updateClock(data) {
@@ -1741,8 +1602,317 @@ function restoreScrollPosition() {
     }, 100);
 }
 
+function createLiveTimingLoader() {
+    const loader = document.createElement("div");
+    loader.id = "live-timing-loader";
+    loader.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-color, #0b0b0b);
+        color: #fff;
+        font-family: Arial, sans-serif;
+        transition: opacity .35s ease, visibility .35s ease;
+    `;
+
+    const content = document.createElement("div");
+    content.style.cssText = `
+        width: min(420px, 82vw);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+    `;
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 500 260");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "220");
+    svg.style.cssText = "overflow: visible;";
+
+    const glow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    glow.setAttribute("fill", "none");
+    glow.setAttribute("stroke", "rgba(255,24,1,.18)");
+    glow.setAttribute("stroke-width", "18");
+    glow.setAttribute("stroke-linecap", "round");
+    glow.setAttribute("stroke-linejoin", "round");
+    glow.style.filter = "blur(5px)";
+    svg.appendChild(glow);
+
+    const track = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    track.setAttribute("fill", "none");
+    track.setAttribute("stroke", "#ff1801");
+    track.setAttribute("stroke-width", "8");
+    track.setAttribute("stroke-linecap", "round");
+    track.setAttribute("stroke-linejoin", "round");
+    track.style.filter = "drop-shadow(0 0 8px rgba(255,24,1,.55))";
+    svg.appendChild(track);
+
+    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("r", "6");
+    dot.setAttribute("fill", "#fff");
+    dot.setAttribute("stroke", "#ff1801");
+    dot.setAttribute("stroke-width", "3");
+    svg.appendChild(dot);
+
+    const title = document.createElement("div");
+    title.style.cssText = "font-size:18px;font-weight:700;letter-spacing:.3px;text-align:center;";
+    title.textContent = "Loading circuit…";
+
+    const status = document.createElement("div");
+    status.style.cssText = "font-size:13px;opacity:.65;text-align:center;min-height:18px;";
+    status.textContent = "Connecting to live timing…";
+
+    content.appendChild(svg);
+    content.appendChild(title);
+    content.appendChild(status);
+    loader.appendChild(content);
+    document.body.appendChild(loader);
+
+    return {
+        loader,
+        svg,
+        track,
+        glow,
+        dot,
+        title,
+        status,
+        hide() {
+            loader.style.opacity = "0";
+            loader.style.visibility = "hidden";
+            setTimeout(() => loader.remove(), 400);
+        },
+    };
+}
+
+function normalizeCircuitLocation(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function findLocalCircuit(circuits, sessionInfo) {
+    const location = normalizeCircuitLocation(sessionInfo?.Meeting?.Location);
+    const meeting = normalizeCircuitLocation(
+        sessionInfo?.Meeting?.OfficialName || sessionInfo?.Meeting?.Name,
+    );
+
+    return (
+        circuits.find((c) => {
+            const cLocation = normalizeCircuitLocation(c.location);
+            const cName = normalizeCircuitLocation(c.name);
+            return (
+                (location && cLocation === location) ||
+                (meeting && cName && meeting.includes(cName)) ||
+                (meeting && cLocation && meeting.includes(cLocation))
+            );
+        }) || null
+    );
+}
+
+function extractLoaderCoordinates(geoJson) {
+    const coordinates = [];
+
+    const addLine = (line) => {
+        if (!Array.isArray(line)) return;
+        line.forEach((pair) => {
+            if (
+                Array.isArray(pair) &&
+                pair.length >= 2 &&
+                Number.isFinite(Number(pair[0])) &&
+                Number.isFinite(Number(pair[1]))
+            ) {
+                coordinates.push([Number(pair[0]), Number(pair[1])]);
+            }
+        });
+    };
+
+    const walkGeometry = (geometry) => {
+        if (!geometry) return;
+        if (geometry.type === "LineString") addLine(geometry.coordinates);
+        else if (geometry.type === "MultiLineString") {
+            geometry.coordinates.forEach(addLine);
+        } else if (geometry.type === "Polygon") {
+            geometry.coordinates.forEach(addLine);
+        } else if (geometry.type === "MultiPolygon") {
+            geometry.coordinates.forEach((poly) => poly.forEach(addLine));
+        }
+    };
+
+    if (geoJson?.type === "Feature") {
+        walkGeometry(geoJson.geometry);
+    } else if (geoJson?.type === "FeatureCollection") {
+        geoJson.features?.forEach((feature) => walkGeometry(feature?.geometry));
+    } else {
+        walkGeometry(geoJson);
+    }
+
+    return coordinates;
+}
+
+function drawLoaderCircuit(loader, coordinates) {
+    if (!loader || !coordinates || coordinates.length < 2) return false;
+
+    if (typeof loader.stopAnimation === "function") {
+        loader.stopAnimation();
+    }
+
+    const points = coordinates.map(c => Array.isArray(c) ? [c[0], c[1]] : [c.x, c.y]);
+
+    let minX = Infinity,
+        maxX = -Infinity,
+        minY = Infinity,
+        maxY = -Infinity;
+
+    points.forEach(([x, y]) => {
+        if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) return;
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+    });
+
+    if (!isFinite(minX) || !isFinite(maxX) || !isFinite(minY) || !isFinite(maxY)) return false;
+
+    const spanW = Math.max(maxX - minX, 1e-6);
+    const spanH = Math.max(maxY - minY, 1e-6);
+    const pad = 16;
+    const viewW = 500;
+    const viewH = 260;
+
+    const scale = Math.min((viewW - pad * 2) / spanW, (viewH - pad * 2) / spanH);
+
+    const scaledW = spanW * scale;
+    const scaledH = spanH * scale;
+    const xOffset = pad + ((viewW - pad * 2) - scaledW) / 2;
+    const yOffset = pad + ((viewH - pad * 2) - scaledH) / 2;
+
+    const project = ([x, y]) => [
+        xOffset + (x - minX) * scale,
+        yOffset + (maxY - y) * scale,
+    ];
+
+    const projected = points.map(project);
+    let d = "";
+    projected.forEach(([x, y], index) => {
+        d += `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)} `;
+    });
+
+    if (loader.track) loader.track.setAttribute("d", d);
+    if (loader.glow) loader.glow.setAttribute("d", d);
+
+    if (!loader.dot || projected.length === 0) return false;
+
+    let index = 0;
+    let raf = null;
+
+    const animate = () => {
+        const [x, y] = projected[index];
+        loader.dot.setAttribute("cx", x);
+        loader.dot.setAttribute("cy", y);
+        index = (index + 1) % projected.length;
+        raf = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    loader.stopAnimation = () => {
+        if (raf) {
+            cancelAnimationFrame(raf);
+            raf = null;
+        }
+    };
+
+    return true;
+}
+async function prepareLiveTimingPage() {
+    const loader = createLiveTimingLoader();
+    const loaderStartedAt = performance.now();
+    const app = document.getElementById("app");
+
+    if (app) {
+        app.style.visibility = "hidden";
+        app.style.opacity = "0";
+        app.style.transition = "opacity .25s ease";
+    }
+
+    try {
+        loader.status.textContent = "Connecting to live timing…";
+
+        window.f1Client = new F1LiveClient(null);
+        const sessionInfo = await window.f1Client.sessionReadyPromise;
+
+        loader.status.textContent = "Identifying circuit…";
+
+        const circuitsResponse = await fetch("circuits.json", {
+            cache: "no-cache",
+        });
+        if (!circuitsResponse.ok) {
+            throw new Error(`circuits.json HTTP ${circuitsResponse.status}`);
+        }
+
+        const circuits = await circuitsResponse.json();
+        const circuit = findLocalCircuit(circuits, sessionInfo);
+
+        if (!circuit) {
+            throw new Error(
+                `Circuit not found for ${sessionInfo?.Meeting?.Location || "unknown location"}`,
+            );
+        }
+
+        loader.title.textContent =
+            circuit.name || circuit.location || "Loading circuit…";
+        loader.status.textContent = "Loading local circuit…";
+
+        const geoResponse = await fetch(`circuits/${circuit.id}.geojson`, {
+            cache: "no-cache",
+        });
+
+        if (geoResponse.ok) {
+            const geoJson = await geoResponse.json();
+            drawLoaderCircuit(loader, extractLoaderCoordinates(geoJson));
+        }
+
+        loader.status.textContent = "Building live timing…";
+
+        const ui = new F1LiveTimingUI("app");
+        await window.f1Client.setUI(ui);
+
+        await ui.updateSession(sessionInfo);
+
+        const elapsed = performance.now() - loaderStartedAt;
+        if (elapsed < 2000) {
+            await new Promise(resolve => setTimeout(resolve, 2000 - elapsed));
+        }
+
+        if (app) {
+            app.style.visibility = "visible";
+            app.style.opacity = "1";
+        }
+
+        loader.status.textContent = "Ready";
+        loader.stopAnimation?.();
+        loader.hide();
+
+        restoreScrollPosition();
+    } catch (error) {
+        console.error("Live timing initialization failed:", error);
+        loader.title.textContent = "Unable to load live timing";
+        loader.status.textContent =
+            error?.message || "Please reload the page.";
+
+        if (app) {
+            app.style.visibility = "hidden";
+            app.style.opacity = "0";
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    const ui = new F1LiveTimingUI("app");
-    window.f1Client = new F1LiveClient(ui);
-    restoreScrollPosition();
+    prepareLiveTimingPage();
 });
