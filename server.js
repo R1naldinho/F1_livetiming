@@ -7,7 +7,7 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const AUTH_TOKEN = process.env.F1_AUTH_TOKEN;
-const CARTO_API_KEY = process.env.CARTO_API_KEY || "";
+const CARTO_API_KEY = process.env.CARTO_API_KEY;
 
 if (!AUTH_TOKEN) {
     throw new Error("F1_AUTH_TOKEN is required");
