@@ -32,10 +32,8 @@ class SessionInfoUI {
                 : "☀ Light Mode";
             localStorage.setItem("theme", lightActive ? "light" : "dark");
             if (this.baseMapLayer) {
-                const newUrl = lightActive
-                    ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-                this.baseMapLayer.setUrl(newUrl);
+                const themeName = lightActive ? "light" : "dark";
+                this.baseMapLayer.setUrl(`/api/tiles/${themeName}/{z}/{x}/{y}`);
             }
         };
         this.topRow.appendChild(topLeftGroup);
@@ -323,14 +321,19 @@ class SessionInfoUI {
             this.map = L.map("leaflet-map-container", {
                 zoomControl: false,
             }).setView([circuit.lat, circuit.lon], circuit.zoom);
+
             L.control.zoom({ position: "bottomright" }).addTo(this.map);
+
             const isLight = document.body.classList.contains("light-mode");
-            const tileUrl = isLight
-                ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-            this.baseMapLayer = L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(
-                this.map,
-            );
+            const themeName = isLight ? "light" : "dark";
+            const tileUrl = `/api/tiles/${themeName}/{z}/{x}/{y}`;
+
+            this.baseMapLayer = L.tileLayer(tileUrl, {
+                maxZoom: 19,
+                attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
+            }).addTo(this.map);
+
             this.loadRainViewerRadar();
         } else {
             this.map.setView([circuit.lat, circuit.lon], circuit.zoom);
@@ -611,8 +614,7 @@ class F1LiveTimingUI {
             { location: "Yas Marina", circuitKey: 70 },
         ];
         const locationName =
-            forcedLocation ||
-            window.f1Client?.sessionInfo?.Meeting?.Location;
+            forcedLocation || window.f1Client?.sessionInfo?.Meeting?.Location;
         const normalizedLocation = locationName
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
@@ -1642,7 +1644,10 @@ function createLiveTimingLoader() {
     glow.style.filter = "blur(5px)";
     svg.appendChild(glow);
 
-    const track = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const track = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path",
+    );
     track.setAttribute("fill", "none");
     track.setAttribute("stroke", "#ff1801");
     track.setAttribute("stroke-width", "8");
@@ -1651,7 +1656,10 @@ function createLiveTimingLoader() {
     track.style.filter = "drop-shadow(0 0 8px rgba(255,24,1,.55))";
     svg.appendChild(track);
 
-    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    const dot = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle",
+    );
     dot.setAttribute("r", "6");
     dot.setAttribute("fill", "#fff");
     dot.setAttribute("stroke", "#ff1801");
@@ -1659,11 +1667,13 @@ function createLiveTimingLoader() {
     svg.appendChild(dot);
 
     const title = document.createElement("div");
-    title.style.cssText = "font-size:18px;font-weight:700;letter-spacing:.3px;text-align:center;";
+    title.style.cssText =
+        "font-size:18px;font-weight:700;letter-spacing:.3px;text-align:center;";
     title.textContent = "Loading circuit…";
 
     const status = document.createElement("div");
-    status.style.cssText = "font-size:13px;opacity:.65;text-align:center;min-height:18px;";
+    status.style.cssText =
+        "font-size:13px;opacity:.65;text-align:center;min-height:18px;";
     status.textContent = "Connecting to live timing…";
 
     content.appendChild(svg);
@@ -1762,7 +1772,9 @@ function drawLoaderCircuit(loader, coordinates) {
         loader.stopAnimation();
     }
 
-    const points = coordinates.map(c => Array.isArray(c) ? [c[0], c[1]] : [c.x, c.y]);
+    const points = coordinates.map((c) =>
+        Array.isArray(c) ? [c[0], c[1]] : [c.x, c.y],
+    );
 
     let minX = Infinity,
         maxX = -Infinity,
@@ -1770,14 +1782,26 @@ function drawLoaderCircuit(loader, coordinates) {
         maxY = -Infinity;
 
     points.forEach(([x, y]) => {
-        if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) return;
+        if (
+            typeof x !== "number" ||
+            typeof y !== "number" ||
+            isNaN(x) ||
+            isNaN(y)
+        )
+            return;
         minX = Math.min(minX, x);
         maxX = Math.max(maxX, x);
         minY = Math.min(minY, y);
         maxY = Math.max(maxY, y);
     });
 
-    if (!isFinite(minX) || !isFinite(maxX) || !isFinite(minY) || !isFinite(maxY)) return false;
+    if (
+        !isFinite(minX) ||
+        !isFinite(maxX) ||
+        !isFinite(minY) ||
+        !isFinite(maxY)
+    )
+        return false;
 
     const spanW = Math.max(maxX - minX, 1e-6);
     const spanH = Math.max(maxY - minY, 1e-6);
@@ -1785,12 +1809,15 @@ function drawLoaderCircuit(loader, coordinates) {
     const viewW = 500;
     const viewH = 260;
 
-    const scale = Math.min((viewW - pad * 2) / spanW, (viewH - pad * 2) / spanH);
+    const scale = Math.min(
+        (viewW - pad * 2) / spanW,
+        (viewH - pad * 2) / spanH,
+    );
 
     const scaledW = spanW * scale;
     const scaledH = spanH * scale;
-    const xOffset = pad + ((viewW - pad * 2) - scaledW) / 2;
-    const yOffset = pad + ((viewH - pad * 2) - scaledH) / 2;
+    const xOffset = pad + (viewW - pad * 2 - scaledW) / 2;
+    const yOffset = pad + (viewH - pad * 2 - scaledH) / 2;
 
     const project = ([x, y]) => [
         xOffset + (x - minX) * scale,
@@ -1887,7 +1914,7 @@ async function prepareLiveTimingPage() {
 
         const elapsed = performance.now() - loaderStartedAt;
         if (elapsed < 2000) {
-            await new Promise(resolve => setTimeout(resolve, 2000 - elapsed));
+            await new Promise((resolve) => setTimeout(resolve, 2000 - elapsed));
         }
 
         if (app) {
@@ -1903,8 +1930,7 @@ async function prepareLiveTimingPage() {
     } catch (error) {
         console.error("Live timing initialization failed:", error);
         loader.title.textContent = "Unable to load live timing";
-        loader.status.textContent =
-            error?.message || "Please reload the page.";
+        loader.status.textContent = error?.message || "Please reload the page.";
 
         if (app) {
             app.style.visibility = "hidden";
