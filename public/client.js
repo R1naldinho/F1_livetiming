@@ -25,7 +25,8 @@ class F1LiveClient {
             this.ws.close();
         }
 
-        this.ws = new WebSocket(`wss://${window.location.host}`);
+        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        this.ws = new WebSocket(`${protocol}://${window.location.host}`);
 
         this.ws.onopen = () => {
             if (this.reconnectTimer) {
@@ -43,7 +44,11 @@ class F1LiveClient {
                     return;
                 }
 
-                if (message.type === 1 && Array.isArray(message.arguments) && message.arguments.length >= 2) {
+                if (
+                    message.type === 1 &&
+                    Array.isArray(message.arguments) &&
+                    message.arguments.length >= 2
+                ) {
                     const streamType = message.arguments[0];
                     const streamData = message.arguments[1];
                     this.handleStream(streamType, streamData);
@@ -86,9 +91,12 @@ class F1LiveClient {
         if (this.sessionInfo) {
             await this.ui.updateSession(this.sessionInfo);
         }
-        if (this.lastExtrapolatedClock) this.ui.updateClock(this.lastExtrapolatedClock);
-        if (this.lastSessionStatus) this.ui.updateSessionStatus(this.lastSessionStatus);
-        if (this.lastTrackStatus) this.ui.updateTrackStatus(this.lastTrackStatus);
+        if (this.lastExtrapolatedClock)
+            this.ui.updateClock(this.lastExtrapolatedClock);
+        if (this.lastSessionStatus)
+            this.ui.updateSessionStatus(this.lastSessionStatus);
+        if (this.lastTrackStatus)
+            this.ui.updateTrackStatus(this.lastTrackStatus);
         if (this.lastWeatherData) this.ui.updateWeather(this.lastWeatherData);
 
         this.scheduleUIRefresh();
@@ -112,7 +120,7 @@ class F1LiveClient {
         if (!data) {
             return;
         }
-        
+
         switch (streamType) {
             case "SessionInfo":
                 this.sessionInfo = this.normalize(data);
@@ -277,11 +285,21 @@ class F1LiveClient {
         const type = String(this.sessionInfo?.Type || "").toLowerCase();
         const name = String(this.sessionInfo?.Name || "").toLowerCase();
 
-        if (type === "race" || type === "sprint" || name.includes("sprint") || name.includes("race")) {
+        if (
+            type === "race" ||
+            type === "sprint" ||
+            name.includes("sprint") ||
+            name.includes("race")
+        ) {
             return "race";
         }
 
-        if (type === "qualifying" || type === "qualification" || name.includes("qualifying") || name.includes("qualification")) {
+        if (
+            type === "qualifying" ||
+            type === "qualification" ||
+            name.includes("qualifying") ||
+            name.includes("qualification")
+        ) {
             return "qualifying";
         }
 
@@ -297,13 +315,16 @@ class F1LiveClient {
         }, 0);
 
         const series = this.sessionData?.Series;
-        const seriesValues = series && typeof series === "object" ? Object.values(series) : [];
+        const seriesValues =
+            series && typeof series === "object" ? Object.values(series) : [];
         const latestSeries = seriesValues
             .filter((item) => item && item.Lap !== undefined)
             .sort((a, b) => new Date(a.Utc || 0) - new Date(b.Utc || 0))
             .pop();
 
-        const currentLap = latestSeries?.Lap ? Number(latestSeries.Lap) : completedLaps + 1;
+        const currentLap = latestSeries?.Lap
+            ? Number(latestSeries.Lap)
+            : completedLaps + 1;
 
         return {
             kind,
@@ -314,12 +335,17 @@ class F1LiveClient {
     }
 
     parseTimeToSeconds(valStr) {
-        if (!valStr || valStr === '-' || typeof valStr !== 'string') return Infinity;
+        if (!valStr || valStr === "-" || typeof valStr !== "string")
+            return Infinity;
         valStr = valStr.trim();
-        const parts = valStr.split(':');
+        const parts = valStr.split(":");
         try {
             if (parts.length === 3) {
-                return Number(parts[0]) * 3600 + Number(parts[1]) * 60 + parseFloat(parts[2]);
+                return (
+                    Number(parts[0]) * 3600 +
+                    Number(parts[1]) * 60 +
+                    parseFloat(parts[2])
+                );
             } else if (parts.length === 2) {
                 return Number(parts[0]) * 60 + parseFloat(parts[1]);
             } else if (parts.length === 1) {
@@ -348,7 +374,9 @@ class F1LiveClient {
             : info.BestLapTime || stats.PersonalBestLapTime || {};
 
         const sectors = Array.isArray(info.Sectors) ? info.Sectors : [];
-        const bestSectors = Array.isArray(stats.BestSectors) ? stats.BestSectors : [];
+        const bestSectors = Array.isArray(stats.BestSectors)
+            ? stats.BestSectors
+            : [];
 
         const stints = Array.isArray(appData.Stints)
             ? appData.Stints
@@ -363,23 +391,28 @@ class F1LiveClient {
 
         if (kind === "race") {
             gap = info.GapToLeader || "";
-            diff = info.IntervalToPositionAhead?.Value || info.TimeDiffToPositionAhead || "";
+            diff =
+                info.IntervalToPositionAhead?.Value ||
+                info.TimeDiffToPositionAhead ||
+                "";
         } else {
             const allDrivers = Object.keys(this.timingData);
             const driverBestSec = this.parseTimeToSeconds(bestLap.Value);
 
             let fastestSec = Infinity;
-            allDrivers.forEach(num => {
+            allDrivers.forEach((num) => {
                 const dStats = this.timingStats[num] || {};
                 const dInfo = this.timingData[num] || {};
-                const dBest = dStats.PersonalBestLapTime?.Value || dInfo.BestLapTime?.Value;
+                const dBest =
+                    dStats.PersonalBestLapTime?.Value ||
+                    dInfo.BestLapTime?.Value;
                 const sec = this.parseTimeToSeconds(dBest);
                 if (sec < fastestSec) fastestSec = sec;
             });
 
             if (driverBestSec !== Infinity && fastestSec !== Infinity) {
                 if (driverBestSec === fastestSec) {
-                    gap = ""; 
+                    gap = "";
                 } else {
                     gap = this.formatSecondsToGap(driverBestSec - fastestSec);
                 }
@@ -396,10 +429,16 @@ class F1LiveClient {
                 const prevDriverNum = sortedDrivers[myIndex - 1];
                 const prevInfo = this.timingData[prevDriverNum] || {};
                 const prevStats = this.timingStats[prevDriverNum] || {};
-                const prevBest = prevStats.PersonalBestLapTime?.Value || prevInfo.BestLapTime?.Value;
-                
+                const prevBest =
+                    prevStats.PersonalBestLapTime?.Value ||
+                    prevInfo.BestLapTime?.Value;
+
                 const prevSec = this.parseTimeToSeconds(prevBest);
-                if (driverBestSec !== Infinity && prevSec !== Infinity && driverBestSec >= prevSec) {
+                if (
+                    driverBestSec !== Infinity &&
+                    prevSec !== Infinity &&
+                    driverBestSec >= prevSec
+                ) {
                     diff = this.formatSecondsToGap(driverBestSec - prevSec);
                 }
             }
@@ -407,7 +446,9 @@ class F1LiveClient {
 
         return {
             racingNumber: driverNum,
-            position: Number.isFinite(Number(info.Position)) ? Number(info.Position) : Number(driverObj.Line || 999),
+            position: Number.isFinite(Number(info.Position))
+                ? Number(info.Position)
+                : Number(driverObj.Line || 999),
             tLA: driverObj.Tla,
             lastName: driverObj.LastName,
             teamColour: driverObj.TeamColour,
@@ -422,8 +463,8 @@ class F1LiveClient {
             pitOut: info.PitOut,
             lastLap: info.LastLapTime,
             knockedOut: info.KnockedOut,
-            cutOff: info.CutOff, 
-            lapFlags: info.LapFlags, 
+            cutOff: info.CutOff,
+            lapFlags: appData.Stints[appData.Stints.length - 1]?.LapFlags,
             bestLap,
             lastS1: sectors[0] || {},
             lastS2: sectors[1] || {},
