@@ -8,12 +8,23 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-    <div id="app"></div>
-    <script src="ui.js"></script>
+    <div id="navbar-container"></div>
+    <div id="app">
+        <div id="livetiming" class="tab-content"></div>
+        <div id="schedule" class="tab-content" style="display:none;"></div>
+        <div id="results" class="tab-content" style="display:none;"></div>
+        <div id="standings" class="tab-content" style="display:none;"></div>
+    </div>
+
     <script src="client.js"></script>
+    <script src="session-ui.js"></script>
+    <script src="timing-ui.js"></script>
+    <script src="standings-ui.js"></script>
+    <script src="app.js"></script>
 </body>
 
 </html>
