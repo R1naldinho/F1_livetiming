@@ -113,11 +113,6 @@ class StandingsUI {
         this.tableWrapper = document.createElement("div");
         this.tableWrapper.className = "table-wrapper";
 
-        this.tableWrapper.addEventListener("scroll", () =>
-            this.syncScrollPosition(),
-        );
-        window.addEventListener("resize", () => this.updateScrollThumb());
-
         this.chartWrapper = document.createElement("div");
         this.chartWrapper.className = "chart-wrapper";
         this.chartCanvas = document.createElement("canvas");
@@ -126,38 +121,6 @@ class StandingsUI {
         this.container.appendChild(controlsContainer);
         this.container.appendChild(this.tableWrapper);
         this.container.appendChild(this.chartWrapper);
-    }
-
-    syncScrollPosition() {
-        const maxScroll =
-            this.tableWrapper.scrollWidth - this.tableWrapper.clientWidth;
-        if (maxScroll <= 0) {
-            this.scrollTrack.style.display = "none";
-            return;
-        }
-        this.scrollTrack.style.display = "block";
-        const scrollRatio = this.tableWrapper.scrollLeft / maxScroll;
-        const trackWidth = this.scrollTrack.clientWidth;
-        const thumbWidth = this.scrollThumb.clientWidth;
-        const maxThumbLeft = trackWidth - thumbWidth;
-        this.scrollThumb.style.transform = `translateX(${scrollRatio * maxThumbLeft}px)`;
-    }
-
-    updateScrollThumb() {
-        if (!this.tableWrapper) return;
-        const clientWidth = this.tableWrapper.clientWidth;
-        const scrollWidth = this.tableWrapper.scrollWidth;
-        if (scrollWidth <= clientWidth) {
-            this.scrollTrack.style.display = "none";
-        } else {
-            this.scrollTrack.style.display = "block";
-            const thumbWidth = Math.max(
-                (clientWidth / scrollWidth) * this.scrollTrack.clientWidth,
-                30,
-            );
-            this.scrollThumb.style.width = `${thumbWidth}px`;
-            this.syncScrollPosition();
-        }
     }
 
     async fetchStandings() {
@@ -228,7 +191,6 @@ class StandingsUI {
             this.renderDriversRace();
             this.renderChart();
         }
-        setTimeout(() => this.updateScrollThumb(), 50);
     }
 
     renderDriversTotal() {
@@ -281,6 +243,9 @@ class StandingsUI {
                 const logo = document.createElement("img");
                 logo.src = d.teamLogo;
                 logo.className = "standings-team-logo";
+                if (["Aston Martin", "Cadillac", "Haas F1 Team"].includes(d.car)) {
+                    logo.classList.add("invert-in-dark");
+                }
                 logo.alt = d.car;
                 teamContainer.appendChild(logo);
             }
@@ -374,6 +339,9 @@ class StandingsUI {
                 const logo = document.createElement("img");
                 logo.src = d.teamLogo;
                 logo.className = "standings-team-logo";
+                if (["Aston Martin", "Cadillac", "Haas F1 Team"].includes(d.car)) {
+                    logo.classList.add("invert-in-dark");
+                }
                 logo.alt = d.car;
                 teamContainer.appendChild(logo);
             }
@@ -460,6 +428,9 @@ class StandingsUI {
                 const logo = document.createElement("img");
                 logo.src = c.teamLogo;
                 logo.className = "standings-team-logo";
+                if (["Aston Martin", "Cadillac", "Haas F1 Team"].includes(c.teamName)) {
+                    logo.classList.add("invert-in-dark");
+                }
                 logo.alt = c.teamName;
                 teamContainer.appendChild(logo);
             }
