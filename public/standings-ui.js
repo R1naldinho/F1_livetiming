@@ -661,7 +661,9 @@ class StandingsUI {
     }
 
     renderDriversTotalTable() {
-        const leaderDriver = this.data.drivers.find(d => parseInt(d.pos, 10) === 1) || this.data.drivers[0];
+        const leaderDriver =
+            this.data.drivers.find((d) => parseInt(d.pos, 10) === 1) ||
+            this.data.drivers[0];
         const leaderPts = leaderDriver ? parseFloat(leaderDriver.pts) || 0 : 0;
 
         const columns = [
@@ -755,13 +757,14 @@ class StandingsUI {
                             d.teamLogo
                                 ? this.el("img", {
                                       src: d.teamLogo,
-                                      className: [
-                                          "Aston Martin",
-                                          "Cadillac",
-                                          "Haas F1 Team",
-                                      ].includes(d.car) && !this.isLight
-                                          ? "standings-team-logo invert-in-dark"
-                                          : "standings-team-logo",
+                                      className:
+                                          [
+                                              "Aston Martin",
+                                              "Cadillac",
+                                              "Haas F1 Team",
+                                          ].includes(d.car) && !this.isLight
+                                              ? "standings-team-logo invert-in-dark"
+                                              : "standings-team-logo",
                                       alt: d.car,
                                   })
                                 : null,
@@ -829,7 +832,11 @@ class StandingsUI {
         }
 
         this.contentWrapper.appendChild(
-            this.el("div", { className: "table-responsive standings-table-wrap" }, table),
+            this.el(
+                "div",
+                { className: "table-responsive standings-table-wrap" },
+                table,
+            ),
         );
     }
 
@@ -966,26 +973,30 @@ class StandingsUI {
     }
 
     renderConstructorsTotalTable() {
-        const leaderConstructor = this.data.constructors.find(c => parseInt(c.pos, 10) === 1) || this.data.constructors[0];
-        const leaderPts = leaderConstructor ? parseFloat(leaderConstructor.pts) || 0 : 0;
+        const leaderConstructor =
+            this.data.constructors.find((c) => parseInt(c.pos, 10) === 1) ||
+            this.data.constructors[0];
+        const leaderPts = leaderConstructor
+            ? parseFloat(leaderConstructor.pts) || 0
+            : 0;
 
         const columns = [
             {
                 label: "Pos",
                 key: "pos",
                 getValue: (c) => parseInt(c.pos, 10),
-                style: { textAlign: "left"},
+                style: { textAlign: "left" },
             },
             {
                 label: "Team",
                 key: "teamName",
-                style: { textAlign: "left"},
+                style: { textAlign: "left" },
             },
             {
                 label: "Points",
                 key: "pts",
                 getValue: (c) => parseFloat(c.pts),
-                style: { textAlign: "center"},
+                style: { textAlign: "center" },
                 defaultDir: "desc",
             },
             {
@@ -1028,14 +1039,15 @@ class StandingsUI {
                             c.teamLogo
                                 ? this.el("img", {
                                       src: c.teamLogo,
-                                      className: [
-                                          "Aston Martin",
-                                          "Cadillac",
-                                          "Haas F1 Team",
-                                      ].includes(c.teamName) &&
-                                      !this.isLight
-                                          ? "standings-team-logo invert-in-dark"
-                                          : "standings-team-logo",
+                                      className:
+                                          [
+                                              "Aston Martin",
+                                              "Cadillac",
+                                              "Haas F1 Team",
+                                          ].includes(c.teamName) &&
+                                          !this.isLight
+                                              ? "standings-team-logo invert-in-dark"
+                                              : "standings-team-logo",
                                       alt: c.teamName,
                                   })
                                 : null,
@@ -1080,7 +1092,7 @@ class StandingsUI {
             }
             table.style.width = "100%";
             table.style.tableLayout = "fixed";
-            table.style.fontSize = "0.85rem"; 
+            table.style.fontSize = "0.85rem";
 
             const colgroup = document.createElement("colgroup");
 
@@ -1105,7 +1117,11 @@ class StandingsUI {
         }
 
         this.contentWrapper.appendChild(
-            this.el("div", { className: "table-responsive standings-table-wrap" }, table),
+            this.el(
+                "div",
+                { className: "table-responsive standings-table-wrap" },
+                table,
+            ),
         );
     }
 
@@ -1473,6 +1489,7 @@ class StandingsUI {
             ptsHistory: [],
             singlePtsHistory: [],
             posArray: [],
+            championshipPositionHistory: [],
             cars: new Set(),
             maxPtsStreak: 0,
             maxPodiumStreak: 0,
@@ -1536,14 +1553,43 @@ class StandingsUI {
             }
         });
 
+        const gps = this.getAllGrandsPrix();
         if (this.data && this.data.drivers) {
+            gps.forEach((gp, gpIndex) => {
+                const driverStandingsAtRound = this.data.drivers.map((d) => {
+                    let cumulativePts = 0;
+                    for (let i = 0; i <= gpIndex; i++) {
+                        const roundRes = d.raceResults?.find(
+                            (r) => r.grandPrix === gps[i],
+                        );
+                        if (roundRes) {
+                            cumulativePts += parseFloat(roundRes.pts) || 0;
+                        }
+                    }
+                    return { name: d.driverName, pts: cumulativePts };
+                });
+
+                driverStandingsAtRound.sort((a, b) => b.pts - a.pts);
+
+                const rankIndex = driverStandingsAtRound.findIndex(
+                    (d) => d.name === driver.driverName,
+                );
+                stats.championshipPositionHistory.push(
+                    rankIndex !== -1 ? rankIndex + 1 : null,
+                );
+            });
+
             const sortedDrivers = [...this.data.drivers].sort((a, b) => {
                 return (parseFloat(b.pts) || 0) - (parseFloat(a.pts) || 0);
             });
-            const index = sortedDrivers.findIndex((d) => d.driverName === driver.driverName);
-            stats.championshipPosition = index !== -1 ? index + 1 : (driver.pos || 0);
+            const index = sortedDrivers.findIndex(
+                (d) => d.driverName === driver.driverName,
+            );
+            stats.championshipPosition =
+                index !== -1 ? index + 1 : driver.pos || 0;
         } else {
             stats.championshipPosition = driver.pos || 0;
+            stats.championshipPositionHistory = gps.map(() => null);
         }
 
         const championship = this.getChampionshipInfo();
@@ -1568,7 +1614,7 @@ class StandingsUI {
             ? ((stats.points / stats.completedMaxPoints) * 100).toFixed(1) + "%"
             : "0%";
         stats.championshipStatus = this.getDriverChampionshipStatus(driver);
-        
+
         return stats;
     }
 
@@ -1613,26 +1659,39 @@ class StandingsUI {
                 "div",
                 { className: "stats-grid" },
                 this.createStatCard("Total Points", stats.points),
-                this.createStatCard("Championship Position", stats.championshipPosition === 1 ? "1st" : stats.championshipPosition === 2 ? "2nd" : stats.championshipPosition === 3 ? "3rd" : stats.championshipPosition + "th"),
+                this.createStatCard(
+                    "Championship Position",
+                    stats.championshipPosition === 1
+                        ? "1st"
+                        : stats.championshipPosition === 2
+                          ? "2nd"
+                          : stats.championshipPosition === 3
+                            ? "3rd"
+                            : stats.championshipPosition + "th",
+                ),
                 this.createStatCard("Wins", stats.wins),
                 this.createStatCard("Podiums", stats.podiums),
                 this.createStatCard("Top 5s", stats.top5),
                 this.createStatCard("Top 10s", stats.top10),
                 this.createStatCard("Avg Finish", stats.avgPos),
-                this.createStatCard("Best Finish", stats.best),
+                this.createStatCard("Best Finish", stats.best == 1 ? "1st" : stats.best == 2 ? "2nd" : stats.best == 3 ? "3rd" : isNaN(stats.best) ? stats.best : stats.best + "th"),
                 this.createStatCard("DNFs", stats.dnfs),
                 this.createStatCard("Finish %", stats.finishRate),
                 this.createStatCard("Pts / Race", stats.ptsPerRace),
                 this.createStatCard("Pts / Finish", stats.ptsPerFinish),
                 this.createStatCard("Pts Streak", stats.maxPtsStreak),
                 this.createStatCard("Podium Streak", stats.maxPodiumStreak),
+                this.createStatCard("Races", stats.races),
             );
 
             const chartsGrid = this.el("div", { className: "charts-grid" });
             const lineCanvas = this.el("canvas");
             const barCanvas = this.el("canvas");
+            const positionCanvas = this.el("canvas");
+
             chartsGrid.appendChild(this.createChartBox(lineCanvas));
             chartsGrid.appendChild(this.createChartBox(barCanvas));
+            chartsGrid.appendChild(this.createChartBox(positionCanvas));
 
             const box = this.el("div", {
                 className: "stat-card",
@@ -1741,12 +1800,22 @@ class StandingsUI {
                 );
             }
 
-            const posCounts = Array(10).fill(0);
-            stats.history.forEach((p) => {
-                if (typeof p === "number") {
-                    if (p <= 22) posCounts[p - 1]++;
-                }
-            });
+            const posCounts = Array(22).fill(0);
+            let dnfCount = 0;
+
+            if (stats.history && Array.isArray(stats.history)) {
+                stats.history.forEach((p) => {
+                    if (typeof p === "number") {
+                        if (p >= 1 && p <= 22) {
+                            posCounts[p - 1]++;
+                        }
+                    } else if (p === "DNF" || p === null || p === undefined) {
+                        dnfCount++;
+                    }
+                });
+            } else {
+                dnfCount = stats.dnfs || 0;
+            }
 
             const barLabels = [
                 "1st",
@@ -1773,7 +1842,7 @@ class StandingsUI {
                 "22nd",
                 "DNF",
             ];
-            const barData = [...posCounts, stats.dnfs];
+            const barData = [...posCounts, dnfCount];
 
             const avgPosNum = parseFloat(stats.avgPos);
 
@@ -1793,17 +1862,17 @@ class StandingsUI {
                     if (!xAxis || !yAxis) return;
 
                     let targetIdx = avgPosNum - 1;
-                    if (targetIdx > 10) targetIdx = 10;
+                    if (targetIdx > 21) targetIdx = 21;
 
                     const lowIdx = Math.floor(targetIdx);
                     const highIdx = Math.ceil(targetIdx);
                     const frac = targetIdx - lowIdx;
 
                     const p1 = xAxis.getPixelForValue(
-                        Math.min(Math.max(lowIdx, 0), 10),
+                        Math.min(Math.max(lowIdx, 0), 21),
                     );
                     const p2 = xAxis.getPixelForValue(
-                        Math.min(Math.max(highIdx, 0), 10),
+                        Math.min(Math.max(highIdx, 0), 21),
                     );
                     const xPixel = p1 + (p2 - p1) * frac;
 
@@ -1844,6 +1913,41 @@ class StandingsUI {
                     plugins: [avgPosLinePlugin],
                 }),
             );
+
+            const championshipPosHistory =
+                stats.championshipPositionHistory || gps.map(() => null);
+
+            const positionChartOpts = this.getChartOptions(
+                "Championship Position Progression",
+            );
+            positionChartOpts.scales.y = {
+                ...positionChartOpts.scales.y,
+                reverse: true,
+                ticks: {
+                    precision: 0,
+                    stepSize: 1,
+                },
+            };
+
+            this.charts.push(
+                new Chart(positionCanvas, {
+                    type: "line",
+                    data: {
+                        labels: gps,
+                        datasets: [
+                            {
+                                label: "Championship Position",
+                                data: championshipPosHistory,
+                                borderColor: color,
+                                backgroundColor: color,
+                                tension: 0.2,
+                                fill: false,
+                            },
+                        ],
+                    },
+                    options: positionChartOpts,
+                }),
+            );
         };
 
         select.addEventListener("change", updateDash);
@@ -1870,9 +1974,11 @@ class StandingsUI {
             races: 0,
             ptsHistory: [],
             singlePtsHistory: [],
+            championshipPositionHistory: [],
             drivers: {},
             totalPosSum: 0,
             totalFinishes: 0,
+            best: Infinity,
         };
         const gps = this.getAllGrandsPrix();
         let cum = 0;
@@ -1897,6 +2003,7 @@ class StandingsUI {
                         } else {
                             stats.totalFinishes++;
                             stats.totalPosSum += posNum;
+                            if (posNum < stats.best) stats.best = posNum;
                             if (posNum === 1) stats.wins++;
                             if (posNum <= 3) stats.podiums++;
                             if (posNum <= 5) stats.top5++;
@@ -1911,12 +2018,57 @@ class StandingsUI {
             stats.singlePtsHistory.push(gpPoints);
         });
 
+        if (this.data && this.data.constructors) {
+            gps.forEach((gp, gpIndex) => {
+                const constructorStandingsAtRound = this.data.constructors.map(
+                    (c) => {
+                        let cumulativePts = 0;
+                        for (let i = 0; i <= gpIndex; i++) {
+                            let roundPts = 0;
+                            this.data.drivers.forEach((d) => {
+                                if (d.raceResults) {
+                                    const roundRes = d.raceResults.find(
+                                        (r) => r.grandPrix === gps[i],
+                                    );
+                                    if (
+                                        roundRes &&
+                                        roundRes.car === c.teamName
+                                    ) {
+                                        roundPts +=
+                                            parseFloat(roundRes.pts) || 0;
+                                    }
+                                }
+                            });
+                            cumulativePts += roundPts;
+                        }
+                        return { name: c.teamName, pts: cumulativePts };
+                    },
+                );
+
+                constructorStandingsAtRound.sort((a, b) => b.pts - a.pts);
+
+                const rankIndex = constructorStandingsAtRound.findIndex(
+                    (c) => c.name === teamName,
+                );
+                stats.championshipPositionHistory.push(
+                    rankIndex !== -1 ? rankIndex + 1 : null,
+                );
+            });
+        } else {
+            stats.championshipPositionHistory = gps.map(() => null);
+        }
+
+        stats.best = stats.best === Infinity
+            ? "-"
+            : (stats.best === 1 ? "1st" : stats.best === 2 ? "2nd" : stats.best === 3 ? "3rd" : isNaN(stats.best) ? "-" : stats.best + "th");
+
         stats.ptsPerRace = stats.races
             ? (stats.points / stats.races).toFixed(2)
             : "0";
         stats.avgFinish = stats.totalFinishes
             ? (stats.totalPosSum / stats.totalFinishes).toFixed(2)
             : "-";
+
 
         const championship = this.getChampionshipInfo();
         const constructor = this.data.constructors.find(
@@ -1925,13 +2077,20 @@ class StandingsUI {
         if (constructor) {
             if (!isNaN(parseFloat(constructor.pts)))
                 stats.points = parseFloat(constructor.pts);
-            
+
             if (this.data.constructors) {
-                const sortedConstructors = [...this.data.constructors].sort((a, b) => {
-                    return (parseFloat(b.pts) || 0) - (parseFloat(a.pts) || 0);
-                });
-                const index = sortedConstructors.findIndex((c) => c.teamName === teamName);
-                stats.championshipPosition = index !== -1 ? index + 1 : (constructor.pos || 0);
+                const sortedConstructors = [...this.data.constructors].sort(
+                    (a, b) => {
+                        return (
+                            (parseFloat(b.pts) || 0) - (parseFloat(a.pts) || 0)
+                        );
+                    },
+                );
+                const index = sortedConstructors.findIndex(
+                    (c) => c.teamName === teamName,
+                );
+                stats.championshipPosition =
+                    index !== -1 ? index + 1 : constructor.pos || 0;
             } else {
                 stats.championshipPosition = constructor.pos || 0;
             }
@@ -1956,762 +2115,1009 @@ class StandingsUI {
     }
 
     createTeammateComparison(teamDrivers, teamName) {
-    const container = this.el("div");
-    
-    if (!teamDrivers || teamDrivers.length === 0) {
-        container.appendChild(this.el("div", { textContent: "No drivers available for this team.", style: { color: this.textColor, padding: "10px" } }));
+        const container = this.el("div");
+
+        if (!teamDrivers || teamDrivers.length === 0) {
+            container.appendChild(
+                this.el("div", {
+                    textContent: "No drivers available for this team.",
+                    style: { color: this.textColor, padding: "10px" },
+                }),
+            );
+            return container;
+        }
+
+        const gps = this.getAllGrandsPrix();
+
+        const getTeamFilteredStats = (driverObj) => {
+            const rawStats = this.calculateDriverStats(driverObj);
+            const results = driverObj.raceResults || driverObj.results || [];
+
+            if (
+                results.length === 0 &&
+                !driverObj.history &&
+                !driverObj.posArray
+            ) {
+                return rawStats;
+            }
+
+            const filteredHistory = [];
+            const filteredSinglePts = [];
+            const filteredPosArray = [];
+            let runningPts = 0;
+            let pointsSum = 0;
+            let wins = 0;
+            let podiums = 0;
+            let top5 = 0;
+            let top10 = 0;
+            let bestPos = 999;
+            let dnfs = 0;
+            let finishedCount = 0;
+            let posSum = 0;
+            let races = 0;
+            const ptsHistory = [];
+            const singlePtsHistory = [];
+
+            gps.forEach((gp, idx) => {
+                const res = results.find(
+                    (r) =>
+                        r.grandPrix === gp ||
+                        r.round === idx + 1 ||
+                        r.gp === gp,
+                );
+                const teamForGp = res
+                    ? res.team || res.constructorName || res.car
+                    : null;
+                const isThisTeam = teamForGp
+                    ? teamForGp.toLowerCase() === teamName.toLowerCase()
+                    : true;
+
+                if (isThisTeam && res) {
+                    const pos =
+                        res.position !== undefined
+                            ? res.position
+                            : rawStats.posArray
+                              ? rawStats.posArray[idx]
+                              : null;
+                    const pts =
+                        res.points !== undefined
+                            ? Number(res.points)
+                            : rawStats.singlePtsHistory
+                              ? rawStats.singlePtsHistory[idx]
+                              : 0;
+
+                    filteredPosArray.push(pos);
+                    filteredHistory.push(
+                        pos === null || pos === undefined ? "DNF" : pos,
+                    );
+                    singlePtsHistory.push(pts);
+                    runningPts += pts;
+                    ptsHistory.push(runningPts);
+
+                    pointsSum += pts;
+                    if (pos === 1) wins++;
+                    if (pos >= 1 && pos <= 3) podiums++;
+                    if (pos >= 1 && pos <= 5) top5++;
+                    if (pos >= 1 && pos <= 10) top10++;
+
+                    if(pos > 0 && pos < bestPos) bestPos = pos;
+                    races++;
+
+                    if (
+                        pos === null ||
+                        pos === undefined ||
+                        pos === "DNF" ||
+                        pos === "Ret"
+                    ) {
+                        dnfs++;
+                    } else {
+                        finishedCount++;
+                        posSum += Number(pos);
+                    }
+                } else {
+                    filteredPosArray.push(null);
+                    filteredHistory.push(null);
+                    singlePtsHistory.push(0);
+                    ptsHistory.push(runningPts);
+                }
+            });
+
+            const validRacesCount = finishedCount;
+            const avgPos =
+                validRacesCount > 0
+                    ? (posSum / validRacesCount).toFixed(2)
+                    : "N/A";
+            const racesCount = filteredPosArray.filter(
+                (p) => p !== null,
+            ).length;
+            const ptsPerRace =
+                racesCount > 0 ? (pointsSum / racesCount).toFixed(2) : "0.00";
+
+            return {
+                ...rawStats,
+                points: pointsSum,
+                wins,
+                podiums,
+                top5,
+                top10,
+                best: bestPos !== 999 ? bestPos : "DNF",
+                dnfs,
+                races: racesCount,
+                avgPos,
+                ptsPerRace,
+                ptsHistory,
+                races,
+                singlePtsHistory,
+                posArray: filteredPosArray,
+                history: filteredHistory,
+            };
+        };
+
+        const driverStatsList = teamDrivers
+            .map((d) => {
+                const name =
+                    typeof d === "object" && d !== null
+                        ? d.driverName || d.name || String(d)
+                        : String(d);
+                return {
+                    driver: d,
+                    name: name,
+                    stats: getTeamFilteredStats(d),
+                };
+            })
+            .sort((a, b) => (b.stats.points || 0) - (a.stats.points || 0));
+
+        const namesString = driverStatsList.map((d) => d.name).join(" vs ");
+        const titleText =
+            driverStatsList.length > 1
+                ? `Team Drivers Comparison (${teamName}): ${namesString}`
+                : `Team Driver Overview (${teamName}): ${namesString}`;
+
+        const title = this.el("div", {
+            className: "section-title",
+            style: { fontSize: "1.1rem", marginBottom: "15px" },
+            textContent: titleText,
+        });
+        container.appendChild(title);
+
+        const grid = this.el("div", {
+            style: { marginBottom: "20px", overflowX: "auto" },
+        });
+
+        const createStatRow = (label, getValueFn, lowerIsBetter = false) => {
+            const rowEl = this.el("div", {
+                className: "compare-grid",
+                style: {
+                    display: "grid",
+                    gridTemplateColumns: `150px repeat(${driverStatsList.length}, 1fr)`,
+                    gap: "10px",
+                    alignItems: "center",
+                    marginBottom: "8px",
+                },
+            });
+
+            rowEl.appendChild(
+                this.el("div", {
+                    className: "compare-label",
+                    textContent: label,
+                    style: { fontWeight: "bold" },
+                }),
+            );
+
+            const values = driverStatsList.map((item) =>
+                getValueFn(item.stats, item.driver),
+            );
+            const numericValues = values
+                .map((v) => parseFloat(v))
+                .filter((v) => !isNaN(v));
+            let bestVal = null;
+            if (numericValues.length > 0) {
+                bestVal = lowerIsBetter
+                    ? Math.min(...numericValues)
+                    : Math.max(...numericValues);
+            }
+
+            driverStatsList.forEach((item, idx) => {
+                const val = values[idx];
+                const num = parseFloat(val);
+                let color = this.textColor;
+
+                if (
+                    bestVal !== null &&
+                    !isNaN(num) &&
+                    num === bestVal &&
+                    numericValues.filter((v) => v === bestVal).length === 1
+                ) {
+                    color = "#00E676";
+                } else if (
+                    numericValues.length > 1 &&
+                    !isNaN(num) &&
+                    num !== bestVal
+                ) {
+                    color = "#ED1131";
+                }
+
+                rowEl.appendChild(
+                    this.el("div", {
+                        className: "compare-val",
+                        style: { color: color, textAlign: "center" },
+                        textContent: val,
+                    }),
+                );
+            });
+
+            return rowEl;
+        };
+
+        grid.appendChild(createStatRow("Total Points", (s) => s.points));
+        grid.appendChild(
+            createStatRow(
+                "Championship Position",
+                (s) =>
+                    s.championshipPosition === 1
+                        ? "1st"
+                        : s.championshipPosition === 2
+                          ? "2nd"
+                          : s.championshipPosition === 3
+                            ? "3rd"
+                            : s.championshipPosition + "th",
+                true,
+            ),
+        );
+        grid.appendChild(createStatRow("Wins", (s) => s.wins));
+        grid.appendChild(createStatRow("Podiums", (s) => s.podiums));
+        grid.appendChild(createStatRow("Top 5s", (s) => s.top5));
+        grid.appendChild(createStatRow("Top 10s", (s) => s.top10));
+        grid.appendChild(createStatRow("Best Finish", (s) => s.best === 1 ? "1st" : s.best === 2 ? "2nd" : s.best === 3 ? "3rd" : isNaN(s.best) ? s.best : s.best + "th", true));
+        grid.appendChild(
+            createStatRow(
+                "Avg Finish Position",
+                (s) => s.avgPos || "N/A",
+                true,
+            ),
+        );
+        grid.appendChild(createStatRow("DNFs", (s) => s.dnfs, true));
+        grid.appendChild(createStatRow("Pts / Race", (s) => s.ptsPerRace));
+        grid.appendChild(createStatRow("Pts / Finish", (s) => s.ptsPerFinish));
+        grid.appendChild(createStatRow("Races", (s) => s.races));
+
+        container.appendChild(grid);
+
+        let chartMode = "cumulative";
+
+        const navContainer = this.el("div", {
+            className: "standings-sub-nav",
+            style: { marginBottom: "15px" },
+        });
+
+        const btnCumulative = this.el("button", {
+            className: `standings-nav-btn ${chartMode === "cumulative" ? "active" : ""}`,
+            textContent: "Cumulative Points",
+            onClick: () => {
+                chartMode = "cumulative";
+                updateSubChart();
+            },
+        });
+        navContainer.appendChild(btnCumulative);
+
+        const btnSingle = this.el("button", {
+            className: `standings-nav-btn ${chartMode === "single" ? "active" : ""}`,
+            textContent: "Points Per Round",
+            onClick: () => {
+                chartMode = "single";
+                updateSubChart();
+            },
+        });
+        navContainer.appendChild(btnSingle);
+
+        let btnGap = null;
+        if (driverStatsList.length >= 2) {
+            btnGap = this.el("button", {
+                className: `standings-nav-btn ${chartMode === "gap" ? "active" : ""}`,
+                textContent: "Points Gap (H2H)",
+                onClick: () => {
+                    chartMode = "gap";
+                    updateSubChart();
+                },
+            });
+            navContainer.appendChild(btnGap);
+        }
+
+        container.appendChild(navContainer);
+
+        const lineCanvas = this.el("canvas");
+        const chartBox = this.createChartBox(lineCanvas);
+        container.appendChild(chartBox);
+
+        const getDriverColor = (idx) => {
+            let baseColor = this.getTeamColor
+                ? this.getTeamColor(teamName)
+                : "#00b4d8";
+            if (baseColor && baseColor[0] === "#") {
+                let num = parseInt(baseColor.slice(1), 16);
+                let shift = idx * 60;
+                let r = Math.min(255, Math.max(0, (num >> 16) + shift));
+                let g = Math.min(
+                    255,
+                    Math.max(0, ((num >> 8) & 0x0ff) + shift / 2),
+                );
+                let b = Math.min(255, Math.max(0, (num & 0x0000ff) + shift));
+                return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+            }
+            const fallbackColors = ["#00b4d8", "#ffb703", "#7209b7", "#4cc9f0"];
+            return fallbackColors[idx % fallbackColors.length];
+        };
+
+        const updateSubChart = () => {
+            btnCumulative.className = `standings-nav-btn ${chartMode === "cumulative" ? "active" : ""}`;
+            btnSingle.className = `standings-nav-btn ${chartMode === "single" ? "active" : ""}`;
+            if (btnGap) {
+                btnGap.className = `standings-nav-btn ${chartMode === "gap" ? "active" : ""}`;
+            }
+
+            const prevChart =
+                typeof Chart !== "undefined" && Chart.getChart
+                    ? Chart.getChart(lineCanvas)
+                    : null;
+            if (prevChart) prevChart.destroy();
+
+            if (chartMode === "cumulative" || chartMode === "single") {
+                const datasets = driverStatsList.map((item, idx) => {
+                    const col = getDriverColor(idx);
+                    return {
+                        label: item.name,
+                        data:
+                            chartMode === "cumulative"
+                                ? item.stats.ptsHistory
+                                : item.stats.singlePtsHistory,
+                        borderColor: col,
+                        backgroundColor: col,
+                        tension: 0.2,
+                        fill: false,
+                        borderDash: idx > 0 ? [5, 5] : [],
+                    };
+                });
+
+                const chart = new Chart(lineCanvas, {
+                    type: chartMode === "cumulative" ? "line" : "bar",
+                    data: { labels: gps, datasets },
+                    options: this.getChartOptions(
+                        chartMode === "cumulative"
+                            ? "Driver Points Comparison"
+                            : "Driver Points Per Round Comparison",
+                    ),
+                });
+                this.charts.push(chart);
+            } else if (chartMode === "gap" && driverStatsList.length >= 2) {
+                const st1 = driverStatsList[0].stats;
+                const baselineColor = getDriverColor(0);
+
+                const datasets = [
+                    {
+                        label: `${driverStatsList[0].name} (Baseline)`,
+                        data: new Array(gps.length).fill(0),
+                        borderColor: baselineColor,
+                        backgroundColor: baselineColor,
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                    },
+                ];
+
+                for (let i = 1; i < driverStatsList.length; i++) {
+                    const stCurr = driverStatsList[i].stats;
+                    const gapData = st1.ptsHistory.map((val1, idx) => {
+                        const valCurr = stCurr.ptsHistory[idx] || 0;
+                        return Number((valCurr - val1).toFixed(2));
+                    });
+                    const colCurr = getDriverColor(i);
+
+                    datasets.push({
+                        label: `${driverStatsList[i].name} vs ${driverStatsList[0].name} (Gap)`,
+                        data: gapData,
+                        borderColor: colCurr,
+                        backgroundColor: colCurr,
+                        borderWidth: 2,
+                        tension: 0.2,
+                        fill: false,
+                        borderDash: [5, 5],
+                    });
+                }
+
+                const backgroundZonesPlugin = {
+                    id: "backgroundZonesPlugin",
+                    beforeDraw(chart) {
+                        const {
+                            ctx,
+                            chartArea: { top, bottom, left, right },
+                            scales: { y },
+                        } = chart;
+                        const zeroY = y.getPixelForValue(0);
+
+                        ctx.save();
+                        ctx.fillStyle = "rgba(237, 17, 49, 0.3)";
+                        ctx.fillRect(
+                            left,
+                            top,
+                            right - left,
+                            Math.max(0, zeroY - top),
+                        );
+
+                        ctx.fillStyle = "rgba(0, 230, 118, 0.3)";
+                        ctx.fillRect(
+                            left,
+                            Math.min(bottom, zeroY),
+                            right - left,
+                            Math.max(0, bottom - zeroY),
+                        );
+                        ctx.restore();
+                    },
+                };
+
+                const chart = new Chart(lineCanvas, {
+                    type: "line",
+                    data: { labels: gps, datasets },
+                    options: {
+                        ...this.getChartOptions(
+                            `Points Gap relative to ${driverStatsList[0].name}`,
+                        ),
+                        scales: {
+                            ...this.getChartOptions("").scales,
+                            y: {
+                                ...this.getChartOptions("").scales?.y,
+                                grid: {
+                                    color: (context) =>
+                                        context.tick.value === 0
+                                            ? "rgba(255, 255, 255, 0.4)"
+                                            : "rgba(255, 255, 255, 0.1)",
+                                },
+                            },
+                        },
+                    },
+                    plugins: [backgroundZonesPlugin],
+                });
+                this.charts.push(chart);
+            }
+        };
+
+        requestAnimationFrame(() => {
+            updateSubChart();
+        });
+
+        const heatmapTitle = this.el("div", {
+            className: "stat-value",
+            style: {
+                fontSize: "1.2em",
+                marginTop: "25px",
+                marginBottom: "15px",
+                textAlign: "left",
+            },
+            textContent: `${namesString} Race Results`,
+        });
+        container.appendChild(heatmapTitle);
+
+        const originalDriversArray = driverStatsList.map((item) => item.driver);
+        const heatmapComponent = this.createHeatmap(
+            originalDriversArray,
+            teamName,
+        );
+        if (heatmapComponent) {
+            container.appendChild(heatmapComponent);
+        }
+
         return container;
     }
 
-    const gps = this.getAllGrandsPrix();
-
-    const getTeamFilteredStats = (driverObj) => {
-        const rawStats = this.calculateDriverStats(driverObj);
-        const results = driverObj.raceResults || driverObj.results || [];
-
-        if (results.length === 0 && (!driverObj.history && !driverObj.posArray)) {
-            return rawStats;
-        }
-
-        const filteredHistory = [];
-        const filteredSinglePts = [];
-        const filteredPosArray = [];
-        let runningPts = 0;
-        let pointsSum = 0;
-        let wins = 0;
-        let podiums = 0;
-        let top5 = 0;
-        let top10 = 0;
-        let dnfs = 0;
-        let finishedCount = 0;
-        let posSum = 0;
-        const ptsHistory = [];
-        const singlePtsHistory = [];
-
-        gps.forEach((gp, idx) => {
-            const res = results.find(r => r.grandPrix === gp || r.round === idx + 1 || r.gp === gp);
-            const teamForGp = res ? (res.team || res.constructorName || res.car) : null;
-            const isThisTeam = teamForGp ? teamForGp.toLowerCase() === teamName.toLowerCase() : true; 
-
-            if (isThisTeam && res) {
-                const pos = res.position !== undefined ? res.position : (rawStats.posArray ? rawStats.posArray[idx] : null);
-                const pts = res.points !== undefined ? Number(res.points) : (rawStats.singlePtsHistory ? rawStats.singlePtsHistory[idx] : 0);
-
-                filteredPosArray.push(pos);
-                filteredHistory.push(pos === null || pos === undefined ? 'DNF' : pos);
-                singlePtsHistory.push(pts);
-                runningPts += pts;
-                ptsHistory.push(runningPts);
-
-                pointsSum += pts;
-                if (pos === 1) wins++;
-                if (pos >= 1 && pos <= 3) podiums++;
-                if (pos >= 1 && pos <= 5) top5++;
-                if (pos >= 1 && pos <= 10) top10++;
-                
-                if (pos === null || pos === undefined || pos === 'DNF' || pos === 'Ret') {
-                    dnfs++;
-                } else {
-                    finishedCount++;
-                    posSum += Number(pos);
-                }
-            } else {
-                filteredPosArray.push(null);
-                filteredHistory.push(null);
-                singlePtsHistory.push(0);
-                ptsHistory.push(runningPts);
-            }
-        });
-
-        const validRacesCount = finishedCount;
-        const avgPos = validRacesCount > 0 ? (posSum / validRacesCount).toFixed(2) : "N/A";
-        const racesCount = filteredPosArray.filter(p => p !== null).length;
-        const ptsPerRace = racesCount > 0 ? (pointsSum / racesCount).toFixed(2) : "0.00";
-
-        return {
-            ...rawStats,
-            points: pointsSum,
-            wins,
-            podiums,
-            top5,
-            top10,
-            dnfs,
-            races: racesCount,
-            avgPos,
-            ptsPerRace,
-            ptsHistory,
-            singlePtsHistory,
-            posArray: filteredPosArray,
-            history: filteredHistory
-        };
-    };
-
-    const driverStatsList = teamDrivers.map(d => {
-        const name = typeof d === 'object' && d !== null ? (d.driverName || d.name || String(d)) : String(d);
-        return {
-            driver: d,
-            name: name,
-            stats: getTeamFilteredStats(d)
-        };
-    }).sort((a, b) => (b.stats.points || 0) - (a.stats.points || 0));
-
-    const namesString = driverStatsList.map(d => d.name).join(" vs ");
-    const titleText = driverStatsList.length > 1 
-        ? `Team Drivers Comparison (${teamName}): ${namesString}`
-        : `Team Driver Overview (${teamName}): ${namesString}`;
-
-    const title = this.el("div", {
-        className: "section-title",
-        style: { fontSize: "1.1rem", marginBottom: "15px" },
-        textContent: titleText
-    });
-    container.appendChild(title);
-
-    const grid = this.el("div", { style: { marginBottom: "20px", overflowX: "auto" } });
-
-    const createStatRow = (label, getValueFn, lowerIsBetter = false) => {
-        const rowEl = this.el("div", { className: "compare-grid", style: { display: "grid", gridTemplateColumns: `150px repeat(${driverStatsList.length}, 1fr)`, gap: "10px", alignItems: "center", marginBottom: "8px" } });
-        
-        rowEl.appendChild(this.el("div", { className: "compare-label", textContent: label, style: { fontWeight: "bold" } }));
-
-        const values = driverStatsList.map(item => getValueFn(item.stats, item.driver));
-        const numericValues = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
-        let bestVal = null;
-        if (numericValues.length > 0) {
-            bestVal = lowerIsBetter ? Math.min(...numericValues) : Math.max(...numericValues);
-        }
-
-        driverStatsList.forEach((item, idx) => {
-            const val = values[idx];
-            const num = parseFloat(val);
-            let color = this.textColor;
-
-            if (bestVal !== null && !isNaN(num) && num === bestVal && numericValues.filter(v => v === bestVal).length === 1) {
-                color = "#00E676";
-            } else if (numericValues.length > 1 && !isNaN(num) && num !== bestVal) {
-                color = "#ED1131";
-            }
-
-            rowEl.appendChild(this.el("div", { className: "compare-val", style: { color: color, textAlign: "center" }, textContent: val }));
-        });
-
-        return rowEl;
-    };
-
-    grid.appendChild(createStatRow("Total Points", s => s.points));
-    grid.appendChild(createStatRow("Championship Position", s => s.championshipPosition === 1 ? "1st" : s.championshipPosition === 2 ? "2nd" : s.championshipPosition === 3 ? "3rd" : s.championshipPosition + "th", true));
-    grid.appendChild(createStatRow("Wins", s => s.wins));
-    grid.appendChild(createStatRow("Podiums", s => s.podiums));
-    grid.appendChild(createStatRow("Top 5s", s => s.top5));
-    grid.appendChild(createStatRow("Top 10s", s => s.top10));
-    grid.appendChild(createStatRow("Avg Finish Position", s => s.avgPos || "N/A", true));
-    grid.appendChild(createStatRow("DNFs", s => s.dnfs, true));
-    grid.appendChild(createStatRow("Pts / Race", s => s.ptsPerRace));
-
-    container.appendChild(grid);
-
-    let chartMode = "cumulative";
-
-    const navContainer = this.el("div", { className: "standings-sub-nav", style: { marginBottom: "15px" } });
-    
-    const btnCumulative = this.el("button", {
-        className: `standings-nav-btn ${chartMode === "cumulative" ? "active" : ""}`,
-        textContent: "Cumulative Points",
-        onClick: () => { chartMode = "cumulative"; updateSubChart(); },
-    });
-    navContainer.appendChild(btnCumulative);
-
-    const btnSingle = this.el("button", {
-        className: `standings-nav-btn ${chartMode === "single" ? "active" : ""}`,
-        textContent: "Points Per Round",
-        onClick: () => { chartMode = "single"; updateSubChart(); },
-    });
-    navContainer.appendChild(btnSingle);
-
-    let btnGap = null;
-    if (driverStatsList.length >= 2) {
-        btnGap = this.el("button", {
-            className: `standings-nav-btn ${chartMode === "gap" ? "active" : ""}`,
-            textContent: "Points Gap (H2H)",
-            onClick: () => { chartMode = "gap"; updateSubChart(); },
-        });
-        navContainer.appendChild(btnGap);
-    }
-
-    container.appendChild(navContainer);
-
-    const lineCanvas = this.el("canvas");
-    const chartBox = this.createChartBox(lineCanvas);
-    container.appendChild(chartBox);
-
-    const getDriverColor = (idx) => {
-        let baseColor = this.getTeamColor ? this.getTeamColor(teamName) : "#00b4d8";
-        if (baseColor && baseColor[0] === "#") {
-            let num = parseInt(baseColor.slice(1), 16);
-            let shift = idx * 60;
-            let r = Math.min(255, Math.max(0, (num >> 16) + shift));
-            let g = Math.min(255, Math.max(0, ((num >> 8) & 0x0ff) + (shift / 2)));
-            let b = Math.min(255, Math.max(0, (num & 0x0000ff) + shift));
-            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-        }
-        const fallbackColors = ["#00b4d8", "#ffb703", "#7209b7", "#4cc9f0"];
-        return fallbackColors[idx % fallbackColors.length];
-    };
-
-    const updateSubChart = () => {
-        btnCumulative.className = `standings-nav-btn ${chartMode === "cumulative" ? "active" : ""}`;
-        btnSingle.className = `standings-nav-btn ${chartMode === "single" ? "active" : ""}`;
-        if (btnGap) {
-            btnGap.className = `standings-nav-btn ${chartMode === "gap" ? "active" : ""}`;
-        }
-
-        const prevChart = typeof Chart !== "undefined" && Chart.getChart ? Chart.getChart(lineCanvas) : null;
-        if (prevChart) prevChart.destroy();
-
-        if (chartMode === "cumulative" || chartMode === "single") {
-            const datasets = driverStatsList.map((item, idx) => {
-                const col = getDriverColor(idx);
-                return {
-                    label: item.name,
-                    data: chartMode === "cumulative" ? item.stats.ptsHistory : item.stats.singlePtsHistory,
-                    borderColor: col,
-                    backgroundColor: col,
-                    tension: 0.2,
-                    fill: false,
-                    borderDash: idx > 0 ? [5, 5] : []
-                };
+    renderTeamDashboard() {
+        const select = this.el("select", { className: "selector-dropdown" });
+        this.data.constructors.forEach((c) => {
+            const opt = this.el("option", {
+                value: c.teamName,
+                textContent: c.teamName,
             });
+            if (c.teamName === this.selectedTeamName) opt.selected = true;
+            select.appendChild(opt);
+        });
 
-            const chart = new Chart(lineCanvas, {
-                type: chartMode === "cumulative" ? "line" : "bar",
-                data: { labels: gps, datasets },
-                options: this.getChartOptions(chartMode === "cumulative" ? "Driver Points Comparison" : "Driver Points Per Round Comparison"),
-            });
-            this.charts.push(chart);
+        const updateDash = () => {
+            this.selectedTeamName = select.value;
+            const teamName = this.selectedTeamName;
+            const stats = this.calculateTeamStats(teamName);
+            const teamDrivers = this.data.drivers.filter((d) =>
+                d.raceResults?.some((r) => r.car === teamName),
+            );
 
-        } else if (chartMode === "gap" && driverStatsList.length >= 2) {
-            const st1 = driverStatsList[0].stats;
-            const baselineColor = getDriverColor(0);
+            if (!this.teamChartMode) this.teamChartMode = "points";
 
-            const datasets = [{
-                label: `${driverStatsList[0].name} (Baseline)`,
-                data: new Array(gps.length).fill(0),
-                borderColor: baselineColor,
-                backgroundColor: baselineColor,
-                borderWidth: 2,
-                pointRadius: 0,
-                fill: false,
-            }];
+            const togglePointsChart = this.el(
+                "div",
+                { className: "standings-sub-nav" },
+                this.el("button", {
+                    className: `standings-nav-btn ${this.teamChartMode === "points" ? "active" : ""}`,
+                    textContent: "Points Chart",
+                    onClick: () => {
+                        this.teamChartMode = "points";
+                        updateDash();
+                    },
+                }),
+                this.el("button", {
+                    className: `standings-nav-btn ${this.teamChartMode === "position" ? "active" : ""}`,
+                    textContent: "Position History",
+                    onClick: () => {
+                        this.teamChartMode = "position";
+                        updateDash();
+                    },
+                }),
+            );
 
-            for (let i = 1; i < driverStatsList.length; i++) {
-                const stCurr = driverStatsList[i].stats;
-                const gapData = st1.ptsHistory.map((val1, idx) => {
-                    const valCurr = stCurr.ptsHistory[idx] || 0;
-                    return Number((valCurr - val1).toFixed(2));
-                });
-                const colCurr = getDriverColor(i);
-
-                datasets.push({
-                    label: `${driverStatsList[i].name} vs ${driverStatsList[0].name} (Gap)`,
-                    data: gapData,
-                    borderColor: colCurr,
-                    backgroundColor: colCurr,
-                    borderWidth: 2,
-                    tension: 0.2,
-                    fill: false,
-                    borderDash: [5, 5]
-                });
+            let togglePointsSubNav = null;
+            if (this.teamChartMode === "points") {
+                togglePointsSubNav = this.el(
+                    "div",
+                    {
+                        className: "standings-sub-nav",
+                        style: { marginTop: "8px" },
+                    },
+                    this.el("button", {
+                        className: `standings-nav-btn ${this.teamPointChartMode === "cumulative" ? "active" : ""}`,
+                        textContent: "Cumulative Points",
+                        onClick: () => {
+                            this.teamPointChartMode = "cumulative";
+                            updateDash();
+                        },
+                    }),
+                    this.el("button", {
+                        className: `standings-nav-btn ${this.teamPointChartMode === "single" ? "active" : ""}`,
+                        textContent: "Points Per Round",
+                        onClick: () => {
+                            this.teamPointChartMode = "single";
+                            updateDash();
+                        },
+                    }),
+                );
             }
 
-            const backgroundZonesPlugin = {
-                id: 'backgroundZonesPlugin',
-                beforeDraw(chart) {
-                    const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-                    const zeroY = y.getPixelForValue(0);
+            const grid = this.el(
+                "div",
+                { className: "stats-grid" },
+                this.createStatCard("Total Points", stats.points),
+                this.createStatCard(
+                    "Championship Position",
+                    stats.championshipPosition === 1
+                        ? "1st"
+                        : stats.championshipPosition === 2
+                          ? "2nd"
+                          : stats.championshipPosition === 3
+                            ? "3rd"
+                            : stats.championshipPosition + "th",
+                ),
+                this.createStatCard("Wins", stats.wins),
+                this.createStatCard("Podiums", stats.podiums),
+                this.createStatCard("Top 10s", stats.top10),
+                this.createStatCard("Driver DNFs", stats.dnfs),
+                this.createStatCard("Pts / Race", stats.ptsPerRace),
+                this.createStatCard("Avg Driver Finish", stats.avgFinish),
+            );
 
-                    ctx.save();
-                    ctx.fillStyle = 'rgba(237, 17, 49, 0.3)';
-                    ctx.fillRect(left, top, right - left, Math.max(0, zeroY - top));
+            const chartsGrid = this.el("div", { className: "charts-grid" });
+            const lineCanvas = this.el("canvas");
 
-                    ctx.fillStyle = 'rgba(0, 230, 118, 0.3)';
-                    ctx.fillRect(left, Math.min(bottom, zeroY), right - left, Math.max(0, bottom - zeroY));
-                    ctx.restore();
-                }
+            const depBox = this.el("div", { className: "chart-box" });
+            depBox.style.display = "flex";
+            depBox.style.flexDirection = "column";
+            depBox.style.height = "100%";
+            depBox.style.minHeight = "0";
+            depBox.style.boxSizing = "border-box";
+            depBox.style.overflow = "hidden";
+
+            const cardTitle = document.createElement("h4");
+            cardTitle.textContent = "Driver Points Dependency";
+            cardTitle.style.color = this.textColor;
+            cardTitle.style.margin = "0 0 12px 0";
+            cardTitle.style.fontSize = "1.1rem";
+            cardTitle.style.fontWeight = "600";
+            cardTitle.style.textAlign = "center";
+            depBox.appendChild(cardTitle);
+
+            if (!this.depViewMode) this.depViewMode = "pie";
+
+            const depNav = document.createElement("div");
+            depNav.className = "standings-sub-nav";
+            depNav.style.margin = "0 0 10px 0";
+            depNav.style.padding = "0";
+            depNav.style.flexShrink = "0";
+
+            const btnBar = document.createElement("button");
+            btnBar.className = `standings-nav-btn ${this.depViewMode === "bar" ? "active" : ""}`;
+            btnBar.textContent = "Bar View";
+            btnBar.onclick = () => {
+                this.depViewMode = "bar";
+                updateDash();
             };
 
-            const chart = new Chart(lineCanvas, {
-                type: "line",
-                data: { labels: gps, datasets },
-                options: {
-                    ...this.getChartOptions(`Points Gap relative to ${driverStatsList[0].name}`),
-                    scales: {
-                        ...this.getChartOptions("").scales,
-                        y: {
-                            ...this.getChartOptions("").scales?.y,
-                            grid: {
-                                color: (context) => context.tick.value === 0 ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.1)'
-                            }
-                        }
-                    }
-                },
-                plugins: [backgroundZonesPlugin]
+            const btnPie = document.createElement("button");
+            btnPie.className = `standings-nav-btn ${this.depViewMode === "pie" ? "active" : ""}`;
+            btnPie.textContent = "Pie View";
+            btnPie.onclick = () => {
+                this.depViewMode = "pie";
+                updateDash();
+            };
+
+            depNav.appendChild(btnPie);
+            depNav.appendChild(btnBar);
+            depBox.appendChild(depNav);
+
+            const contentSplitter = document.createElement("div");
+            contentSplitter.style.display = "flex";
+            contentSplitter.style.flex = "1";
+            contentSplitter.style.minHeight = "0";
+            contentSplitter.style.gap = "16px";
+            contentSplitter.style.alignItems = "center";
+
+            const depPercDiv = this.el("div", {
+                className: "dependency-stats-container",
             });
-            this.charts.push(chart);
-        }
-    };
-    
-requestAnimationFrame(() => {
-        updateSubChart();
-    });
+            depPercDiv.style.flex = "1";
+            depPercDiv.style.minWidth = "0";
+            depPercDiv.style.display = "flex";
+            depPercDiv.style.flexDirection = "column";
+            depPercDiv.style.justifyContent = "center";
+            depPercDiv.style.padding = "0";
+            depPercDiv.style.boxSizing = "border-box";
 
-    const heatmapTitle = this.el("div", {
-        className: "stat-value",
-        style: {
-            fontSize: "1.2em",
-            marginTop: "25px",
-            marginBottom: "15px",
-            textAlign: "left",
-        },
-        textContent: `${namesString} Race Results`,
-    });
-    container.appendChild(heatmapTitle);
+            const canvasWrapper = document.createElement("div");
+            canvasWrapper.style.position = "relative";
+            canvasWrapper.style.flex = "1";
+            canvasWrapper.style.width = "100%";
+            canvasWrapper.style.height = "100%";
+            canvasWrapper.style.minHeight = "0";
+            canvasWrapper.style.minWidth = "0";
 
-    const originalDriversArray = driverStatsList.map(item => item.driver);
-    const heatmapComponent = this.createHeatmap(originalDriversArray, teamName);
-    if (heatmapComponent) {
-        container.appendChild(heatmapComponent);
-    }
+            const dynamicChartCanvas = this.el("canvas");
+            dynamicChartCanvas.style.position = "absolute";
+            dynamicChartCanvas.style.left = "0";
+            dynamicChartCanvas.style.top = "0";
+            dynamicChartCanvas.style.width = "100%";
+            dynamicChartCanvas.style.height = "100%";
 
-    return container;
-}
-    renderTeamDashboard() {
-    const select = this.el("select", { className: "selector-dropdown" });
-    this.data.constructors.forEach((c) => {
-        const opt = this.el("option", {
-            value: c.teamName,
-            textContent: c.teamName,
-        });
-        if (c.teamName === this.selectedTeamName) opt.selected = true;
-        select.appendChild(opt);
-    });
+            canvasWrapper.appendChild(dynamicChartCanvas);
 
-    const updateDash = () => {
-        this.selectedTeamName = select.value;
-        const teamName = this.selectedTeamName;
-        const stats = this.calculateTeamStats(teamName);
-        const teamDrivers = this.data.drivers.filter((d) =>
-            d.raceResults?.some((r) => r.car === teamName),
-        );
+            contentSplitter.appendChild(depPercDiv);
+            contentSplitter.appendChild(canvasWrapper);
+            depBox.appendChild(contentSplitter);
 
-        const togglePointsChart = this.el(
-            "div",
-            { className: "standings-sub-nav" },
-            this.el("button", {
-                className: `standings-nav-btn ${this.teamPointChartMode === "cumulative" ? "active" : ""}`,
-                textContent: "Cumulative Points",
-                onClick: () => {
-                    this.teamPointChartMode = "cumulative";
-                    updateDash();
-                },
-            }),
-            this.el("button", {
-                className: `standings-nav-btn ${this.teamPointChartMode === "single" ? "active" : ""}`,
-                textContent: "Points Per Round",
-                onClick: () => {
-                    this.teamPointChartMode = "single";
-                    updateDash();
-                },
-            }),
-        );
+            chartsGrid.appendChild(this.createChartBox(lineCanvas));
+            chartsGrid.appendChild(depBox);
+            chartsGrid.firstChild.style.gridColumn = "1 / -1";
+            chartsGrid.lastChild.style.gridColumn = "1 / -1";
+            chartsGrid.lastChild.style.minHeight = "300px";
 
-        const grid = this.el(
-            "div",
-            { className: "stats-grid" },
-            this.createStatCard("Total Points", stats.points),
-            this.createStatCard("Championship Position", stats.championshipPosition === 1 ? "1st" : stats.championshipPosition === 2 ? "2nd" : stats.championshipPosition === 3 ? "3rd" : stats.championshipPosition + "th"),
-            this.createStatCard("Wins", stats.wins),
-            this.createStatCard("Podiums", stats.podiums),
-            this.createStatCard("Top 10s", stats.top10),
-            this.createStatCard("Driver DNFs", stats.dnfs),
-            this.createStatCard("Pts / Race", stats.ptsPerRace),
-            this.createStatCard("Avg Driver Finish", stats.avgFinish),
-        );
+            const box = this.el("div", {
+                className: "stat-card",
+                style: { marginTop: "20px", textAlign: "left" },
+            });
 
-        const chartsGrid = this.el("div", { className: "charts-grid" });
-        const lineCanvas = this.el("canvas");
-
-        const depBox = this.el("div", { className: "chart-box" });
-        depBox.style.display = "flex";
-        depBox.style.flexDirection = "column";
-        depBox.style.height = "100%";
-        depBox.style.minHeight = "0";
-        depBox.style.boxSizing = "border-box";
-        depBox.style.overflow = "hidden";
-
-        const cardTitle = document.createElement("h4");
-        cardTitle.textContent = "Driver Points Dependency";
-        cardTitle.style.color = this.textColor;
-        cardTitle.style.margin = "0 0 12px 0";
-        cardTitle.style.fontSize = "1.1rem";
-        cardTitle.style.fontWeight = "600";
-        cardTitle.style.textAlign = "center";
-        depBox.appendChild(cardTitle);
-
-        if (!this.depViewMode) this.depViewMode = "pie";
-
-        const depNav = document.createElement("div");
-        depNav.className = "standings-sub-nav";
-        depNav.style.margin = "0 0 10px 0";
-        depNav.style.padding = "0";
-        depNav.style.flexShrink = "0";
-
-        const btnBar = document.createElement("button");
-        btnBar.className = `standings-nav-btn ${this.depViewMode === "bar" ? "active" : ""}`;
-        btnBar.textContent = "Bar View";
-        btnBar.onclick = () => {
-            this.depViewMode = "bar";
-            updateDash();
-        };
-
-        const btnPie = document.createElement("button");
-        btnPie.className = `standings-nav-btn ${this.depViewMode === "pie" ? "active" : ""}`;
-        btnPie.textContent = "Pie View";
-        btnPie.onclick = () => {
-            this.depViewMode = "pie";
-            updateDash();
-        };
-
-        depNav.appendChild(btnPie);
-        depNav.appendChild(btnBar);
-        depBox.appendChild(depNav);
-
-        const contentSplitter = document.createElement("div");
-        contentSplitter.style.display = "flex";
-        contentSplitter.style.flex = "1";
-        contentSplitter.style.minHeight = "0";
-        contentSplitter.style.gap = "16px";
-        contentSplitter.style.alignItems = "center";
-
-        const depPercDiv = this.el("div", {
-            className: "dependency-stats-container",
-        });
-        depPercDiv.style.flex = "1";
-        depPercDiv.style.minWidth = "0";
-        depPercDiv.style.display = "flex";
-        depPercDiv.style.flexDirection = "column";
-        depPercDiv.style.justifyContent = "center";
-        depPercDiv.style.padding = "0";
-        depPercDiv.style.boxSizing = "border-box";
-
-        const canvasWrapper = document.createElement("div");
-        canvasWrapper.style.position = "relative";
-        canvasWrapper.style.flex = "1";
-        canvasWrapper.style.width = "100%";
-        canvasWrapper.style.height = "100%";
-        canvasWrapper.style.minHeight = "0";
-        canvasWrapper.style.minWidth = "0";
-
-        const dynamicChartCanvas = this.el("canvas");
-        dynamicChartCanvas.style.position = "absolute";
-        dynamicChartCanvas.style.left = "0";
-        dynamicChartCanvas.style.top = "0";
-        dynamicChartCanvas.style.width = "100%";
-        dynamicChartCanvas.style.height = "100%";
-
-        canvasWrapper.appendChild(dynamicChartCanvas);
-
-        contentSplitter.appendChild(depPercDiv);
-        contentSplitter.appendChild(canvasWrapper);
-        depBox.appendChild(contentSplitter);
-
-        chartsGrid.appendChild(this.createChartBox(lineCanvas));
-        chartsGrid.appendChild(depBox);
-        chartsGrid.firstChild.style.gridColumn = "1 / -1";
-        chartsGrid.lastChild.style.gridColumn = "1 / -1";
-        chartsGrid.lastChild.style.minHeight = "300px";
-
-        const box = this.el("div", {
-            className: "stat-card",
-            style: { marginTop: "20px", textAlign: "left" },
-        });
-        
-        const teammateComp = this.createTeammateComparison(
-            teamDrivers,
-            teamName,
-        );
-
-        box.appendChild(teammateComp);
-
-        const dashContainer = this.el(
-            "div",
-            { id: "team-dash-content" },
-            togglePointsChart,
-            grid,
-            chartsGrid,
-            box,
-        );
-        const existing = document.getElementById("team-dash-content");
-        if (existing) existing.replaceWith(dashContainer);
-        else this.contentWrapper.appendChild(dashContainer);
-
-        this.destroyCharts();
-
-        const gps = this.getAllGrandsPrix();
-        const color = this.getTeamColor(teamName);
-        const avgVal = parseFloat(stats.ptsPerRace);
-
-        if (this.teamPointChartMode === "cumulative") {
-            const cumAvgLineData = gps.map((_, idx) => (idx + 1) * avgVal);
-
-            this.charts.push(
-                new Chart(lineCanvas, {
-                    type: "line",
-                    data: {
-                        labels: gps,
-                        datasets: [
-                            {
-                                label: `${teamName} Points`,
-                                data: stats.ptsHistory,
-                                borderColor: color,
-                                backgroundColor: color,
-                                tension: 0.2,
-                                fill: false,
-                            },
-                            {
-                                label: `Avg Trajectory (${avgVal}/race)`,
-                                data: cumAvgLineData,
-                                borderColor: "#ED1131",
-                                borderWidth: 2,
-                                borderDash: [5, 5],
-                                pointRadius: 0,
-                                fill: false,
-                            },
-                        ],
-                    },
-                    options: this.getChartOptions(
-                        "Cumulative Points Progression",
-                    ),
-                }),
+            const teammateComp = this.createTeammateComparison(
+                teamDrivers,
+                teamName,
             );
-        } else {
-            const avgLineData = gps.map(() => avgVal);
 
-            this.charts.push(
-                new Chart(lineCanvas, {
-                    type: "bar",
-                    data: {
-                        labels: gps,
-                        datasets: [
-                            {
-                                type: "bar",
-                                label: "Points Scored",
-                                data: stats.singlePtsHistory,
-                                backgroundColor: color,
-                            },
-                            {
-                                type: "line",
-                                label: `Avg Pts/Race (${avgVal})`,
-                                data: avgLineData,
-                                borderColor: "#ED1131",
-                                borderWidth: 2,
-                                borderDash: [5, 5],
-                                pointRadius: 0,
-                                fill: false,
-                            },
-                        ],
-                    },
-                    options: this.getChartOptions(
-                        "Points Per Round & Average",
-                    ),
-                }),
+            box.appendChild(teammateComp);
+
+            const dashChildren = [togglePointsChart];
+            if (togglePointsSubNav) dashChildren.push(togglePointsSubNav);
+            dashChildren.push(grid, chartsGrid, box);
+
+            const dashContainer = this.el(
+                "div",
+                { id: "team-dash-content" },
+                ...dashChildren,
             );
-        }
+            const existing = document.getElementById("team-dash-content");
+            if (existing) existing.replaceWith(dashContainer);
+            else this.contentWrapper.appendChild(dashContainer);
 
-        const driverNames = Object.keys(stats.drivers);
-        const driverPts = Object.values(stats.drivers);
-        const driverShades = this.getDriverShades(
-            color,
-            driverNames.length,
-        );
+            this.destroyCharts();
 
-        const driverPcts = driverPts.map((p) =>
-            stats.points > 0 ? ((p / stats.points) * 100).toFixed(1) : 0,
-        );
+            const gps = this.getAllGrandsPrix();
+            const color = this.getTeamColor(teamName);
+            const avgVal = parseFloat(stats.ptsPerRace);
 
-        const maxPtsIndex = driverPts.indexOf(Math.max(...driverPts));
+            if (this.teamChartMode === "position") {
+                const numTeams = this.data.constructors
+                    ? this.data.constructors.length
+                    : 10;
+                this.charts.push(
+                    new Chart(lineCanvas, {
+                        type: "line",
+                        data: {
+                            labels: gps,
+                            datasets: [
+                                {
+                                    label: `${teamName} Position`,
+                                    data: stats.championshipPositionHistory,
+                                    borderColor: color,
+                                    backgroundColor: color,
+                                    tension: 0.2,
+                                    fill: false,
+                                },
+                            ],
+                        },
+                        options: {
+                            ...this.getChartOptions(
+                                "Championship Position Progression",
+                            ),
+                            scales: {
+                                y: {
+                                    reverse: true,
+                                    min: 1,
+                                    max: numTeams,
+                                    ticks: {
+                                        stepSize: 1,
+                                        color: this.textColor,
+                                    },
+                                    grid: { color: this.gridColor },
+                                },
+                                x: {
+                                    ticks: { color: this.textColor },
+                                    grid: { color: this.gridColor },
+                                },
+                            },
+                        },
+                    }),
+                );
+            } else if (this.teamPointChartMode === "cumulative") {
+                const cumAvgLineData = gps.map((_, idx) => (idx + 1) * avgVal);
 
-        const depList = document.createElement("div");
-        depList.style.display = "flex";
-        depList.style.flexDirection = "column";
-        depList.style.gap = "10px";
-
-        driverNames.forEach((name, index) => {
-            const isTopDriver = index === maxPtsIndex;
-
-            const depItem = document.createElement("div");
-            depItem.style.display = "flex";
-            depItem.style.flexDirection = "column";
-            depItem.style.gap = "4px";
-
-            const headerRow = document.createElement("div");
-            headerRow.style.display = "flex";
-            headerRow.style.justifyContent = "space-between";
-            headerRow.style.alignItems = "center";
-
-            const nameSpan = document.createElement("span");
-            nameSpan.textContent = name;
-            nameSpan.style.color = this.textColor;
-
-            if (isTopDriver) {
-                nameSpan.style.fontWeight = "900";
-                nameSpan.style.fontSize = "1.05rem";
-                nameSpan.style.textShadow = `0 0 8px ${driverShades[index]}88`;
+                this.charts.push(
+                    new Chart(lineCanvas, {
+                        type: "line",
+                        data: {
+                            labels: gps,
+                            datasets: [
+                                {
+                                    label: `${teamName} Points`,
+                                    data: stats.ptsHistory,
+                                    borderColor: color,
+                                    backgroundColor: color,
+                                    tension: 0.2,
+                                    fill: false,
+                                },
+                                {
+                                    label: `Avg Trajectory (${avgVal}/race)`,
+                                    data: cumAvgLineData,
+                                    borderColor: "#ED1131",
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    pointRadius: 0,
+                                    fill: false,
+                                },
+                            ],
+                        },
+                        options: this.getChartOptions(
+                            "Cumulative Points Progression",
+                        ),
+                    }),
+                );
             } else {
-                nameSpan.style.fontWeight = "400";
+                const avgLineData = gps.map(() => avgVal);
+
+                this.charts.push(
+                    new Chart(lineCanvas, {
+                        type: "bar",
+                        data: {
+                            labels: gps,
+                            datasets: [
+                                {
+                                    type: "bar",
+                                    label: "Points Scored",
+                                    data: stats.singlePtsHistory,
+                                    backgroundColor: color,
+                                },
+                                {
+                                    type: "line",
+                                    label: `Avg Pts/Race (${avgVal})`,
+                                    data: avgLineData,
+                                    borderColor: "#ED1131",
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    pointRadius: 0,
+                                    fill: false,
+                                },
+                            ],
+                        },
+                        options: this.getChartOptions(
+                            "Points Per Round & Average",
+                        ),
+                    }),
+                );
             }
 
-            const valSpan = document.createElement("span");
-            valSpan.textContent = `${driverPcts[index]}% (${driverPts[index]} pts)`;
-            valSpan.style.color = this.textColor;
-            valSpan.style.fontWeight = isTopDriver ? "900" : "600";
-            if (isTopDriver) {
-                valSpan.style.fontSize = "1.05rem";
+            const driverNames = Object.keys(stats.drivers);
+            const driverPts = Object.values(stats.drivers);
+            const driverShades = this.getDriverShades(
+                color,
+                driverNames.length,
+            );
+
+            const driverPcts = driverPts.map((p) =>
+                stats.points > 0 ? ((p / stats.points) * 100).toFixed(1) : 0,
+            );
+
+            const maxPtsIndex = driverPts.indexOf(Math.max(...driverPts));
+
+            const depList = document.createElement("div");
+            depList.style.display = "flex";
+            depList.style.flexDirection = "column";
+            depList.style.gap = "10px";
+
+            driverNames.forEach((name, index) => {
+                const isTopDriver = index === maxPtsIndex;
+
+                const depItem = document.createElement("div");
+                depItem.style.display = "flex";
+                depItem.style.flexDirection = "column";
+                depItem.style.gap = "4px";
+
+                const headerRow = document.createElement("div");
+                headerRow.style.display = "flex";
+                headerRow.style.justifyContent = "space-between";
+                headerRow.style.alignItems = "center";
+
+                const nameSpan = document.createElement("span");
+                nameSpan.textContent = name;
+                nameSpan.style.color = this.textColor;
+
+                if (isTopDriver) {
+                    nameSpan.style.fontWeight = "900";
+                    nameSpan.style.fontSize = "1.05rem";
+                    nameSpan.style.textShadow = `0 0 8px ${driverShades[index]}88`;
+                } else {
+                    nameSpan.style.fontWeight = "400";
+                }
+
+                const valSpan = document.createElement("span");
+                valSpan.textContent = `${driverPcts[index]}% (${driverPts[index]} pts)`;
+                valSpan.style.color = this.textColor;
+                valSpan.style.fontWeight = isTopDriver ? "900" : "600";
+                if (isTopDriver) {
+                    valSpan.style.fontSize = "1.05rem";
+                }
+
+                headerRow.appendChild(nameSpan);
+                headerRow.appendChild(valSpan);
+
+                const progressBarBg = document.createElement("div");
+                progressBarBg.style.width = "100%";
+                progressBarBg.style.height = "8px";
+                progressBarBg.style.backgroundColor =
+                    "rgba(255, 255, 255, 0.1)";
+                progressBarBg.style.borderRadius = "4px";
+                progressBarBg.style.overflow = "hidden";
+
+                const progressBarFill = document.createElement("div");
+                progressBarFill.style.width = `${driverPcts[index]}%`;
+                progressBarFill.style.height = "100%";
+                progressBarFill.style.backgroundColor = driverShades[index];
+                progressBarFill.style.borderRadius = "4px";
+                progressBarFill.style.transition = "width 0.4s ease";
+
+                progressBarBg.appendChild(progressBarFill);
+                depItem.appendChild(headerRow);
+                depItem.appendChild(progressBarBg);
+                depList.appendChild(depItem);
+            });
+
+            depPercDiv.appendChild(depList);
+
+            if (this.depViewMode === "bar") {
+                this.charts.push(
+                    new Chart(dynamicChartCanvas, {
+                        type: "bar",
+                        data: {
+                            labels: driverNames,
+                            datasets: [
+                                {
+                                    label: "% of Team Points",
+                                    data: driverPcts,
+                                    backgroundColor: driverShades,
+                                    borderRadius: 6,
+                                },
+                            ],
+                        },
+                        options: {
+                            indexAxis: "y",
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                title: {
+                                    display: true,
+                                    text: "Drivers points (%)",
+                                    color: this.textColor,
+                                },
+                                zoom: true,
+                            },
+                            scales: {
+                                x: {
+                                    min: 0,
+                                    max: 100,
+                                    ticks: { color: this.textColor },
+                                    grid: { color: this.gridColor },
+                                },
+                                y: {
+                                    ticks: { color: this.textColor },
+                                    grid: { color: this.gridColor },
+                                },
+                            },
+                        },
+                        plugins: [
+                            {
+                                id: "thresholdLine",
+                                afterDraw: (chart) => {
+                                    const xAxis = chart.scales.x;
+                                    const yAxis = chart.scales.y;
+                                    if (!xAxis) return;
+                                    const xPos = xAxis.getPixelForValue(50);
+                                    const ctx = chart.ctx;
+                                    ctx.save();
+                                    ctx.beginPath();
+                                    ctx.setLineDash([5, 5]);
+                                    ctx.strokeStyle = "#ED1131";
+                                    ctx.lineWidth = 2;
+                                    ctx.moveTo(xPos, yAxis.top);
+                                    ctx.lineTo(xPos, yAxis.bottom);
+                                    ctx.stroke();
+                                    ctx.restore();
+                                },
+                            },
+                        ],
+                    }),
+                );
+            } else {
+                this.charts.push(
+                    new Chart(dynamicChartCanvas, {
+                        type: "doughnut",
+                        data: {
+                            labels: driverNames,
+                            datasets: [
+                                {
+                                    data: driverPts,
+                                    backgroundColor: driverShades,
+                                    borderColor: this.cardBg,
+                                    borderWidth: 2,
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { labels: { color: this.textColor } },
+                                title: {
+                                    display: true,
+                                    text: "Points Distribution (points)",
+                                    color: this.textColor,
+                                },
+                                zoom: false,
+                            },
+                        },
+                    }),
+                );
             }
+        };
 
-            headerRow.appendChild(nameSpan);
-            headerRow.appendChild(valSpan);
-
-            const progressBarBg = document.createElement("div");
-            progressBarBg.style.width = "100%";
-            progressBarBg.style.height = "8px";
-            progressBarBg.style.backgroundColor =
-                "rgba(255, 255, 255, 0.1)";
-            progressBarBg.style.borderRadius = "4px";
-            progressBarBg.style.overflow = "hidden";
-
-            const progressBarFill = document.createElement("div");
-            progressBarFill.style.width = `${driverPcts[index]}%`;
-            progressBarFill.style.height = "100%";
-            progressBarFill.style.backgroundColor = driverShades[index];
-            progressBarFill.style.borderRadius = "4px";
-            progressBarFill.style.transition = "width 0.4s ease";
-
-            progressBarBg.appendChild(progressBarFill);
-            depItem.appendChild(headerRow);
-            depItem.appendChild(progressBarBg);
-            depList.appendChild(depItem);
-        });
-
-        depPercDiv.appendChild(depList);
-
-        if (this.depViewMode === "bar") {
-            this.charts.push(
-                new Chart(dynamicChartCanvas, {
-                    type: "bar",
-                    data: {
-                        labels: driverNames,
-                        datasets: [
-                            {
-                                label: "% of Team Points",
-                                data: driverPcts,
-                                backgroundColor: driverShades,
-                                borderRadius: 6,
-                            },
-                        ],
-                    },
-                    options: {
-                        indexAxis: "y",
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            title: {
-                                display: true,
-                                text: "Drivers points (%)",
-                                color: this.textColor,
-                            },
-                            zoom: true,
-                        },
-                        scales: {
-                            x: {
-                                min: 0,
-                                max: 100,
-                                ticks: { color: this.textColor },
-                                grid: { color: this.gridColor },
-                            },
-                            y: {
-                                ticks: { color: this.textColor },
-                                grid: { color: this.gridColor },
-                            },
-                        },
-                    },
-                    plugins: [
-                        {
-                            id: "thresholdLine",
-                            afterDraw: (chart) => {
-                                const xAxis = chart.scales.x;
-                                const yAxis = chart.scales.y;
-                                if (!xAxis) return;
-                                const xPos = xAxis.getPixelForValue(50);
-                                const ctx = chart.ctx;
-                                ctx.save();
-                                ctx.beginPath();
-                                ctx.setLineDash([5, 5]);
-                                ctx.strokeStyle = "#ED1131";
-                                ctx.lineWidth = 2;
-                                ctx.moveTo(xPos, yAxis.top);
-                                ctx.lineTo(xPos, yAxis.bottom);
-                                ctx.stroke();
-                                ctx.restore();
-                            },
-                        },
-                    ],
-                }),
-            );
-        } else {
-            this.charts.push(
-                new Chart(dynamicChartCanvas, {
-                    type: "doughnut",
-                    data: {
-                        labels: driverNames,
-                        datasets: [
-                            {
-                                data: driverPts,
-                                backgroundColor: driverShades,
-                                borderColor: this.cardBg,
-                                borderWidth: 2,
-                            },
-                        ],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { labels: { color: this.textColor } },
-                            title: {
-                                display: true,
-                                text: "Points Distribution (points)",
-                                color: this.textColor,
-                            },
-                            zoom: false,
-                        },
-                    },
-                }),
-            );
-        }
-    };
-
-    select.addEventListener("change", updateDash);
-    this.contentWrapper.appendChild(
-        this.el(
-            "div",
-            { className: "selector-container" },
-            this.el("span", { textContent: "Select Team:" }),
-            select,
-        ),
-    );
-    if (this.data.constructors.length) updateDash();
-}
+        select.addEventListener("change", updateDash);
+        this.contentWrapper.appendChild(
+            this.el(
+                "div",
+                { className: "selector-container" },
+                this.el("span", { textContent: "Select Team:" }),
+                select,
+            ),
+        );
+        if (this.data.constructors.length) updateDash();
+    }
 
     renderCompareDriversView() {
         if (!this.data || !this.data.drivers) return;
@@ -2819,14 +3225,33 @@ requestAnimationFrame(() => {
             };
 
             grid.appendChild(createRow("Total Points", st1.points, st2.points));
-            grid.appendChild(createRow("Championship Position", st1.championshipPosition === 1 ? "1st" : st1.championshipPosition === 2 ? "2nd" : st1.championshipPosition === 3 ? "3rd" : st1.championshipPosition + "th", st2.championshipPosition === 1 ? "1st" : st2.championshipPosition === 2 ? "2nd" : st2.championshipPosition === 3 ? "3rd" : st2.championshipPosition + "th", true));
+            grid.appendChild(
+                createRow(
+                    "Championship Position",
+                    st1.championshipPosition === 1
+                        ? "1st"
+                        : st1.championshipPosition === 2
+                          ? "2nd"
+                          : st1.championshipPosition === 3
+                            ? "3rd"
+                            : st1.championshipPosition + "th",
+                    st2.championshipPosition === 1
+                        ? "1st"
+                        : st2.championshipPosition === 2
+                          ? "2nd"
+                          : st2.championshipPosition === 3
+                            ? "3rd"
+                            : st2.championshipPosition + "th",
+                    true,
+                ),
+            );
             grid.appendChild(createRow("H2H Race Finishes", h2h1, h2h2));
             grid.appendChild(createRow("Wins", st1.wins, st2.wins));
             grid.appendChild(createRow("Podiums", st1.podiums, st2.podiums));
             grid.appendChild(createRow("Top 5s", st1.top5, st2.top5));
             grid.appendChild(createRow("Top 10s", st1.top10, st2.top10));
             grid.appendChild(
-                createRow("Best Finish", st1.best, st2.best, true),
+                createRow("Best Finish", st1.best === 1 ? "1st" : st1.best === 2 ? "2nd" : st1.best === 3 ? "3rd" : isNaN(st1.best) ? st1.best : st1.best + "th", st2.best === 1 ? "1st" : st2.best === 2 ? "2nd" : st2.best === 3 ? "3rd" : isNaN(st2.best) ? st2.best : st2.best + "th", true),
             );
             grid.appendChild(
                 createRow("Avg Finish", st1.avgPos, st2.avgPos, true),
@@ -2838,9 +3263,7 @@ requestAnimationFrame(() => {
             grid.appendChild(
                 createRow("Pts / Race", st1.ptsPerRace, st2.ptsPerRace),
             );
-            grid.appendChild(
-                createRow("Races", st1.races, st2.races),
-            );
+            grid.appendChild(createRow("Races", st1.races, st2.races));
 
             const compareBoxTitle = this.el("div", {
                 className: "stat-value",
@@ -3205,19 +3628,33 @@ requestAnimationFrame(() => {
                 });
 
                 const backgroundZonesPlugin = {
-                    id: 'backgroundZonesPlugin',
+                    id: "backgroundZonesPlugin",
                     beforeDraw(chart) {
-                        const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
+                        const {
+                            ctx,
+                            chartArea: { top, bottom, left, right },
+                            scales: { y },
+                        } = chart;
                         const zeroY = y.getPixelForValue(0);
 
                         ctx.save();
-                        ctx.fillStyle = 'rgba(0, 230, 118, 0.3)';
-                        ctx.fillRect(left, top, right - left, Math.max(0, zeroY - top));
+                        ctx.fillStyle = "rgba(0, 230, 118, 0.3)";
+                        ctx.fillRect(
+                            left,
+                            top,
+                            right - left,
+                            Math.max(0, zeroY - top),
+                        );
 
-                        ctx.fillStyle = 'rgba(237, 17, 49, 0.3)';
-                        ctx.fillRect(left, Math.min(bottom, zeroY), right - left, Math.max(0, bottom - zeroY));
+                        ctx.fillStyle = "rgba(237, 17, 49, 0.3)";
+                        ctx.fillRect(
+                            left,
+                            Math.min(bottom, zeroY),
+                            right - left,
+                            Math.max(0, bottom - zeroY),
+                        );
                         ctx.restore();
-                    }
+                    },
                 };
 
                 const chart = new Chart(lineCanvas, {
@@ -3242,22 +3679,27 @@ requestAnimationFrame(() => {
                                 borderWidth: 2,
                                 tension: 0.2,
                                 fill: false,
-                            }
+                            },
                         ],
                     },
                     options: {
-                        ...this.getChartOptions(`Points Gap: ${d2.driverName} relative to ${d1.driverName}`),
+                        ...this.getChartOptions(
+                            `Points Gap: ${d2.driverName} relative to ${d1.driverName}`,
+                        ),
                         scales: {
                             ...this.getChartOptions("").scales,
                             y: {
                                 ...this.getChartOptions("").scales?.y,
                                 grid: {
-                                    color: (context) => context.tick.value === 0 ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.1)'
-                                }
-                            }
-                        }
+                                    color: (context) =>
+                                        context.tick.value === 0
+                                            ? "rgba(255, 255, 255, 0.4)"
+                                            : "rgba(255, 255, 255, 0.1)",
+                                },
+                            },
+                        },
                     },
-                    plugins: [backgroundZonesPlugin]
+                    plugins: [backgroundZonesPlugin],
                 });
                 this.charts.push(chart);
             }
@@ -3357,11 +3799,31 @@ requestAnimationFrame(() => {
             };
 
             grid.appendChild(createRow("Total Points", st1.points, st2.points));
-            grid.appendChild(createRow("Championship Position", st1.championshipPosition === 1 ? "1st" : st1.championshipPosition === 2 ? "2nd" : st1.championshipPosition === 3 ? "3rd" : st1.championshipPosition + "th", st2.championshipPosition === 1 ? "1st" : st2.championshipPosition === 2 ? "2nd" : st2.championshipPosition === 3 ? "3rd" : st2.championshipPosition + "th", true));
+            grid.appendChild(
+                createRow(
+                    "Championship Position",
+                    st1.championshipPosition === 1
+                        ? "1st"
+                        : st1.championshipPosition === 2
+                          ? "2nd"
+                          : st1.championshipPosition === 3
+                            ? "3rd"
+                            : st1.championshipPosition + "th",
+                    st2.championshipPosition === 1
+                        ? "1st"
+                        : st2.championshipPosition === 2
+                          ? "2nd"
+                          : st2.championshipPosition === 3
+                            ? "3rd"
+                            : st2.championshipPosition + "th",
+                    true,
+                ),
+            );
             grid.appendChild(createRow("Wins", st1.wins, st2.wins));
             grid.appendChild(createRow("Podiums", st1.podiums, st2.podiums));
             grid.appendChild(createRow("Top 5s", st1.top5, st2.top5));
             grid.appendChild(createRow("Top 10s", st1.top10, st2.top10));
+            grid.appendChild(createRow("Best Finish", st1.best === 1 ? "1st" : st1.best === 2 ? "2nd" : st1.best === 3 ? "3rd" : isNaN(st1.best) ? st1.best : st1.best + "th", st2.best === 1 ? "1st" : st2.best === 2 ? "2nd" : st2.best === 3 ? "3rd" : isNaN(st2.best) ? st2.best : st2.best + "th", true));
             grid.appendChild(
                 createRow(
                     "Avg Driver Finish",
@@ -3499,19 +3961,33 @@ requestAnimationFrame(() => {
                 });
 
                 const backgroundZonesPlugin = {
-                    id: 'backgroundZonesPlugin',
+                    id: "backgroundZonesPlugin",
                     beforeDraw(chart) {
-                        const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
+                        const {
+                            ctx,
+                            chartArea: { top, bottom, left, right },
+                            scales: { y },
+                        } = chart;
                         const zeroY = y.getPixelForValue(0);
 
                         ctx.save();
-                        ctx.fillStyle = 'rgba(237, 17, 49, 0.3)';
-                        ctx.fillRect(left, top, right - left, Math.max(0, zeroY - top));
+                        ctx.fillStyle = "rgba(237, 17, 49, 0.3)";
+                        ctx.fillRect(
+                            left,
+                            top,
+                            right - left,
+                            Math.max(0, zeroY - top),
+                        );
 
-                        ctx.fillStyle = 'rgba(0, 230, 118, 0.3)';
-                        ctx.fillRect(left, Math.min(bottom, zeroY), right - left, Math.max(0, bottom - zeroY));
+                        ctx.fillStyle = "rgba(0, 230, 118, 0.3)";
+                        ctx.fillRect(
+                            left,
+                            Math.min(bottom, zeroY),
+                            right - left,
+                            Math.max(0, bottom - zeroY),
+                        );
                         ctx.restore();
-                    }
+                    },
                 };
 
                 const chart = new Chart(lineCanvas, {
@@ -3536,22 +4012,27 @@ requestAnimationFrame(() => {
                                 borderWidth: 2,
                                 tension: 0.2,
                                 fill: false,
-                            }
+                            },
                         ],
                     },
                     options: {
-                        ...this.getChartOptions(`Points Gap: ${c2.teamName} relative to ${c1.teamName}`),
+                        ...this.getChartOptions(
+                            `Points Gap: ${c2.teamName} relative to ${c1.teamName}`,
+                        ),
                         scales: {
                             ...this.getChartOptions("").scales,
                             y: {
                                 ...this.getChartOptions("").scales?.y,
                                 grid: {
-                                    color: (context) => context.tick.value === 0 ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.1)'
-                                }
-                            }
-                        }
+                                    color: (context) =>
+                                        context.tick.value === 0
+                                            ? "rgba(255, 255, 255, 0.4)"
+                                            : "rgba(255, 255, 255, 0.1)",
+                                },
+                            },
+                        },
                     },
-                    plugins: [backgroundZonesPlugin]
+                    plugins: [backgroundZonesPlugin],
                 });
                 this.charts.push(chart);
             }
@@ -3836,7 +4317,9 @@ requestAnimationFrame(() => {
                 {},
                 this.el("th", { textContent: "Driver" }),
                 ...gps.map((gp) =>
-                    this.el("th", { textContent: gp.substring(0, 3).toUpperCase() }),
+                    this.el("th", {
+                        textContent: gp.substring(0, 3).toUpperCase(),
+                    }),
                 ),
             ),
         );
