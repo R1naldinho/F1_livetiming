@@ -130,8 +130,6 @@ function createLiveTimingLoader() {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--bg-color, #0b0b0b);
-        color: #fff;
         font-family: Arial, sans-serif;
         transition: opacity .35s ease, visibility .35s ease;
     `;
@@ -430,6 +428,7 @@ async function prepareLiveTimingPage() {
         await ui.updateSession(sessionInfo);
 
         const elapsed = performance.now() - loaderStartedAt;
+        
         if (elapsed < 2000) {
             await new Promise((resolve) => setTimeout(resolve, 2000 - elapsed));
         }
