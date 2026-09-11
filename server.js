@@ -69,7 +69,7 @@ let calendarScrapingPromise = null;
 
 const cleanText = (str) => {
     if (!str) return "";
-    return str
+    return String(str)
         .replace(/^Flag of\s+/i, "")
         .replace(/\s+/g, " ")
         .trim();
@@ -202,7 +202,8 @@ const scrapeStandings = async () => {
                                                 : "";
 
                                             if (grandPrixClean && flagImage) {
-                                                gpFlagMap[grandPrixClean] = flagImage;
+                                                gpFlagMap[grandPrixClean] =
+                                                    flagImage;
                                             }
 
                                             results.push({
@@ -365,114 +366,243 @@ const scrapeStandings = async () => {
     }
 };
 
-const scrapeCircuitDetail = async (url) => {
-    try {
-        const { data } = await axios.get(url, {
-            headers: { "User-Agent": "Mozilla/5.0" },
-        });
-        const $ = cheerio.load(data);
+const cleanTextCircuit = (str) => {
+    if (!str) return "";
+    return String(str).replace(/\s+/g, " ").trim();
+};
 
-        const circuitName = cleanText($("h1").first().text());
-        const circuitMapTag = $("img[src*='circuit'], img[src*='card'], img[src*='races']").first();
-        const rawMap = circuitMapTag.attr("src") || circuitMapTag.attr("data-src") || "";
-        const circuitMap = rawMap
-            ? rawMap.startsWith("http")
-                ? rawMap
-                : `https://www.formula1.com${rawMap}`
+const F1_HEADERS = {
+    "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+};
+
+const extractScalarField = (html, key) => {
+    const regex = new RegExp('\\\\"' + key + '\\\\":\\\\"((?:[^\\\\"]|\\\\.|<[^>]*>)*?)\\\\"');
+    const match = html.match(regex);
+    
+    if (!match) return "";
+
+    return match[1]
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/\\?"]\)\s*(?:self\.__next_f\.push\(\[1,")?/gi, '')
+        .replace(/\\u003C/gi, '<')
+        .replace(/\\u003E/gi, '>')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\')
+        .trim();
+};
+
+const scrapeRaceWeekend = async (url) => {
+    try {
+        const { data: html } = await axios.get(url, { headers: F1_HEADERS });
+
+        let sessions = [];
+        const sessionsMatch = html.match(/\\"meetingSessions\\":\[(.*?)\]/);
+        if (sessionsMatch) {
+            try {
+                const jsonText =
+                    "[" + sessionsMatch[1].replace(/\\"/g, '"') + "]";
+                const parsed = JSON.parse(jsonText);
+                sessions = parsed.map((s) => ({
+                    session: s.session || "",
+                    shortName: s.shortName || "",
+                    name: s.description || "",
+                    startTime: s.startTime || "",
+                    endTime: s.endTime || "",
+                    gmtOffset: s.gmtOffset || "",
+                    timezone: s.timezone || "",
+                    state: s.state || "",
+                    sessionType: s.sessionType || "",
+                    sessionNumber: s.sessionNumber ?? null,
+                }));
+            } catch (e) {
+                sessions = [];
+            }
+        }
+
+        const laps = extractScalarField(html, "scheduledLapCount");
+        const distanceKm = extractScalarField(html, "scheduledDistance");
+        const trackLengthKm = extractScalarField(html, "trackLength");
+        const rawCircuitName = extractScalarField(html, "circuitOfficialName");
+        const circuitOfficialName = rawCircuitName
+            ? rawCircuitName.replace(
+                  /\\?"]\)\s*<\/?script[^>]*>\s*(?:self\.__next_f\.push\(\[1,")?/gi,
+                  "",
+              )
+            : "";
+        const circuitLocation = extractScalarField(html, "circuitLocation");
+        const circuitType = extractScalarField(html, "circuitType");
+        const direction = extractScalarField(html, "direction");
+        const fastestLapTime = extractScalarField(html, "fastestLapTime");
+        const fastestLapDriver = extractScalarField(html, "fastestLapDriver");
+        const fastestLapTeam = extractScalarField(html, "fastestLapTeam");
+        const fastestLapSeason = extractScalarField(html, "fastestLapSeason");
+
+        const mapMatch = html.match(
+            /\\"circuitMapImage\\":\{[^}]*?\\"url\\":\\"([^\\]*)\\"/,
+        );
+        const mapImage = mapMatch ? mapMatch[1] : "";
+
+        const outlineMatch = html.match(
+            /\\"circuitImage\\":\{\\"public_id\\":\\"([^\\]*)\\"/,
+        );
+        const outlineImage = outlineMatch
+            ? `https://media.formula1.com/image/upload/${outlineMatch[1]}.svg`
             : "";
 
-        const stats = {};
-        $("dl, table, [class*='stat'], [class*='circuit']").each((_, el) => {
-            const key = cleanText($(el).find("dt, th, [class*='label']").first().text());
-            const val = cleanText($(el).find("dd, td, [class*='value']").first().text());
-            if (key && val) {
-                stats[key] = val;
-            }
-        });
+        const weekendStart = sessions.length > 0 ? sessions[0].startTime : "";
+        const weekendEnd =
+            sessions.length > 0 ? sessions[sessions.length - 1].endTime : "";
 
         return {
-            circuitName,
-            circuitMap,
-            stats,
+            laps: laps ? Number(laps) : null,
+            distanceKm: distanceKm ? Number(distanceKm) : null,
+            trackLengthKm: trackLengthKm ? Number(trackLengthKm) : null,
+            circuitOfficialName: cleanTextCircuit(circuitOfficialName),
+            circuitLocation: cleanTextCircuit(circuitLocation),
+            circuitType: cleanTextCircuit(circuitType),
+            direction: cleanTextCircuit(direction),
+            fastestLap: {
+                time: fastestLapTime || null,
+                driver: fastestLapDriver || null,
+                team: fastestLapTeam || null,
+                season: fastestLapSeason || null,
+            },
+            mapImage,
+            outlineImage,
+            weekendStart,
+            weekendEnd,
+            sessions,
         };
-    } catch (err) {
-        return null;
+    } catch (error) {
+        return {
+            laps: null,
+            distanceKm: null,
+            trackLengthKm: null,
+            circuitOfficialName: "",
+            circuitLocation: "",
+            circuitType: "",
+            direction: "",
+            fastestLap: { time: null, driver: null, team: null, season: null },
+            mapImage: "",
+            outlineImage: "",
+            weekendStart: "",
+            weekendEnd: "",
+            sessions: [],
+        };
     }
 };
 
 const scrapeCalendar = async () => {
     try {
         const currentYear = new Date().getFullYear();
-        const url = `https://www.formula1.com/en/racing/${currentYear}`;
-
-        const { data } = await axios.get(url, {
-            headers: { "User-Agent": "Mozilla/5.0" },
+        const baseUrl = "https://www.formula1.com";
+        const calendarUrl = `${baseUrl}/en/racing/${currentYear}.html`;
+        const { data: html } = await axios.get(calendarUrl, {
+            headers: F1_HEADERS,
         });
+        const $ = cheerio.load(html);
 
-        const $ = cheerio.load(data);
         const races = [];
-        const detailPromises = [];
+        const seenSlugs = new Set();
 
-        $("a[href*='/en/racing/']").each((_, el) => {
-            const $link = $(el);
-            const href = $link.attr("href") || "";
-            const match = href.match(/\/en\/racing\/\d{4}\/([a-z0-9-]+)/i);
-            
-            if (!match) return;
+        $(`a[href*="/en/racing/${currentYear}/"]`).each((_, el) => {
+            const $card = $(el);
+            const href = $card.attr("href") || "";
+            const slug = href
+                .replace(/\/$/, "")
+                .split("/")
+                .filter(Boolean)
+                .pop();
 
-            const slug = match[1];
-            if (races.some((r) => r.slug === slug)) return;
+            if (!slug || slug === String(currentYear) || seenSlugs.has(slug))
+                return;
+            seenSlugs.add(slug);
 
             const fullUrl = href.startsWith("http")
                 ? href
-                : `https://www.formula1.com${href}`;
+                : `${baseUrl}${href}`;
+            const cardText = $card.text();
+            const isTesting = /testing/i.test(slug);
 
-            const $card = $link.closest("[class*='card'], [class*='race'], fieldset, article");
+            let round = "";
+            let roundOrder = 999;
 
-            const roundText = cleanText(
-                $card.find("[class*='round'], [class*='subtitle'], p").first().text()
+            const roundSpan = $card
+                .find('span[class*="body-2-xs-bold"]')
+                .first();
+            const roundText = cleanTextCircuit(roundSpan.text()) || cardText;
+
+            if (isTesting) {
+                round = "TESTING";
+                const testingNumberMatch = slug.match(/(\d+)$/);
+                roundOrder = testingNumberMatch
+                    ? Number(testingNumberMatch[1]) - 100
+                    : -100;
+            } else {
+                const roundMatch = roundText.match(/ROUND\s*(\d+)/i);
+                if (roundMatch) {
+                    round = `ROUND ${roundMatch[1]}`;
+                    roundOrder = Number(roundMatch[1]);
+                }
+            }
+
+            const countryEl = $card.find('p[class*="display-xl-bold"]').first();
+            const country = cleanTextCircuit(countryEl.text());
+
+            let officialName = "";
+            const contextAttr = $card.attr("data-f1rd-a7s-context");
+
+            if (contextAttr) {
+                try {
+                    const decoded = JSON.parse(
+                        Buffer.from(contextAttr, "base64").toString("utf-8"),
+                    );
+                    if (decoded && decoded.raceName) {
+                        officialName = decoded.raceName;
+                    }
+                } catch (e) {}
+            }
+
+            if (!officialName) {
+                const officialNameEl = $card
+                    .find('span[class*="typography-module_body-xs-semibold"]')
+                    .first();
+                officialName = cleanTextCircuit(officialNameEl.text());
+            } else {
+                officialName = cleanTextCircuit(officialName);
+            }
+
+            const dateMatch = cardText.match(
+                /\d{1,2}(?:\s*[A-Za-z]{3})?\s*-\s*\d{1,2}\s*[A-Za-z]{3}/,
             );
+            const dates = dateMatch ? dateMatch[0] : "";
 
-            const gpTitle = cleanText(
-                $card.find("h2, h3, [class*='title'], [class*='name']").first().text()
-            );
-
-            const datesText = cleanText(
-                $card.find("[class*='date'], time").text()
-            );
-
-            const cardImgTag = $card.find("img").first();
-            const rawCardImg = cardImgTag.attr("src") || cardImgTag.attr("data-src") || "";
-            const cardImage = rawCardImg
-                ? rawCardImg.startsWith("http")
-                    ? rawCardImg
-                    : `https://www.formula1.com${rawCardImg}`
-                : "";
-
-            const raceObj = {
+            races.push({
                 slug,
                 url: fullUrl,
-                round: roundText,
-                grandPrix: gpTitle,
-                dates: datesText,
-                cardImage,
-                circuitDetails: null,
-            };
-
-            races.push(raceObj);
-
-            detailPromises.push(
-                scrapeCircuitDetail(fullUrl).then((details) => {
-                    raceObj.circuitDetails = details;
-                })
-            );
+                round,
+                roundOrder,
+                country: country || slug.replace(/-/g, " "),
+                grandPrix: officialName,
+                dates,
+                isTesting,
+            });
         });
 
-        await Promise.all(detailPromises);
+        races.sort((a, b) => a.roundOrder - b.roundOrder);
+
+        const enrichedRaces = await Promise.all(
+            races.map(async (race) => {
+                const weekend = await scrapeRaceWeekend(race.url);
+                return { ...race, ...weekend };
+            }),
+        );
 
         cachedCalendar = {
             year: currentYear,
-            races,
+            races: enrichedRaces,
         };
         lastCalendarScrapedTime = Date.now();
         return cachedCalendar;
@@ -525,17 +655,16 @@ app.get("/api/calendar/:slug", async (req, res) => {
     const url = `https://www.formula1.com/en/racing/${currentYear}/${slug}`;
 
     try {
-        const details = await scrapeCircuitDetail(url);
-        if (!details) {
-            return res.status(404).json({ error: "Circuito non trovato" });
-        }
+        const details = await scrapeRaceWeekend(url);
         res.json({
             slug,
             url,
             ...details,
         });
     } catch (err) {
-        res.status(500).json({ error: `Error during circuit scraping ${slug}` });
+        res.status(500).json({
+            error: `Error during circuit scraping ${slug}`,
+        });
     }
 });
 
