@@ -133,6 +133,8 @@ class F1LiveClient {
                 break;
             case "ExtrapolatedClock":
                 this.lastExtrapolatedClock = data;
+                console.log("extrapolated clock: ");
+                console.log(data);
                 if (this.ui) this.ui.updateClock(data);
                 break;
             case "SessionStatus":
@@ -173,6 +175,11 @@ class F1LiveClient {
                     this.scheduleUIRefresh();
                 }
                 break;
+            case "RaceControlMessages":
+                if (data.Lines){
+                    console.log("racecontrolmessages: ")
+                    console.log(data.lines)
+                }
         }
     }
 

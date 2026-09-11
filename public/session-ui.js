@@ -31,7 +31,8 @@ class SessionInfoUI {
         this.leftColumn.appendChild(this.progressElement);
         this.weatherCard = document.createElement("div");
         this.weatherCard.className = "weather-card clickable-card";
-        this.weatherCard.title = "Click to open weather details, forecast & radar";
+        this.weatherCard.title =
+            "Click to open weather details, forecast & radar";
         this.weatherCard.onclick = () => this.showWeatherModal();
         this.weatherTitle = document.createElement("div");
         this.weatherTitle.className = "weather-title";
@@ -382,16 +383,26 @@ class SessionInfoUI {
     }
 
     updateClock(data) {
-        if (!data) return;
-        this.clockData = data;
-        const remainingSeconds = this.parseTime(data.Remaining);
-        this.clockData.targetMs = Date.now() + remainingSeconds * 1000;
+    if (!data) return;
+    this.clockData = data;
+
+    if (data.Extrapolating) {
+        const serverTimeMs = new Date(data.Utc).getTime();
+        const initialRemainingMs = this.parseTime(data.Remaining) * 1000;
+        
+        const nowMs = Date.now();
+        const elapsedMs = Math.max(0, nowMs - serverTimeMs); 
+        
+        const effectiveRemainingMs = Math.max(0, initialRemainingMs - elapsedMs);
+
+        this.clockData.targetMs = nowMs + effectiveRemainingMs;
+
         if (!this.clockInterval) {
             this.clockInterval = setInterval(() => this.tickClock(), 1000);
         }
-        this.tickClock();
     }
-
+    this.tickClock();
+}
     tickClock() {
         if (!this.clockData) return;
         if (

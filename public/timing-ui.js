@@ -31,6 +31,7 @@ class F1LiveTimingUI {
             "Last S2",
             "Last S3",
             "Best Lap",
+            "Ideal Lap",
             "Best S1",
             "Best S2",
             "Best S3",
@@ -89,7 +90,6 @@ class F1LiveTimingUI {
             { location: "Budapest", circuitKey: 4 },
             { location: "Zandvoort", circuitKey: 55 },
             { location: "Monza", circuitKey: 39 },
-            // Madrid
             { location: "Baku", circuitKey: 144 },
             { location: "Marina Bay", circuitKey: 61 },
             { location: "Austin", circuitKey: 9 },
@@ -98,7 +98,6 @@ class F1LiveTimingUI {
             { location: "Las Vegas", circuitKey: 152 },
             { location: "Al Daayen", circuitKey: 150 },
             { location: "Yas Marina", circuitKey: 70 },
-            // Imola
         ];
         const locationName =
             forcedLocation || window.f1Client?.sessionInfo?.Meeting?.Location;
@@ -675,6 +674,21 @@ class F1LiveTimingUI {
         return Infinity;
     }
 
+    formatTimeFromSeconds(seconds) {
+        if (!Number.isFinite(seconds) || seconds <= 0) return "-";
+        const totalMs = Math.round(seconds * 1000);
+        const mins = Math.floor(totalMs / 60000);
+        const remainingMs = totalMs % 60000;
+        const secs = Math.floor(remainingMs / 1000);
+        const ms = remainingMs % 1000;
+        const msStr = String(ms).padStart(3, "0");
+        if (mins > 0) {
+            const secsStr = String(secs).padStart(2, "0");
+            return `${mins}:${secsStr}.${msStr}`;
+        }
+        return `${secs}.${msStr}`;
+    }
+
     getTimingClass(item) {
         if (!item || !item.Value || item.Value === "-") return "";
         if (item.OverallFastest === true) return "color-purple";
@@ -823,6 +837,11 @@ class F1LiveTimingUI {
             const bestLapNumSpan = document.createElement("span");
             bestLapCell.appendChild(bestLapValSpan);
             bestLapCell.appendChild(bestLapNumSpan);
+            const idealLapCell = document.createElement("td");
+            const idealLapValSpan = document.createElement("span");
+            const idealLapDiffSpan = document.createElement("span");
+            idealLapCell.appendChild(idealLapValSpan);
+            idealLapCell.appendChild(idealLapDiffSpan);
             const bestS1Cell = this.createBestSectorCellNode();
             const bestS2Cell = this.createBestSectorCellNode();
             const bestS3Cell = this.createBestSectorCellNode();
@@ -839,6 +858,7 @@ class F1LiveTimingUI {
             row.appendChild(lastS2Cell.td);
             row.appendChild(lastS3Cell.td);
             row.appendChild(bestLapCell);
+            row.appendChild(idealLapCell);
             row.appendChild(bestS1Cell.td);
             row.appendChild(bestS2Cell.td);
             row.appendChild(bestS3Cell.td);
@@ -862,6 +882,8 @@ class F1LiveTimingUI {
                 lastS3: lastS3Cell,
                 bestLapValSpan,
                 bestLapNumSpan,
+                idealLapValSpan,
+                idealLapDiffSpan,
                 bestS1: bestS1Cell,
                 bestS2: bestS2Cell,
                 bestS3: bestS3Cell,
@@ -989,6 +1011,28 @@ class F1LiveTimingUI {
             c.bestLapValSpan.className = "";
             c.bestLapNumSpan.textContent = "";
         }
+
+        const s1 = this.parseTimeToSeconds(driverData.bestS1?.Value);
+        const s2 = this.parseTimeToSeconds(driverData.bestS2?.Value);
+        const s3 = this.parseTimeToSeconds(driverData.bestS3?.Value);
+        if (s1 !== Infinity && s2 !== Infinity && s3 !== Infinity) {
+            const idealSec = s1 + s2 + s3;
+            c.idealLapValSpan.textContent = this.formatTimeFromSeconds(idealSec);
+            const bestLapSec = this.parseTimeToSeconds(
+                driverData.bestLap?.Value,
+            );
+            if (bestLapSec !== Infinity) {
+                const diffSec = bestLapSec - idealSec;
+                const sign = diffSec <= 0 ? "+" : "-";
+                c.idealLapDiffSpan.textContent = ` (${sign}${Math.abs(diffSec).toFixed(3)})`;
+            } else {
+                c.idealLapDiffSpan.textContent = "";
+            }
+        } else {
+            c.idealLapValSpan.textContent = "-";
+            c.idealLapDiffSpan.textContent = "";
+        }
+
         this.updateBestSectorCellNode(
             c.bestS1,
             driverData.bestS1,

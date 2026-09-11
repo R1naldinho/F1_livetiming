@@ -1685,27 +1685,6 @@ class StandingsUI {
             const driver = this.data.drivers[this.selectedDriverIndex];
             const stats = this.calculateDriverStats(driver);
 
-            const togglePointsChart = this.el(
-                "div",
-                { className: "standings-sub-nav" },
-                this.el("button", {
-                    className: `standings-nav-btn ${this.driverPointChartMode === "cumulative" ? "active" : ""}`,
-                    textContent: "Cumulative Points",
-                    onClick: () => {
-                        this.driverPointChartMode = "cumulative";
-                        updateDash();
-                    },
-                }),
-                this.el("button", {
-                    className: `standings-nav-btn ${this.driverPointChartMode === "single" ? "active" : ""}`,
-                    textContent: "Points Per Round",
-                    onClick: () => {
-                        this.driverPointChartMode = "single";
-                        updateDash();
-                    },
-                }),
-            );
-
             const grid = this.el(
                 "div",
                 { className: "stats-grid" },
@@ -1746,6 +1725,27 @@ class StandingsUI {
                 this.createStatCard("Races", stats.races),
             );
 
+            const togglePointsChart = this.el(
+                "div",
+                { className: "standings-sub-nav" },
+                this.el("button", {
+                    className: `standings-nav-btn ${this.driverPointChartMode === "cumulative" ? "active" : ""}`,
+                    textContent: "Cumulative Points",
+                    onClick: () => {
+                        this.driverPointChartMode = "cumulative";
+                        updateDash();
+                    },
+                }),
+                this.el("button", {
+                    className: `standings-nav-btn ${this.driverPointChartMode === "single" ? "active" : ""}`,
+                    textContent: "Points Per Round",
+                    onClick: () => {
+                        this.driverPointChartMode = "single";
+                        updateDash();
+                    },
+                }),
+            );
+
             const chartsGrid = this.el("div", { className: "charts-grid" });
             const lineCanvas = this.el("canvas");
             const barCanvas = this.el("canvas");
@@ -1776,8 +1776,8 @@ class StandingsUI {
             const dashContainer = this.el(
                 "div",
                 { id: "driver-dash-content" },
-                togglePointsChart,
                 grid,
+                togglePointsChart,
                 chartsGrid,
                 box,
             );
@@ -2889,9 +2889,9 @@ class StandingsUI {
 
             box.appendChild(teammateComp);
 
-            const dashChildren = [togglePointsChart];
+            const dashChildren = [grid, togglePointsChart];
             if (togglePointsSubNav) dashChildren.push(togglePointsSubNav);
-            dashChildren.push(grid, chartsGrid, box);
+            dashChildren.push(chartsGrid, box);
 
             const dashContainer = this.el(
                 "div",
