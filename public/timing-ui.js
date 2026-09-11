@@ -1017,16 +1017,25 @@ class F1LiveTimingUI {
         const s3 = this.parseTimeToSeconds(driverData.bestS3?.Value);
         if (s1 !== Infinity && s2 !== Infinity && s3 !== Infinity) {
             const idealSec = s1 + s2 + s3;
-            c.idealLapValSpan.textContent = this.formatTimeFromSeconds(idealSec);
+            c.idealLapValSpan.textContent =
+                this.formatTimeFromSeconds(idealSec);
             const bestLapSec = this.parseTimeToSeconds(
                 driverData.bestLap?.Value,
             );
             if (bestLapSec !== Infinity) {
                 const diffSec = bestLapSec - idealSec;
-                const sign = diffSec <= 0 ? "+" : "-";
+                const sign = diffSec > 0.0001 ? "-" : "";
+
                 c.idealLapDiffSpan.textContent = ` (${sign}${Math.abs(diffSec).toFixed(3)})`;
+
+                if (Math.abs(diffSec) < 0.0001) {
+                    c.idealLapValSpan.className = "color-green";
+                } else {
+                    c.idealLapValSpan.className = "";
+                }
             } else {
                 c.idealLapDiffSpan.textContent = "";
+                c.idealLapValSpan.className = "";
             }
         } else {
             c.idealLapValSpan.textContent = "-";
