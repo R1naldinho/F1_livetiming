@@ -113,7 +113,7 @@ class F1LiveTimingUI {
                 .toLowerCase();
             return circuitLocation === normalizedLocation;
         });
-        const circuitKey = matchedCircuit ? matchedCircuit.circuitKey : 55;
+        const circuitKey = matchedCircuit ? matchedCircuit.circuitKey : "";
         try {
             const response = await fetch(
                 `https://api.multiviewer.app/api/v1/circuits/${circuitKey}/2026`,
@@ -123,6 +123,10 @@ class F1LiveTimingUI {
             this.activeCircuitData = data;
             this.renderCircuitMap();
         } catch (error) {
+            const circuitMap = document.querySelector(".gps-map-container");
+            if (circuitMap) {
+                circuitMap.style.display = "none";
+            }
         } finally {
             this.isFetchingCircuit = false;
         }
@@ -866,21 +870,6 @@ class F1LiveTimingUI {
             };
         }
         const c = row.cache;
-        if (driverData.lapFlags === 1 || driverData.lapFlags === "1") {
-            c.flagSpan.classList.add("chequered-flag");
-            c.flagSpan.title = "Checked flag received";
-            c.flagSpan.textContent = "";
-            if (c.flagSpan.parentElement) {
-                c.flagSpan.parentElement.classList.add("flag-cell");
-            }
-        } else {
-            c.flagSpan.classList.remove("chequered-flag");
-            c.flagSpan.title = "";
-            c.flagSpan.textContent = "";
-            if (c.flagSpan.parentElement) {
-                c.flagSpan.parentElement.classList.remove("flag-cell");
-            }
-        }
         c.posSpan.textContent =
             driverData.position !== undefined ? driverData.position : "-";
         c.numberSpan.textContent = `#${driverData.racingNumber}`;

@@ -64,7 +64,8 @@ function createNavbar() {
 
     const tabs = [
         { id: "livetiming", label: "Live Timing" },
-        { id: "standings", label: "Standings" }
+        { id: "calendar", label: "Calendar"},
+        { id: "standings", label: "Standings" },
     ];
 
     tabs.forEach((tab, index) => {

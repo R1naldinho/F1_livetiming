@@ -23,9 +23,7 @@ class StandingsUI {
         this.isLight = document.body.classList.contains("light-mode");
         this.updateThemeVariables();
         this.initLayout();
-        this.loadZoomPlugin()
-            .catch(() => {})
-            .then(() => this.fetchStandings());
+        this.initializeData();
 
         const observer = new MutationObserver(() => {
             const currentLight = document.body.classList.contains("light-mode");
@@ -113,9 +111,9 @@ class StandingsUI {
             "div",
             { className: "standings-main-nav" },
             this.createNavBtn("Standings", "standings"),
-            this.createNavBtn("Form", "form-status"),
             this.createNavBtn("Drivers", "driver-dash"),
             this.createNavBtn("Teams", "team-dash"),
+            this.createNavBtn("Form", "form-status"),
             this.createNavBtn("Compare Drivers", "compare-drivers"),
             this.createNavBtn("Compare Teams", "compare-teams"),
         );
@@ -142,31 +140,48 @@ class StandingsUI {
         });
     }
 
-    async fetchStandings() {
+    async initializeData() {
         while (this.contentWrapper.firstChild)
             this.contentWrapper.removeChild(this.contentWrapper.firstChild);
         this.contentWrapper.appendChild(
             this.el("div", { textContent: "Loading standings data..." }),
         );
+
         try {
-            const res = await fetch("/api/standings");
-            if (!res.ok) throw new Error("Failed");
-            this.data = await res.json();
-            if (
-                this.data.constructors &&
-                this.data.constructors.length &&
-                !this.selectedTeamName
-            ) {
-                this.selectedTeamName = this.data.constructors[0].teamName;
-            }
+            await this.loadZoomPlugin().catch(() => {});
+            const [calendarResult, standingsResult] = await Promise.all([
+                this.loadCalendarData(),
+                this.loadStandingsData(),
+            ]);
+            if (!calendarResult || !standingsResult)
+                throw new Error("Unable to load required data");
             this.render();
         } catch (err) {
+            console.error("Unable to initialize standings:", err);
             while (this.contentWrapper.firstChild)
                 this.contentWrapper.removeChild(this.contentWrapper.firstChild);
             this.contentWrapper.appendChild(
                 this.el("div", { textContent: "Unable to load standings." }),
             );
         }
+    }
+
+    async loadStandingsData() {
+        const res = await fetch("/api/standings");
+        if (!res.ok) throw new Error("Failed to load standings");
+        this.data = await res.json();
+        if (
+            this.data.constructors &&
+            this.data.constructors.length &&
+            !this.selectedTeamName
+        ) {
+            this.selectedTeamName = this.data.constructors[0].teamName;
+        }
+        return this.data;
+    }
+
+    async fetchStandings() {
+        return this.initializeData();
     }
 
     getAllGrandsPrix() {
@@ -191,77 +206,6 @@ class StandingsUI {
         );
     }
 
-    getSeasonConfig() {
-        const configs = {
-            2026: {
-                races: 24,
-                sprints: [
-                    "Chinese Grand Prix",
-                    "Miami Grand Prix",
-                    "Canadian Grand Prix",
-                    "British Grand Prix",
-                    "Dutch Grand Prix",
-                    "Singapore Grand Prix",
-                ],
-            },
-            2025: {
-                races: 24,
-                sprints: [
-                    "Chinese Grand Prix",
-                    "Miami Grand Prix",
-                    "Belgian Grand Prix",
-                    "United States Grand Prix",
-                    "São Paulo Grand Prix",
-                    "Qatar Grand Prix",
-                ],
-            },
-            2024: {
-                races: 24,
-                sprints: [
-                    "Chinese Grand Prix",
-                    "Miami Grand Prix",
-                    "Austrian Grand Prix",
-                    "United States Grand Prix",
-                    "São Paulo Grand Prix",
-                    "Qatar Grand Prix",
-                ],
-            },
-            2023: {
-                races: 22,
-                sprints: [
-                    "Azerbaijan Grand Prix",
-                    "Austrian Grand Prix",
-                    "Belgian Grand Prix",
-                    "Qatar Grand Prix",
-                    "United States Grand Prix",
-                    "São Paulo Grand Prix",
-                ],
-            },
-            2022: {
-                races: 22,
-                sprints: [
-                    "Emilia-Romagna Grand Prix",
-                    "Austrian Grand Prix",
-                    "São Paulo Grand Prix",
-                ],
-            },
-            2021: {
-                races: 22,
-                sprints: [
-                    "British Grand Prix",
-                    "Italian Grand Prix",
-                    "São Paulo Grand Prix",
-                ],
-            },
-        };
-        return (
-            configs[this.getSeasonYear()] || {
-                races: this.getAllGrandsPrix().length,
-                sprints: [],
-            }
-        );
-    }
-
     normalizeGrandPrixName(name) {
         return String(name || "")
             .toLowerCase()
@@ -271,11 +215,110 @@ class StandingsUI {
             .trim();
     }
 
+    async loadCalendarData() {
+        if (this.calendarData) return this.calendarData;
+
+        try {
+            const response = await fetch("api/calendar");
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+            const data = await response.json();
+
+            if (Array.isArray(data)) {
+                this.calendarData = this.parseCalendarResponse(data);
+            } else {
+                this.calendarData = data;
+            }
+        } catch (error) {
+            console.error("Impossible loading calendar:", error);
+            this.calendarData = {};
+        }
+
+        return this.calendarData;
+    }
+
+    parseCalendarResponse(racesList) {
+        const configs = {};
+
+        racesList.forEach((race) => {
+            const year = race.year || this.getSeasonYear();
+            if (!configs[year]) {
+                configs[year] = { races: 0, sprints: [] };
+            }
+
+            configs[year].races += 1;
+
+            if (race.isSprint || race.type === "sprint" || race.hasSprint) {
+                configs[year].sprints.push(
+                    race.raceName || race.grandPrix || race.name,
+                );
+            }
+        });
+
+        return configs;
+    }
+
+    async getSeasonConfig() {
+        const calendarData = await this.loadCalendarData();
+        return this.buildSeasonConfig(calendarData);
+    }
+
+    buildSeasonConfig(calendarData) {
+        const season = Array.isArray(calendarData)
+            ? calendarData
+            : calendarData?.races ||
+              calendarData?.calendar ||
+              calendarData?.data ||
+              [];
+        const races = season.filter((race) => !race.isTesting);
+        const sprints = races.filter(
+            (race) =>
+                race.sessions &&
+                race.sessions.some((s) => s.name?.toLowerCase() === "sprint"),
+        );
+        const sprintCount = sprints.length;
+        const raceCount = races.length;
+        const remainingRaces = races.filter((race) => {
+            const raceSession = race.sessions?.find(
+                (s) => s.session === "r" || s.sessionType === "Race",
+            );
+            return raceSession && raceSession.state !== "completed";
+        });
+        const remainingSprints = sprints.filter((race) => {
+            const sprintSession = race.sessions?.find(
+                (s) => s.session === "s" || s.name?.toLowerCase() === "sprint",
+            );
+            return sprintSession && sprintSession.state !== "completed";
+        });
+        return {
+            ...(this.baseConfig || {}),
+            races,
+            sprints,
+            sprintCount,
+            maxDriverPointsTotal: raceCount * 25 + sprintCount * 8,
+            maxConstructorPointsTotal: raceCount * 43 + sprintCount * 15,
+            maxDriverPointsRemaining:
+                remainingRaces.length * 25 + remainingSprints.length * 8,
+            maxConstructorPointsRemaining:
+                remainingRaces.length * 43 + remainingSprints.length * 15,
+            remainingRaces: remainingRaces,
+            remainingSprints: remainingSprints,
+        };
+    }
+
+    getSeasonConfigSync() {
+        return this.buildSeasonConfig(this.calendarData || {});
+    }
+
     isSprintGrandPrix(gp) {
-        const config = this.getSeasonConfig();
+        const config = this.getSeasonConfigSync();
         const name = this.normalizeGrandPrixName(gp);
-        return config.sprints.some((s) => {
-            const sprint = this.normalizeGrandPrixName(s);
+        const sprints = Array.isArray(config?.sprints) ? config.sprints : [];
+        return sprints.some((s) => {
+            const sprint = this.normalizeGrandPrixName(
+                typeof s === "string" ? s : s.raceName || s.grandPrix || s.name,
+            );
             return (
                 name === sprint ||
                 name.includes(sprint.replace(" grand prix", "")) ||
@@ -284,35 +327,40 @@ class StandingsUI {
         });
     }
 
-    getCompletedSprintCount() {
-        return this.getAllGrandsPrix().filter((gp) =>
-            this.isSprintGrandPrix(gp),
-        ).length;
-    }
-
     getChampionshipInfo() {
-        const config = this.getSeasonConfig();
-        const completedRaces = this.getAllGrandsPrix().length;
-        const completedSprints = this.getCompletedSprintCount();
-        const remainingRaces = Math.max(0, config.races - completedRaces);
-        const remainingSprints = Math.max(
-            0,
-            config.sprints.length - completedSprints,
-        );
-        const completedDriverMax = completedRaces * 25 + completedSprints * 8;
+        const config = this.getSeasonConfigSync();
+
+        const totalRaces = Array.isArray(config?.races)
+            ? config.races.length
+            : config?.races || 0;
+        const totalSprints = Array.isArray(config?.sprints)
+            ? config.sprints.length
+            : config?.sprints || 0;
+
+        const completedRaces = config.completedRaces;
+        const completedSprints = config.completedSprints;
+
+        const remainingRaces = Math.max(0, totalRaces - completedRaces);
+        const remainingSprints = Math.max(0, totalSprints - completedSprints);
+
+        const completedDriverMax =
+            config.maxDriverPointsTotal - config.maxDriverPointsRemaining;
         const completedConstructorMax =
-            completedRaces * 43 + completedSprints * 15;
-        const remainingDriverMax = remainingRaces * 25 + remainingSprints * 8;
-        const remainingConstructorMax =
-            remainingRaces * 43 + remainingSprints * 15;
+            config.maxConstructorPointsTotal -
+            config.maxConstructorPointsRemaining;
+        const remainingDriverMax = config.maxDriverPointsRemaining;
+        const remainingConstructorMax = config.maxConstructorPointsRemaining;
+
         const leaderDriverPoints = this.data?.drivers?.length
             ? Math.max(...this.data.drivers.map((d) => parseFloat(d.pts) || 0))
             : 0;
+
         const leaderConstructorPoints = this.data?.constructors?.length
             ? Math.max(
                   ...this.data.constructors.map((c) => parseFloat(c.pts) || 0),
               )
             : 0;
+
         const driverAlive =
             this.data?.drivers?.map((d) => {
                 const points = parseFloat(d.pts) || 0;
@@ -323,6 +371,7 @@ class StandingsUI {
                     canWin: points + remainingDriverMax >= leaderDriverPoints,
                 };
             }) || [];
+
         const constructorAlive =
             this.data?.constructors?.map((c) => {
                 const points = parseFloat(c.pts) || 0;
@@ -335,6 +384,7 @@ class StandingsUI {
                         leaderConstructorPoints,
                 };
             }) || [];
+
         return {
             config,
             completedRaces,
@@ -367,6 +417,7 @@ class StandingsUI {
 
     getConstructorChampionshipStatus(constructor) {
         const info = this.getChampionshipInfo();
+        console.log("Constructor championship info:", info);
         const entry = info.constructorAlive.find((x) => x.item === constructor);
         if (!entry) return "";
         if (!entry.canWin) return "eliminated";
@@ -1674,7 +1725,18 @@ class StandingsUI {
                 this.createStatCard("Top 5s", stats.top5),
                 this.createStatCard("Top 10s", stats.top10),
                 this.createStatCard("Avg Finish", stats.avgPos),
-                this.createStatCard("Best Finish", stats.best == 1 ? "1st" : stats.best == 2 ? "2nd" : stats.best == 3 ? "3rd" : isNaN(stats.best) ? stats.best : stats.best + "th"),
+                this.createStatCard(
+                    "Best Finish",
+                    stats.best == 1
+                        ? "1st"
+                        : stats.best == 2
+                          ? "2nd"
+                          : stats.best == 3
+                            ? "3rd"
+                            : isNaN(stats.best)
+                              ? stats.best
+                              : stats.best + "th",
+                ),
                 this.createStatCard("DNFs", stats.dnfs),
                 this.createStatCard("Finish %", stats.finishRate),
                 this.createStatCard("Pts / Race", stats.ptsPerRace),
@@ -2058,9 +2120,18 @@ class StandingsUI {
             stats.championshipPositionHistory = gps.map(() => null);
         }
 
-        stats.best = stats.best === Infinity
-            ? "-"
-            : (stats.best === 1 ? "1st" : stats.best === 2 ? "2nd" : stats.best === 3 ? "3rd" : isNaN(stats.best) ? "-" : stats.best + "th");
+        stats.best =
+            stats.best === Infinity
+                ? "-"
+                : stats.best === 1
+                  ? "1st"
+                  : stats.best === 2
+                    ? "2nd"
+                    : stats.best === 3
+                      ? "3rd"
+                      : isNaN(stats.best)
+                        ? "-"
+                        : stats.best + "th";
 
         stats.ptsPerRace = stats.races
             ? (stats.points / stats.races).toFixed(2)
@@ -2068,7 +2139,6 @@ class StandingsUI {
         stats.avgFinish = stats.totalFinishes
             ? (stats.totalPosSum / stats.totalFinishes).toFixed(2)
             : "-";
-
 
         const championship = this.getChampionshipInfo();
         const constructor = this.data.constructors.find(
@@ -2200,7 +2270,7 @@ class StandingsUI {
                     if (pos >= 1 && pos <= 5) top5++;
                     if (pos >= 1 && pos <= 10) top10++;
 
-                    if(pos > 0 && pos < bestPos) bestPos = pos;
+                    if (pos > 0 && pos < bestPos) bestPos = pos;
                     races++;
 
                     if (
@@ -2368,7 +2438,22 @@ class StandingsUI {
         grid.appendChild(createStatRow("Podiums", (s) => s.podiums));
         grid.appendChild(createStatRow("Top 5s", (s) => s.top5));
         grid.appendChild(createStatRow("Top 10s", (s) => s.top10));
-        grid.appendChild(createStatRow("Best Finish", (s) => s.best === 1 ? "1st" : s.best === 2 ? "2nd" : s.best === 3 ? "3rd" : isNaN(s.best) ? s.best : s.best + "th", true));
+        grid.appendChild(
+            createStatRow(
+                "Best Finish",
+                (s) =>
+                    s.best === 1
+                        ? "1st"
+                        : s.best === 2
+                          ? "2nd"
+                          : s.best === 3
+                            ? "3rd"
+                            : isNaN(s.best)
+                              ? s.best
+                              : s.best + "th",
+                true,
+            ),
+        );
         grid.appendChild(
             createStatRow(
                 "Avg Finish Position",
@@ -3251,7 +3336,28 @@ class StandingsUI {
             grid.appendChild(createRow("Top 5s", st1.top5, st2.top5));
             grid.appendChild(createRow("Top 10s", st1.top10, st2.top10));
             grid.appendChild(
-                createRow("Best Finish", st1.best === 1 ? "1st" : st1.best === 2 ? "2nd" : st1.best === 3 ? "3rd" : isNaN(st1.best) ? st1.best : st1.best + "th", st2.best === 1 ? "1st" : st2.best === 2 ? "2nd" : st2.best === 3 ? "3rd" : isNaN(st2.best) ? st2.best : st2.best + "th", true),
+                createRow(
+                    "Best Finish",
+                    st1.best === 1
+                        ? "1st"
+                        : st1.best === 2
+                          ? "2nd"
+                          : st1.best === 3
+                            ? "3rd"
+                            : isNaN(st1.best)
+                              ? st1.best
+                              : st1.best + "th",
+                    st2.best === 1
+                        ? "1st"
+                        : st2.best === 2
+                          ? "2nd"
+                          : st2.best === 3
+                            ? "3rd"
+                            : isNaN(st2.best)
+                              ? st2.best
+                              : st2.best + "th",
+                    true,
+                ),
             );
             grid.appendChild(
                 createRow("Avg Finish", st1.avgPos, st2.avgPos, true),
@@ -3823,7 +3929,30 @@ class StandingsUI {
             grid.appendChild(createRow("Podiums", st1.podiums, st2.podiums));
             grid.appendChild(createRow("Top 5s", st1.top5, st2.top5));
             grid.appendChild(createRow("Top 10s", st1.top10, st2.top10));
-            grid.appendChild(createRow("Best Finish", st1.best === 1 ? "1st" : st1.best === 2 ? "2nd" : st1.best === 3 ? "3rd" : isNaN(st1.best) ? st1.best : st1.best + "th", st2.best === 1 ? "1st" : st2.best === 2 ? "2nd" : st2.best === 3 ? "3rd" : isNaN(st2.best) ? st2.best : st2.best + "th", true));
+            grid.appendChild(
+                createRow(
+                    "Best Finish",
+                    st1.best === 1
+                        ? "1st"
+                        : st1.best === 2
+                          ? "2nd"
+                          : st1.best === 3
+                            ? "3rd"
+                            : isNaN(st1.best)
+                              ? st1.best
+                              : st1.best + "th",
+                    st2.best === 1
+                        ? "1st"
+                        : st2.best === 2
+                          ? "2nd"
+                          : st2.best === 3
+                            ? "3rd"
+                            : isNaN(st2.best)
+                              ? st2.best
+                              : st2.best + "th",
+                    true,
+                ),
+            );
             grid.appendChild(
                 createRow(
                     "Avg Driver Finish",
