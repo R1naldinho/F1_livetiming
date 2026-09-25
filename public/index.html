@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Live Timing</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+</head>
+
+<body>
+    <div id="navbar-container"></div>
+    <div id="app">
+        <div id="livetiming" class="tab-content"></div>
+        <div id="standings" class="tab-content" style="display:none;"></div>
+        <div id="calendar" class="tab-content" style="display:none;"></div>
+        <div id="results" class="tab-content" style="display:none;"></div>
+    </div>
+
+    <!-- Livetiming-->
+    <script src="scripts/livetiming/client.js"></script>
+    <script src="scripts/livetiming/session-ui.js"></script>
+    <script src="scripts/livetiming/race-control-ui.js"></script>
+    <script src="scripts/livetiming/timing-ui.js"></script>
+
+    <!-- Standings -->
+    <script src="scripts/standings/standings-ui.js"></script>
+
+    <!-- Calendar -->
+    <script src="scripts/calendar/calendar.js"></script>
+
+    <!-- Race Results-->
+    <script src="scripts/results/DriverStore.js"></script>
+    <script src="scripts/results/LapTimesStore.js"></script>
+    <script src="scripts/results/SessionDataManager.js"></script>
+    <script src="scripts/results/TyreStore.js"></script>
+    <script src="scripts/results/TyreAnalytics.js"></script>
+    <script src="scripts/results/TyreStrategyUI.js"></script>
+    <script src="scripts/results/ResultsUI.js"></script>
+
+    <script src="scripts/app.js"></script>
+</body>
+
+</html>
