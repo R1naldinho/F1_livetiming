@@ -1,6 +1,6 @@
 class SessionDataManager {
     constructor() {
-        this.baseUrl = "http://localhost:3000/api";
+        this.baseUrl = "/api";
         this.currentPath = null;
         this.sessionData = null;
         this.sessionInfo = null;

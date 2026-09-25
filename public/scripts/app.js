@@ -64,53 +64,58 @@ function createNavbar() {
 
     const tabs = [
         { id: "livetiming", label: "Live Timing" },
-        { id: "calendar", label: "Calendar"},
+        { id: "calendar", label: "Calendar" },
         { id: "standings", label: "Standings" },
-        { id: "results", label: "Results"},
+        { id: "results", label: "Results" },
     ];
 
     tabs.forEach((tab, index) => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.className = `nav-link ${index === 0 ? "active" : ""}`;
-    btn.textContent = tab.label;
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".nav-link").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.className = `nav-link ${index === 0 ? "active" : ""}`;
+        btn.textContent = tab.label;
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".nav-link").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
 
-        document.querySelectorAll(".tab-content").forEach(el => {
-            el.style.display = "none";
-        });
-        const target = document.getElementById(tab.id);
-        if (target) {
-            target.style.display = "block";
-            
-            if (tab.id === "standings" && !window.standingsUI) {
-                window.standingsUI = new StandingsUI("standings");
+            document.querySelectorAll(".tab-content").forEach(el => {
+                el.style.display = "none";
+            });
+            const target = document.getElementById(tab.id);
+            if (target) {
+                target.style.display = "block";
+                
+                if (tab.id === "standings" && !window.standingsUI) {
+                    window.standingsUI = new StandingsUI("standings");
+                }
             }
-        }
+        });
+        li.appendChild(btn);
+        ul.appendChild(li);
     });
-    li.appendChild(btn);
-    ul.appendChild(li);
-});
 
     nav.appendChild(ul);
 
     const themeBtn = document.createElement("button");
     themeBtn.className = "theme-toggle-btn";
+    
     const isLight = localStorage.getItem("theme") === "light";
     if (isLight) {
         document.body.classList.add("light-mode");
-        themeBtn.textContent = "☾ Dark Mode";
-    } else {
-        themeBtn.textContent = "☀︎ Light Mode";
     }
+
+    const updateThemeBtnContent = (lightActive) => {
+        themeBtn.innerHTML = `<span class="theme-icon">${lightActive ? "☾" : "☀︎"}</span><span class="theme-text">${lightActive ? "Dark Mode" : "Light Mode"}</span>`;
+    };
+
+    updateThemeBtnContent(isLight);
 
     themeBtn.onclick = () => {
         document.body.classList.toggle("light-mode");
         const lightActive = document.body.classList.contains("light-mode");
-        themeBtn.textContent = lightActive ? "☾ Dark Mode" : "☀ Light Mode";
+        updateThemeBtnContent(lightActive);
         localStorage.setItem("theme", lightActive ? "light" : "dark");
+        
         const sessionUI = window.f1Client?.ui?.sessionUI;
         if (sessionUI && sessionUI.baseMapLayer) {
             const themeName = lightActive ? "light" : "dark";
