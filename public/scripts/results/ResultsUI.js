@@ -209,7 +209,7 @@ class ResultsUI {
     async fetchData() {
         try {
             const response = await fetch(
-                `http://localhost:3000/api/races/${this.selectedYear}`,
+                `/api/races/${this.selectedYear}`,
             );
 
             if (!response.ok) {
