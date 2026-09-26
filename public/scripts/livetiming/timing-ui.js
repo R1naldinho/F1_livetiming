@@ -538,9 +538,7 @@ class F1LiveTimingUI {
                 ? previous * 0.5 + perStep * 0.5
                 : perStep;
         }
-        car.average = car.average
-            ? car.average * 0.7 + perStep * 0.3
-            : perStep;
+        car.average = car.average ? car.average * 0.7 + perStep * 0.3 : perStep;
     }
 
     estimateStepDuration(car, index, driverData) {
@@ -574,7 +572,8 @@ class F1LiveTimingUI {
             if (delta < -0.5) delta += 1;
             if (delta > 0.5) delta -= 1;
             const steps = Math.round(delta * total);
-            if (steps > 0) this.recordStepDuration(car, steps, now - car.enteredAt);
+            if (steps > 0)
+                this.recordStepDuration(car, steps, now - car.enteredAt);
             else if (steps < 0) car.snap = true;
             car.base += delta;
         }
@@ -633,11 +632,20 @@ class F1LiveTimingUI {
             driverData?.lastS1?.Stopped ||
             driverData?.lastS2?.Stopped ||
             driverData?.lastS3?.Stopped;
+
+        const recentSegments = driverData.lastS3?.Segments?.slice(-2) ?? [];
+
+        const isInPitSegmentStatus =
+            Boolean(driverData.inPit) ||
+            recentSegments.some(
+                (seg) => seg?.Status === 2064 || seg?.Status === 2052,
+            );
         if (
             driverData?.retired ||
             driverData?.inPit ||
             driverData?.pitOut ||
-            stopped
+            stopped ||
+            isInPitSegmentStatus
         ) {
             if (car && car.visible) {
                 car.visible = false;
@@ -1049,12 +1057,19 @@ class F1LiveTimingUI {
             driverData.lastS1?.Stopped ||
             driverData.lastS2?.Stopped ||
             driverData.lastS3?.Stopped;
+        const recentSegments = driverData.lastS3?.Segments?.slice(-2) ?? [];
+
+        const isInPitSegmentStatus =
+            Boolean(driverData.inPit) ||
+            recentSegments.some(
+                (seg) => seg?.Status === 2064 || seg?.Status === 2052,
+            );
         if (driverData.retired || stopped) {
             const badge = document.createElement("span");
             badge.className = "status-badge badge-retired";
             badge.textContent = "DNF";
             c.badgeContainer.appendChild(badge);
-        } else if (driverData.inPit) {
+        } else if (driverData.inPit || isInPitSegmentStatus) {
             const badge = document.createElement("span");
             badge.className = "status-badge badge-pit";
             badge.textContent = "PIT";
