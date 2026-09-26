@@ -122,7 +122,7 @@ class F1LiveClient {
 
         requestAnimationFrame(() => {
             this.ui.refreshTable();
-            this.ui.updateSessionProgress(this.getSessionProgress());
+            this.ui.updateSessionProgress(this.getSessionProgress(), this.lapCount.TotalLaps);
             this.isRefreshPending = false;
         });
     }

@@ -426,7 +426,7 @@ class SessionInfoUI {
         this.sessionType.textContent = `${type} - ${name} (${status})`;
     }
 
-    updateSessionProgress(data) {
+    updateSessionProgress(data, totalLaps) {
     if (!data) return;
     if (data.kind === "race") {
         this.clockElement.style.display = "none";
@@ -434,7 +434,7 @@ class SessionInfoUI {
         this.progressElement.className = "clock-pill";
         this.progressElement.textContent =
             data.currentLap > 0
-                ? `Lap ${data.currentLap}${data.totalLaps ? `/${data.totalLaps}` : ""}`
+                ? `Lap ${data.currentLap}${totalLaps ? `/${totalLaps}` : ""}`
                 : "Lap --";
     } else {
         this.clockElement.style.display = "block";

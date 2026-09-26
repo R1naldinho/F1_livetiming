@@ -787,8 +787,8 @@ class F1LiveTimingUI {
     updateWeather(data) {
         this.sessionUI.updateWeather(data);
     }
-    updateSessionProgress(data) {
-        this.sessionUI.updateSessionProgress(data);
+    updateSessionProgress(data, totalLaps) {
+        this.sessionUI.updateSessionProgress(data, totalLaps);
     }
     updateRaceControlMessages(messages) {
         this.raceControlUI.update(messages);
