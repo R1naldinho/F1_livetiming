@@ -8,6 +8,7 @@ class F1LiveClient {
         this.sessionData = {};
         this.sessionInfo = null;
         this.raceControlMessages = {};
+        this.lapCount = null;
         this.isRefreshPending = false;
         this.reconnectTimer = null;
         this._resolveSessionReady = null;
@@ -26,7 +27,7 @@ class F1LiveClient {
             this.ws.close();
         }
 
-        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
         this.ws = new WebSocket(`${protocol}://${window.location.host}`);
 
         this.ws.onopen = () => {
@@ -84,9 +85,12 @@ class F1LiveClient {
         this.handleStream("ExtrapolatedClock", snapshot.ExtrapolatedClock);
         this.handleStream("SessionStatus", snapshot.SessionStatus);
         this.handleStream("TrackStatus", snapshot.TrackStatus);
+        this.handleStream("LapCount", snapshot.LapCount);
         this.handleStream("WeatherData", snapshot.WeatherData);
         if (this.ui)
-            this.ui.updateRaceControlMessages(this.getRaceControlMessagesList());
+            this.ui.updateRaceControlMessages(
+                this.getRaceControlMessagesList(),
+            );
         this.scheduleUIRefresh();
     }
 
@@ -149,6 +153,10 @@ class F1LiveClient {
             case "TrackStatus":
                 this.lastTrackStatus = data;
                 if (this.ui) this.ui.updateTrackStatus(data);
+                break;
+            case "LapCount":
+                this.lapCount = data;
+                this.scheduleUIRefresh();
                 break;
             case "WeatherData":
                 this.lastWeatherData = data;
@@ -363,14 +371,23 @@ class F1LiveClient {
             .sort((a, b) => new Date(a.Utc || 0) - new Date(b.Utc || 0))
             .pop();
 
-        const currentLap = latestSeries?.Lap
+        const fallbackCurrentLap = latestSeries?.Lap
             ? Number(latestSeries.Lap)
             : completedLaps + 1;
+
+        const currentLap = Number.isFinite(Number(this.lapCount?.CurrentLap))
+            ? Number(this.lapCount.CurrentLap)
+            : fallbackCurrentLap;
+
+        const totalLaps = Number.isFinite(Number(this.lapCount?.TotalLaps))
+            ? Number(this.lapCount.TotalLaps)
+            : null;
 
         return {
             kind,
             completedLaps,
             currentLap: Number.isFinite(currentLap) ? currentLap : 0,
+            totalLaps,
             remaining: this.ui?.sessionUI?.clockElement?.textContent || "--:--",
         };
     }
@@ -505,7 +522,6 @@ class F1LiveClient {
             lastLap: info.LastLapTime,
             knockedOut: info.KnockedOut,
             cutOff: info.CutOff,
-            lapFlags: appData.Stints[appData.Stints.length - 1]?.LapFlags,
             bestLap,
             lastS1: sectors[0] || {},
             lastS2: sectors[1] || {},

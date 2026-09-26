@@ -427,21 +427,23 @@ class SessionInfoUI {
     }
 
     updateSessionProgress(data) {
-        if (!data) return;
-        if (data.kind === "race") {
-            this.clockElement.style.display = "none";
-            this.progressElement.style.display = "block";
-            this.progressElement.className = "clock-pill";
-            this.progressElement.textContent =
-                data.currentLap > 0 ? `Lap ${data.currentLap}` : "Lap --";
-        } else {
-            this.clockElement.style.display = "block";
-            this.progressElement.style.display = "block";
-            this.progressElement.className = "session-progress";
-            this.progressElement.textContent =
-                data.kind === "qualifying" ? "Qualifying" : "Practice";
-        }
+    if (!data) return;
+    if (data.kind === "race") {
+        this.clockElement.style.display = "none";
+        this.progressElement.style.display = "block";
+        this.progressElement.className = "clock-pill";
+        this.progressElement.textContent =
+            data.currentLap > 0
+                ? `Lap ${data.currentLap}${data.totalLaps ? `/${data.totalLaps}` : ""}`
+                : "Lap --";
+    } else {
+        this.clockElement.style.display = "block";
+        this.progressElement.style.display = "block";
+        this.progressElement.className = "session-progress";
+        this.progressElement.textContent =
+            data.kind === "qualifying" ? "Qualifying" : "Practice";
     }
+}
 
     updateTrackStatus(data) {
         if (!data) return;

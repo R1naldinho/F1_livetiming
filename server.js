@@ -404,18 +404,29 @@ const scrapeRaceWeekend = async (url) => {
                 const jsonText =
                     "[" + sessionsMatch[1].replace(/\\"/g, '"') + "]";
                 const parsed = JSON.parse(jsonText);
-                sessions = parsed.map((s) => ({
-                    session: s.session || "",
-                    shortName: s.shortName || "",
-                    name: s.description || "",
-                    startTime: s.startTime || "",
-                    endTime: s.endTime || "",
-                    gmtOffset: s.gmtOffset || "",
-                    timezone: s.timezone || "",
-                    state: s.state || "",
-                    sessionType: s.sessionType || "",
-                    sessionNumber: s.sessionNumber ?? null,
-                }));
+                sessions = parsed.map((s) => {
+                    const gmtOffset = s.gmtOffset || "";
+                    const startTime =
+                        s.startTime && gmtOffset
+                            ? `${s.startTime}${gmtOffset}`
+                            : s.startTime || "";
+                    const endTime =
+                        s.endTime && gmtOffset
+                            ? `${s.endTime}${gmtOffset}`
+                            : s.endTime || "";
+                    return {
+                        session: s.session || "",
+                        shortName: s.shortName || "",
+                        name: s.description || "",
+                        startTime,
+                        endTime,
+                        gmtOffset,
+                        timezone: s.timezone || "",
+                        state: s.state || "",
+                        sessionType: s.sessionType || "",
+                        sessionNumber: s.sessionNumber ?? null,
+                    };
+                });
             } catch (e) {
                 sessions = [];
             }
@@ -807,6 +818,7 @@ function subscribe(socket) {
                     "SessionData",
                     "TimingData",
                     "RaceControlMessages",
+                    "LapCount",
                 ],
             ],
         }) + RECORD_SEPARATOR,
@@ -955,6 +967,10 @@ app.get("/api/races/:year", async(req, res) => {
     const { year } = req.params;
     try {
         const response = await axios.get(`${F1_API_URL}${year}/Index.json`);
+        console.log(year)
+        if(year == 2021){
+            response.data.Meetings[response.data.Meetings.length - 2].Sessions.pop();
+        }
         res.json(response.data);
     } catch (error) {
         console.error("Error fetching data:", error);

@@ -208,9 +208,7 @@ class ResultsUI {
 
     async fetchData() {
         try {
-            const response = await fetch(
-                `/api/races/${this.selectedYear}`,
-            );
+            const response = await fetch(`/api/races/${this.selectedYear}`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -284,7 +282,10 @@ class ResultsUI {
 
         const currentYear = new Date().getFullYear();
 
-        for (let year = currentYear; year >= 2018; year--) {
+        for (let year = currentYear; year > 2018; year--) {
+            if(year == 2022){
+                continue;
+            }
             const option = document.createElement("option");
             option.value = year;
             option.textContent = `Year: ${year}`;
@@ -439,6 +440,41 @@ class ResultsUI {
         contentContainer.appendChild(loading);
     }
 
+    isQualifyingSession(
+        year,
+        sessionType = this.sessionType,
+        sessionName = "",
+    ) {
+        const type = String(sessionType || "").toLowerCase();
+        const name = String(sessionName || "").toLowerCase();
+        if (year === 2021 && year === 2022) {
+            return (
+                (type === "qualifying" ||
+                type.includes("qualifying") ||
+                type.includes("shootout") ||
+                name.includes("qualifying") ||
+                name.includes("shootout") ||
+                name.includes("sprint quali") ||
+                name.includes("q1") ||
+                name.includes("q2") ||
+                name.includes("q3")) && type !== "sprint-qualifying"
+            );
+        }
+        return (
+            type === "qualifying" ||
+            type === "sprint-qualifying" ||
+            type.includes("qualifying") ||
+            type.includes("shootout") ||
+            name.includes("qualifying") ||
+            name.includes("qualifica") ||
+            name.includes("shootout") ||
+            name.includes("sprint quali") ||
+            name.includes("q1") ||
+            name.includes("q2") ||
+            name.includes("q3")
+        );
+    }
+
     renderSelectedSessionInfo(
         meeting,
         session,
@@ -470,6 +506,30 @@ class ResultsUI {
             lapTimeStore,
         };
 
+        const isQuali = this.isQualifyingSession(
+            this.selectedYear,
+            sessionType,
+            sessionName,
+        );
+        const tyreTabBtn = this.resultsContainer.querySelector(
+            '.submenu-btn[data-tab="tyre"]',
+        );
+        if (tyreTabBtn) {
+            tyreTabBtn.style.display = isQuali ? "none" : "";
+        }
+
+        if (isQuali && this.activeTab === "tyre") {
+            this.activeTab = "overview";
+            this.resultsContainer
+                .querySelectorAll(".submenu-btn")
+                .forEach((btn) => {
+                    btn.classList.toggle(
+                        "active",
+                        btn.dataset.tab === "overview",
+                    );
+                });
+        }
+
         const contentContainer = document.getElementById(
             "session-info-content",
         );
@@ -489,7 +549,7 @@ class ResultsUI {
             ),
         );
 
-        if (this.activeTab === "tyre") {
+        if (this.activeTab === "tyre" && !isQuali) {
             this.tyreUI.render(contentContainer);
         } else if (this.activeTab === "overview") {
             this.renderEmptyTab(contentContainer, "Overview");
