@@ -107,36 +107,52 @@ class F1LiveTimingUI {
             { location: "Al Daayen", circuitKey: 150 },
             { location: "Yas Marina", circuitKey: 70 },
         ];
-        const locationName =
-            forcedLocation || window.f1Client?.sessionInfo?.Meeting?.Location;
-        const normalizedLocation = locationName
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase();
-        const matchedCircuit = circuits.find((c) => {
-            const circuitLocation = c.location
+        try {
+            const locationName =
+                forcedLocation ||
+                window.f1Client?.sessionInfo?.Meeting?.Location ||
+                "";
+            const normalizedLocation = locationName
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "")
                 .toLowerCase();
-            return circuitLocation === normalizedLocation;
-        });
-        const circuitKey = matchedCircuit ? matchedCircuit.circuitKey : "";
-        try {
+            const matchedCircuit = circuits.find((c) => {
+                const circuitLocation = c.location
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .toLowerCase();
+                return circuitLocation === normalizedLocation;
+            });
+            if (!matchedCircuit) {
+                this.useFallbackCircuit();
+                return;
+            }
             const response = await fetch(
-                `https://api.multiviewer.app/api/v1/circuits/${circuitKey}/2026`,
+                `https://api.multiviewer.app/api/v1/circuits/${matchedCircuit.circuitKey}/2026`,
             );
             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
             const data = await response.json();
+            if (this.extractCircuitPoints(data).length < 3) {
+                throw new Error("Invalid circuit data");
+            }
             this.activeCircuitData = data;
             this.renderCircuitMap();
         } catch (error) {
-            const circuitMap = document.querySelector(".gps-map-container");
-            if (circuitMap) {
-                circuitMap.style.display = "none";
-            }
+            this.useFallbackCircuit();
         } finally {
             this.isFetchingCircuit = false;
         }
+    }
+
+    useFallbackCircuit() {
+        const scale = 100;
+        const shape = SessionInfoUI.getFallbackTrackShape();
+        this.activeCircuitData = {
+            fallback: true,
+            x: shape.map((p) => -p[0] * scale),
+            y: shape.map((p) => p[1] * scale),
+        };
+        this.renderCircuitMap();
     }
 
     getSectorColor(sector, microsector, index, totalPoints) {

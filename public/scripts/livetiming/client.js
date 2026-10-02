@@ -121,9 +121,16 @@ class F1LiveClient {
         this.isRefreshPending = true;
 
         requestAnimationFrame(() => {
-            this.ui.refreshTable();
-            this.ui.updateSessionProgress(this.getSessionProgress(), this.lapCount.TotalLaps);
-            this.isRefreshPending = false;
+            try {
+                this.ui.refreshTable();
+                this.ui.updateSessionProgress(
+                    this.getSessionProgress(),
+                    this.lapCount?.TotalLaps,
+                );
+            } catch (error) {
+            } finally {
+                this.isRefreshPending = false;
+            }
         });
     }
 
@@ -139,7 +146,11 @@ class F1LiveClient {
                     this._resolveSessionReady(this.sessionInfo);
                     this._resolveSessionReady = null;
                 }
-                if (this.ui) this.ui.updateSession(this.sessionInfo);
+                if (this.ui) {
+                    Promise.resolve(this.ui.updateSession(this.sessionInfo)).catch(
+                        () => {},
+                    );
+                }
                 this.scheduleUIRefresh();
                 break;
             case "ExtrapolatedClock":

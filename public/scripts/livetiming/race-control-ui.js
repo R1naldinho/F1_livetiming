@@ -50,7 +50,8 @@ class RaceControlUI {
 
         this.root.appendChild(this.header);
         this.root.appendChild(this.list);
-        container.firstElementChild.lastElementChild.appendChild(this.root);
+        const host = container?.firstElementChild?.lastElementChild || container;
+        host.appendChild(this.root);
     }
 
     toggleCollapse() {

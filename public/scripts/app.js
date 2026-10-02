@@ -379,6 +379,16 @@ function drawLoaderCircuit(loader, coordinates) {
     return true;
 }
 
+function getFallbackLoaderCoordinates() {
+    if (
+        typeof SessionInfoUI === "undefined" ||
+        typeof SessionInfoUI.getFallbackTrackShape !== "function"
+    ) {
+        return [];
+    }
+    return SessionInfoUI.getFallbackTrackShape().map(([x, y]) => [x, -y]);
+}
+
 async function prepareLiveTimingPage() {
     const loader = createLiveTimingLoader();
     const loaderStartedAt = performance.now();
@@ -398,33 +408,50 @@ async function prepareLiveTimingPage() {
 
         loader.status.textContent = "Identifying circuit…";
 
-        const circuitsResponse = await fetch("scripts/livetiming/circuits.json", {
-            cache: "no-cache",
-        });
-        if (!circuitsResponse.ok) {
-            throw new Error(`circuits.json HTTP ${circuitsResponse.status}`);
+        let circuits = [];
+        try {
+            const circuitsResponse = await fetch(
+                "scripts/livetiming/circuits.json",
+                { cache: "no-cache" },
+            );
+            if (circuitsResponse.ok) {
+                const parsed = await circuitsResponse.json();
+                circuits = Array.isArray(parsed) ? parsed : [];
+            }
+        } catch (e) {
+            circuits = [];
         }
 
-        const circuits = await circuitsResponse.json();
         const circuit = findLocalCircuit(circuits, sessionInfo);
 
-        if (!circuit) {
-            throw new Error(
-                `Circuit not found for ${sessionInfo?.Meeting?.Location || "unknown location"}`,
-            );
-        }
-
         loader.title.textContent =
-            circuit.name || circuit.location || "Loading circuit…";
+            circuit?.name ||
+            circuit?.location ||
+            sessionInfo?.Meeting?.Location ||
+            sessionInfo?.Meeting?.Name ||
+            "Loading circuit…";
         loader.status.textContent = "Loading local circuit…";
 
-        const geoResponse = await fetch(`circuits/${circuit.id}.geojson`, {
-            cache: "no-cache",
-        });
-
-        if (geoResponse.ok) {
-            const geoJson = await geoResponse.json();
-            drawLoaderCircuit(loader, extractLoaderCoordinates(geoJson));
+        let loaderDrawn = false;
+        if (circuit) {
+            try {
+                const geoResponse = await fetch(
+                    `circuits/${circuit.id}.geojson`,
+                    { cache: "no-cache" },
+                );
+                if (geoResponse.ok) {
+                    const geoJson = await geoResponse.json();
+                    loaderDrawn = drawLoaderCircuit(
+                        loader,
+                        extractLoaderCoordinates(geoJson),
+                    );
+                }
+            } catch (e) {
+                loaderDrawn = false;
+            }
+        }
+        if (!loaderDrawn) {
+            drawLoaderCircuit(loader, getFallbackLoaderCoordinates());
         }
 
         loader.status.textContent = "Building live timing…";

@@ -61,10 +61,57 @@ class SessionInfoUI {
         this.initWeatherModal();
     }
 
+    static getFallbackTrackShape() {
+        let outline = [
+            [0, 0],
+            [74, 0],
+            [74, 60],
+            [62, 60],
+            [62, 12],
+            [12, 12],
+            [12, 26],
+            [36, 26],
+            [36, 38],
+            [12, 38],
+            [12, 60],
+            [0, 60],
+        ];
+        for (let pass = 0; pass < 2; pass++) {
+            const smoothed = [];
+            outline.forEach((from, i) => {
+                const to = outline[(i + 1) % outline.length];
+                smoothed.push([
+                    from[0] * 0.75 + to[0] * 0.25,
+                    from[1] * 0.75 + to[1] * 0.25,
+                ]);
+                smoothed.push([
+                    from[0] * 0.25 + to[0] * 0.75,
+                    from[1] * 0.25 + to[1] * 0.75,
+                ]);
+            });
+            outline = smoothed;
+        }
+        const points = [];
+        outline.forEach((from, i) => {
+            const to = outline[(i + 1) % outline.length];
+            const dx = to[0] - from[0];
+            const dy = to[1] - from[1];
+            const count = Math.max(1, Math.round(Math.hypot(dx, dy) / 1.5));
+            for (let k = 0; k < count; k++) {
+                points.push([from[0] + (dx * k) / count, from[1] + (dy * k) / count]);
+            }
+        });
+        return points;
+    }
+
     async loadCircuits() {
         try {
             const res = await fetch("scripts/livetiming/circuits.json");
-            this.f1Circuits = await res.json();
+            if (!res.ok) {
+                throw new Error("Circuits not found");
+            }
+            const data = await res.json();
+            this.f1Circuits = Array.isArray(data) ? data : [];
         } catch (e) {
             this.f1Circuits = [];
         }
@@ -259,15 +306,8 @@ class SessionInfoUI {
         await this.initOrUpdateMap(data);
     }
 
-    async initOrUpdateMap(data) {
-        await this.circuitsPromise;
-        if (!this.f1Circuits || this.f1Circuits.length === 0) {
-            return;
-        }
-        const locationName = data?.Meeting?.Location || "";
-        const meetingName =
-            data?.Meeting?.OfficialName || data?.Meeting?.Name || "";
-        let circuit = this.f1Circuits.find(
+    findCircuit(locationName, meetingName) {
+        return this.f1Circuits.find(
             (c) =>
                 (locationName &&
                     c.location &&
@@ -281,40 +321,100 @@ class SessionInfoUI {
                         .toLowerCase()
                         .includes(c.location.toLowerCase())),
         );
-        if (!circuit) {
-            circuit = this.f1Circuits[0];
+    }
+
+    async buildFallbackCircuit(locationName) {
+        if (!locationName) {
+            return null;
         }
-        if (
-            this.currentCircuit &&
-            this.currentCircuit.id === circuit.id &&
-            this.map
-        ) {
-            return;
+        if (this.fallbackCircuit && this.fallbackCircuit.location === locationName) {
+            return this.fallbackCircuit;
         }
-        this.currentCircuit = circuit;
-        this.fetchForecast(circuit.lat, circuit.lon);
-        if (!this.map) {
-            this.map = L.map("leaflet-map-container", {
-                zoomControl: false,
-            }).setView([circuit.lat, circuit.lon], circuit.zoom);
-
-            L.control.zoom({ position: "bottomright" }).addTo(this.map);
-
-            const isLight = document.body.classList.contains("light-mode");
-            const themeName = isLight ? "light" : "dark";
-            const tileUrl = `/api/tiles/${themeName}/{z}/{x}/{y}`;
-
-            this.baseMapLayer = L.tileLayer(tileUrl, {
-                maxZoom: 19,
-                attribution:
-                    '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
-            }).addTo(this.map);
-
-            this.loadRainViewerRadar();
-        } else {
-            this.map.setView([circuit.lat, circuit.lon], circuit.zoom);
+        try {
+            const res = await fetch(
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName)}&count=1`,
+            );
+            if (!res.ok) {
+                throw new Error("Geocoding failed");
+            }
+            const json = await res.json();
+            const place = json?.results?.[0];
+            if (!place) {
+                throw new Error("Location not found");
+            }
+            this.fallbackCircuit = {
+                id: `fallback-${locationName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+                name: locationName,
+                location: locationName,
+                lat: place.latitude,
+                lon: place.longitude,
+                zoom: 14,
+                weatherZoom: 9,
+            };
+            return this.fallbackCircuit;
+        } catch (e) {
+            return null;
         }
-        this.loadCircuitGeoJSON(circuit);
+    }
+
+    setForecastMessage(text) {
+        while (this.forecastItems.firstChild) {
+            this.forecastItems.removeChild(this.forecastItems.firstChild);
+        }
+        const span = document.createElement("span");
+        span.textContent = text;
+        this.forecastItems.appendChild(span);
+    }
+
+    async initOrUpdateMap(data) {
+        try {
+            await this.circuitsPromise;
+            const locationName = data?.Meeting?.Location || "";
+            const meetingName =
+                data?.Meeting?.OfficialName || data?.Meeting?.Name || "";
+            let circuit = this.findCircuit(locationName, meetingName);
+            if (!circuit) {
+                circuit = await this.buildFallbackCircuit(locationName);
+            }
+            if (!circuit) {
+                this.setForecastMessage("Forecast unavailable");
+                return;
+            }
+            if (
+                this.currentCircuit &&
+                this.currentCircuit.id === circuit.id &&
+                this.map
+            ) {
+                return;
+            }
+            this.currentCircuit = circuit;
+            this.fetchForecast(circuit.lat, circuit.lon);
+            if (typeof L === "undefined") {
+                return;
+            }
+            if (!this.map) {
+                this.map = L.map("leaflet-map-container", {
+                    zoomControl: false,
+                }).setView([circuit.lat, circuit.lon], circuit.zoom);
+
+                L.control.zoom({ position: "bottomright" }).addTo(this.map);
+
+                const isLight = document.body.classList.contains("light-mode");
+                const themeName = isLight ? "light" : "dark";
+                const tileUrl = `/api/tiles/${themeName}/{z}/{x}/{y}`;
+
+                this.baseMapLayer = L.tileLayer(tileUrl, {
+                    maxZoom: 19,
+                    attribution:
+                        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
+                }).addTo(this.map);
+
+                this.loadRainViewerRadar();
+            } else {
+                this.map.setView([circuit.lat, circuit.lon], circuit.zoom);
+            }
+            await this.loadCircuitGeoJSON(circuit);
+        } catch (e) {}
     }
 
     async loadRainViewerRadar() {
@@ -322,6 +422,9 @@ class SessionInfoUI {
             const res = await fetch(
                 "https://api.rainviewer.com/public/weather-maps.json",
             );
+            if (!res.ok) {
+                return;
+            }
             const data = await res.json();
             if (data.radar && data.radar.past && data.radar.past.length > 0) {
                 const latestRadar = data.radar.past[data.radar.past.length - 1];
@@ -339,10 +442,39 @@ class SessionInfoUI {
         } catch (err) {}
     }
 
+    buildFallbackTrackLayer(circuit) {
+        const shape = SessionInfoUI.getFallbackTrackShape();
+        const metersPerUnit = 12;
+        const metersPerDegreeLat = 111320;
+        const metersPerDegreeLon =
+            111320 * Math.cos((circuit.lat * Math.PI) / 180);
+        const latLngs = shape.map(([x, y]) => [
+            circuit.lat - ((y - 30) * metersPerUnit) / metersPerDegreeLat,
+            circuit.lon + ((x - 37) * metersPerUnit) / metersPerDegreeLon,
+        ]);
+        latLngs.push(latLngs[0]);
+        return L.polyline(latLngs, this.trackStyle()).addTo(this.map);
+    }
+
+    trackStyle() {
+        return {
+            color: "#FF1801",
+            weight: 4,
+            opacity: 0.9,
+            lineCap: "round",
+            lineJoin: "round",
+        };
+    }
+
     async loadCircuitGeoJSON(circuit) {
+        if (!this.map) {
+            return;
+        }
         if (this.geoJsonLayer) {
             this.map.removeLayer(this.geoJsonLayer);
+            this.geoJsonLayer = null;
         }
+        this.circuitCenter = null;
         try {
             const res = await fetch(`circuits/${circuit.id}.geojson`);
             if (!res.ok) {
@@ -350,16 +482,20 @@ class SessionInfoUI {
             }
             const data = await res.json();
             this.geoJsonLayer = L.geoJSON(data, {
-                style: {
-                    color: "#FF1801",
-                    weight: 4,
-                    opacity: 0.9,
-                    lineCap: "round",
-                    lineJoin: "round",
-                },
+                style: this.trackStyle(),
             }).addTo(this.map);
+        } catch (e) {
+            if (this.geoJsonLayer) {
+                this.map.removeLayer(this.geoJsonLayer);
+                this.geoJsonLayer = null;
+            }
+            try {
+                this.geoJsonLayer = this.buildFallbackTrackLayer(circuit);
+            } catch (err) {}
+        }
+        if (this.geoJsonLayer) {
             this.circuitCenter = this.geoJsonLayer.getBounds().getCenter();
-        } catch (e) {}
+        }
     }
 
     parseTime(str) {
