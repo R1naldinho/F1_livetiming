@@ -272,7 +272,9 @@ class F1LiveTimingUI {
         const points = this.extractCircuitPoints(this.activeCircuitData);
         if (!points || points.length < 3) return;
         this.originalGpsPoints = points;
-        this.gpsPoints = this.interpolateCircuitPoints(points, 5);
+        this.gpsPoints = this.activeCircuitData.fallback
+            ? points
+            : this.interpolateCircuitPoints(points, 5);
 
         let minX = Infinity,
             maxX = -Infinity,
@@ -303,6 +305,10 @@ class F1LiveTimingUI {
             this.gpsSvg.removeChild(this.gpsSvg.firstChild);
         }
 
+        const isFallbackTrack = !!this.activeCircuitData?.fallback;
+        const capStyle = isFallbackTrack ? "square" : "round";
+        const joinStyle = isFallbackTrack ? "miter" : "round";
+
         let fullPathData = "";
         this.gpsPoints.forEach((point, index) => {
             if (index === 0) fullPathData = `M ${point.x} ${point.y}`;
@@ -318,8 +324,8 @@ class F1LiveTimingUI {
         shadowPath.setAttribute("fill", "none");
         shadowPath.setAttribute("stroke", "rgba(0,0,0,0.35)");
         shadowPath.setAttribute("stroke-width", "190");
-        shadowPath.setAttribute("stroke-linecap", "round");
-        shadowPath.setAttribute("stroke-linejoin", "round");
+        shadowPath.setAttribute("stroke-linecap", capStyle);
+        shadowPath.setAttribute("stroke-linejoin", joinStyle);
         this.gpsSvg.appendChild(shadowPath);
 
         const total = this.gpsPoints.length;
@@ -367,8 +373,8 @@ class F1LiveTimingUI {
             trackPath.setAttribute("fill", "none");
             trackPath.setAttribute("stroke", seg.color);
             trackPath.setAttribute("stroke-width", "120");
-            trackPath.setAttribute("stroke-linecap", "round");
-            trackPath.setAttribute("stroke-linejoin", "round");
+            trackPath.setAttribute("stroke-linecap", capStyle);
+            trackPath.setAttribute("stroke-linejoin", joinStyle);
             this.gpsSvg.appendChild(trackPath);
         });
 
@@ -380,8 +386,8 @@ class F1LiveTimingUI {
         innerPath.setAttribute("fill", "none");
         innerPath.setAttribute("stroke", "rgba(255,255,255,0.14)");
         innerPath.setAttribute("stroke-width", "28");
-        innerPath.setAttribute("stroke-linecap", "round");
-        innerPath.setAttribute("stroke-linejoin", "round");
+        innerPath.setAttribute("stroke-linecap", capStyle);
+        innerPath.setAttribute("stroke-linejoin", joinStyle);
         this.gpsSvg.appendChild(innerPath);
 
         const center = document.createElementNS(
@@ -393,7 +399,7 @@ class F1LiveTimingUI {
         center.setAttribute("stroke", "rgba(255,255,255,0.18)");
         center.setAttribute("stroke-width", "4");
         center.setAttribute("stroke-dasharray", "12 12");
-        center.setAttribute("stroke-linecap", "round");
+        center.setAttribute("stroke-linecap", capStyle);
         this.gpsSvg.appendChild(center);
 
         this.buildTrackLookup();

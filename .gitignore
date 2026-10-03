@@ -3,5 +3,5 @@ doc/
 
 .env
 push.bat
-
+public/loaderCircuitEditor.html
 *.log

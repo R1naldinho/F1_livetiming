@@ -75,16 +75,18 @@ function createNavbar() {
         btn.className = `nav-link ${index === 0 ? "active" : ""}`;
         btn.textContent = tab.label;
         btn.addEventListener("click", () => {
-            document.querySelectorAll(".nav-link").forEach(b => b.classList.remove("active"));
+            document
+                .querySelectorAll(".nav-link")
+                .forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
 
-            document.querySelectorAll(".tab-content").forEach(el => {
+            document.querySelectorAll(".tab-content").forEach((el) => {
                 el.style.display = "none";
             });
             const target = document.getElementById(tab.id);
             if (target) {
                 target.style.display = "block";
-                
+
                 if (tab.id === "standings" && !window.standingsUI) {
                     window.standingsUI = new StandingsUI("standings");
                 }
@@ -98,7 +100,7 @@ function createNavbar() {
 
     const themeBtn = document.createElement("button");
     themeBtn.className = "theme-toggle-btn";
-    
+
     const isLight = localStorage.getItem("theme") === "light";
     if (isLight) {
         document.body.classList.add("light-mode");
@@ -115,11 +117,13 @@ function createNavbar() {
         const lightActive = document.body.classList.contains("light-mode");
         updateThemeBtnContent(lightActive);
         localStorage.setItem("theme", lightActive ? "light" : "dark");
-        
+
         const sessionUI = window.f1Client?.ui?.sessionUI;
         if (sessionUI && sessionUI.baseMapLayer) {
             const themeName = lightActive ? "light" : "dark";
-            sessionUI.baseMapLayer.setUrl(`/api/tiles/${themeName}/{z}/{x}/{y}`);
+            sessionUI.baseMapLayer.setUrl(
+                `/api/tiles/${themeName}/{z}/{x}/{y}`,
+            );
         }
     };
 
@@ -185,6 +189,8 @@ function createLiveTimingLoader() {
     dot.setAttribute("fill", "#fff");
     dot.setAttribute("stroke", "#ff1801");
     dot.setAttribute("stroke-width", "3");
+    dot.style.opacity = "0";
+    dot.style.transition = "opacity .25s ease";
     svg.appendChild(dot);
 
     const title = document.createElement("div");
@@ -286,7 +292,7 @@ function extractLoaderCoordinates(geoJson) {
     return coordinates;
 }
 
-function drawLoaderCircuit(loader, coordinates) {
+function drawLoaderCircuit(loader, coordinates, sharp = false) {
     if (!loader || !coordinates || coordinates.length < 2) return false;
 
     if (typeof loader.stopAnimation === "function") {
@@ -351,6 +357,12 @@ function drawLoaderCircuit(loader, coordinates) {
         d += `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)} `;
     });
 
+    [loader.track, loader.glow].forEach((el) => {
+        if (!el) return;
+        el.setAttribute("stroke-linecap", sharp ? "square" : "round");
+        el.setAttribute("stroke-linejoin", sharp ? "miter" : "round");
+    });
+
     if (loader.track) loader.track.setAttribute("d", d);
     if (loader.glow) loader.glow.setAttribute("d", d);
 
@@ -368,6 +380,7 @@ function drawLoaderCircuit(loader, coordinates) {
     };
 
     animate();
+    loader.dot.style.opacity = "1";
 
     loader.stopAnimation = () => {
         if (raf) {
@@ -451,7 +464,7 @@ async function prepareLiveTimingPage() {
             }
         }
         if (!loaderDrawn) {
-            drawLoaderCircuit(loader, getFallbackLoaderCoordinates());
+            drawLoaderCircuit(loader, getFallbackLoaderCoordinates(), true);
         }
 
         loader.status.textContent = "Building live timing…";
@@ -462,7 +475,7 @@ async function prepareLiveTimingPage() {
         await ui.updateSession(sessionInfo);
 
         const elapsed = performance.now() - loaderStartedAt;
-        
+
         if (elapsed < 2000) {
             await new Promise((resolve) => setTimeout(resolve, 2000 - elapsed));
         }

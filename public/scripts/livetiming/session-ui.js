@@ -62,45 +62,112 @@ class SessionInfoUI {
     }
 
     static getFallbackTrackShape() {
-        let outline = [
-            [0, 0],
-            [74, 0],
-            [74, 60],
-            [62, 60],
-            [62, 12],
-            [12, 12],
-            [12, 26],
-            [36, 26],
-            [36, 38],
-            [12, 38],
-            [12, 60],
-            [0, 60],
+        const sketch = [
+            [283, 73],
+            [319, 79],
+            [360, 86],
+            [392, 94],
+            [434, 105],
+            [475, 114],
+            [514, 92],
+            [535, 72],
+            [572, 70],
+            [597, 68],
+            [585, 101],
+            [573, 144],
+            [562, 180],
+            [551, 213],
+            [540, 246],
+            [527, 294],
+            [518, 333],
+            [506, 375],
+            [553, 370],
+            [602, 372],
+            [606, 414],
+            [561, 412],
+            [517, 412],
+            [470, 412],
+            [434, 410],
+            [405, 409],
+            [370, 408],
+            [371, 373],
+            [402, 374],
+            [444, 375],
+            [466, 304],
+            [483, 252],
+            [509, 174],
+            [524, 131],
+            [497, 149],
+            [466, 170],
+            [427, 163],
+            [379, 156],
+            [328, 146],
+            [296, 140],
+            [282, 176],
+            [323, 184],
+            [354, 190],
+            [389, 198],
+            [372, 240],
+            [327, 232],
+            [293, 225],
+            [261, 219],
+            [246, 256],
+            [226, 303],
+            [206, 353],
+            [195, 377],
+            [182, 402],
+            [156, 402],
+            [106, 402],
+            [125, 366],
+            [141, 322],
+            [161, 273],
+            [185, 219],
+            [201, 184],
+            [221, 136],
+            [235, 100],
+            [251, 67],
         ];
-        for (let pass = 0; pass < 2; pass++) {
-            const smoothed = [];
-            outline.forEach((from, i) => {
-                const to = outline[(i + 1) % outline.length];
-                smoothed.push([
-                    from[0] * 0.75 + to[0] * 0.25,
-                    from[1] * 0.75 + to[1] * 0.25,
-                ]);
-                smoothed.push([
-                    from[0] * 0.25 + to[0] * 0.75,
-                    from[1] * 0.25 + to[1] * 0.75,
-                ]);
-            });
-            outline = smoothed;
-        }
+
+        const outline = sketch.map(([x, y]) => [
+            (x - 105) * 0.15,
+            (y - 70) * 0.15,
+        ]);
         const points = [];
-        outline.forEach((from, i) => {
-            const to = outline[(i + 1) % outline.length];
-            const dx = to[0] - from[0];
-            const dy = to[1] - from[1];
-            const count = Math.max(1, Math.round(Math.hypot(dx, dy) / 1.5));
+        const len = outline.length;
+
+        const getInterpolatedPoint = (p0, p1, p2, p3, t) => {
+            const t2 = t * t;
+            const t3 = t2 * t;
+            const x =
+                0.5 *
+                (2 * p1[0] +
+                    (-p0[0] + p2[0]) * t +
+                    (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+                    (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
+            const y =
+                0.5 *
+                (2 * p1[1] +
+                    (-p0[1] + p2[1]) * t +
+                    (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+                    (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
+            return [x, y];
+        };
+
+        outline.forEach((p1, i) => {
+            const p0 = outline[(i - 1 + len) % len];
+            const p2 = outline[(i + 1) % len];
+            const p3 = outline[(i + 2) % len];
+
+            const dx = p2[0] - p1[0];
+            const dy = p2[1] - p1[1];
+            const count = Math.max(1, Math.round(Math.hypot(dx, dy) / 5));
+
             for (let k = 0; k < count; k++) {
-                points.push([from[0] + (dx * k) / count, from[1] + (dy * k) / count]);
+                const t = k / count;
+                points.push(getInterpolatedPoint(p0, p1, p2, p3, t));
             }
         });
+
         return points;
     }
 
@@ -327,7 +394,10 @@ class SessionInfoUI {
         if (!locationName) {
             return null;
         }
-        if (this.fallbackCircuit && this.fallbackCircuit.location === locationName) {
+        if (
+            this.fallbackCircuit &&
+            this.fallbackCircuit.location === locationName
+        ) {
             return this.fallbackCircuit;
         }
         try {
@@ -444,16 +514,24 @@ class SessionInfoUI {
 
     buildFallbackTrackLayer(circuit) {
         const shape = SessionInfoUI.getFallbackTrackShape();
+        const xs = shape.map((p) => p[0]);
+        const ys = shape.map((p) => p[1]);
+        const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+        const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
         const metersPerUnit = 12;
         const metersPerDegreeLat = 111320;
         const metersPerDegreeLon =
             111320 * Math.cos((circuit.lat * Math.PI) / 180);
         const latLngs = shape.map(([x, y]) => [
-            circuit.lat - ((y - 30) * metersPerUnit) / metersPerDegreeLat,
-            circuit.lon + ((x - 37) * metersPerUnit) / metersPerDegreeLon,
+            circuit.lat - ((y - centerY) * metersPerUnit) / metersPerDegreeLat,
+            circuit.lon + ((x - centerX) * metersPerUnit) / metersPerDegreeLon,
         ]);
         latLngs.push(latLngs[0]);
-        return L.polyline(latLngs, this.trackStyle()).addTo(this.map);
+        return L.polyline(latLngs, {
+            ...this.trackStyle(),
+            lineCap: "square",
+            lineJoin: "miter",
+        }).addTo(this.map);
     }
 
     trackStyle() {
@@ -519,26 +597,29 @@ class SessionInfoUI {
     }
 
     updateClock(data) {
-    if (!data) return;
-    this.clockData = data;
+        if (!data) return;
+        this.clockData = data;
 
-    if (data.Extrapolating) {
-        const serverTimeMs = new Date(data.Utc).getTime();
-        const initialRemainingMs = this.parseTime(data.Remaining) * 1000;
-        
-        const nowMs = Date.now();
-        const elapsedMs = Math.max(0, nowMs - serverTimeMs); 
-        
-        const effectiveRemainingMs = Math.max(0, initialRemainingMs - elapsedMs);
+        if (data.Extrapolating) {
+            const serverTimeMs = new Date(data.Utc).getTime();
+            const initialRemainingMs = this.parseTime(data.Remaining) * 1000;
 
-        this.clockData.targetMs = nowMs + effectiveRemainingMs;
+            const nowMs = Date.now();
+            const elapsedMs = Math.max(0, nowMs - serverTimeMs);
 
-        if (!this.clockInterval) {
-            this.clockInterval = setInterval(() => this.tickClock(), 1000);
+            const effectiveRemainingMs = Math.max(
+                0,
+                initialRemainingMs - elapsedMs,
+            );
+
+            this.clockData.targetMs = nowMs + effectiveRemainingMs;
+
+            if (!this.clockInterval) {
+                this.clockInterval = setInterval(() => this.tickClock(), 1000);
+            }
         }
+        this.tickClock();
     }
-    this.tickClock();
-}
     tickClock() {
         if (!this.clockData) return;
         if (
@@ -563,23 +644,23 @@ class SessionInfoUI {
     }
 
     updateSessionProgress(data, totalLaps) {
-    if (!data) return;
-    if (data.kind === "race") {
-        this.clockElement.style.display = "none";
-        this.progressElement.style.display = "block";
-        this.progressElement.className = "clock-pill";
-        this.progressElement.textContent =
-            data.currentLap > 0
-                ? `Lap ${data.currentLap}${totalLaps ? `/${totalLaps}` : ""}`
-                : "Lap --";
-    } else {
-        this.clockElement.style.display = "block";
-        this.progressElement.style.display = "block";
-        this.progressElement.className = "session-progress";
-        this.progressElement.textContent =
-            data.kind === "qualifying" ? "Qualifying" : "Practice";
+        if (!data) return;
+        if (data.kind === "race") {
+            this.clockElement.style.display = "none";
+            this.progressElement.style.display = "block";
+            this.progressElement.className = "clock-pill";
+            this.progressElement.textContent =
+                data.currentLap > 0
+                    ? `Lap ${data.currentLap}${totalLaps ? `/${totalLaps}` : ""}`
+                    : "Lap --";
+        } else {
+            this.clockElement.style.display = "block";
+            this.progressElement.style.display = "block";
+            this.progressElement.className = "session-progress";
+            this.progressElement.textContent =
+                data.kind === "qualifying" ? "Qualifying" : "Practice";
+        }
     }
-}
 
     updateTrackStatus(data) {
         if (!data) return;
