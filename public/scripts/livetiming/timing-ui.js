@@ -1087,21 +1087,31 @@ class F1LiveTimingUI {
                 (seg) => seg?.Status === 2064 || seg?.Status === 2052,
             );
         if (driverData.retired || stopped) {
+            row.classList.add("row-retired");
             const badge = document.createElement("span");
             badge.className = "status-badge badge-retired";
             badge.textContent = "DNF";
             c.badgeContainer.appendChild(badge);
         } else if (driverData.inPit || isInPitSegmentStatus) {
+            row.classList.remove("row-retired");
             const badge = document.createElement("span");
             badge.className = "status-badge badge-pit";
             badge.textContent = "PIT";
             c.badgeContainer.appendChild(badge);
         } else if (driverData.pitOut) {
+            row.classList.remove("row-retired");
             const badge = document.createElement("span");
             badge.className = "status-badge badge-out";
             badge.textContent = "PIT OUT";
             c.badgeContainer.appendChild(badge);
         }
+        if(driverData.knockedOut || driverData.cutOff){
+            row.classList.remove("row-retired");
+            row.classList.add("row-knockedOut");
+        }else{
+            row.classList.remove("row-knockedOut");
+        }
+        
         if (driverData.currentTyre && driverData.currentTyre.Compound) {
             const compound = driverData.currentTyre.Compound.toUpperCase();
             const total = parseInt(driverData.currentTyre.TotalLaps, 10) || 0;

@@ -663,11 +663,36 @@ class SessionInfoUI {
     }
 
     updateTrackStatus(data) {
-        if (!data) return;
-        const message = data.Message || "CLEAR";
-        this.trackStatusElement.textContent = message;
-        this.trackStatusElement.className = `track-status-badge status-${message.toLowerCase().replace(/\s+/g, "-")}`;
+    if (!data) return;
+
+    const rawStatus = (typeof data === 'string' ? data : data.Message || data.Status || "CLEAR").toString().toUpperCase();
+
+    let label = "CLEAR";
+    let cssClass = "all-clear";
+
+    if (rawStatus.includes("RED") || rawStatus === "5") {
+        label = "RED FLAG";
+        cssClass = "red-flag";
+    } else if (rawStatus.includes("VSC") || rawStatus.includes("VIRTUAL") || rawStatus === "6" || rawStatus === "7") {
+        label = "VSC";
+        cssClass = "yellow-flag";
+    } else if (rawStatus.includes("SC") || rawStatus.includes("SAFETY") || rawStatus === "4") {
+        label = "SAFETY CAR";
+        cssClass = "yellow-flag";
+    } else if (rawStatus.includes("YELLOW") || rawStatus === "2") {
+        label = "YELLOW FLAG";
+        cssClass = "yellow-flag";
+    } else if (rawStatus.includes("CLEAR") || rawStatus.includes("GREEN") || rawStatus === "1") {
+        label = "GREEN FLAG";
+        cssClass = "green-flag";
+    } else {
+        label = rawStatus;
+        cssClass = rawStatus.toLowerCase().replace(/\s+/g, "-");
     }
+
+    this.trackStatusElement.textContent = label;
+    this.trackStatusElement.className = `track-status-badge status-${cssClass}`;
+}
 
     updateWeather(data) {
         if (!data) return;

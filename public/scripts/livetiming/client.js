@@ -347,8 +347,6 @@ class F1LiveClient {
 
         if (
             type === "race" ||
-            type === "sprint" ||
-            name.includes("sprint") ||
             name.includes("race")
         ) {
             return "race";
@@ -433,6 +431,7 @@ class F1LiveClient {
 
     getDriverData(driverNum) {
         const info = this.timingData[driverNum] || {};
+        console.log(info)
         const stats = this.timingStats[driverNum] || {};
         const appData = this.timingAppData[driverNum] || {};
         const driverObj = this.drivers[driverNum] || {};

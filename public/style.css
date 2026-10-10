@@ -641,20 +641,19 @@ body.light-mode text.wind-text {
     font-size: 14px;
 }
 
-.status-yellow {
+.status-yellow-flag {
     background: rgba(227, 179, 65, 0.15);
     color: #e3b341;
     border-color: #e3b341;
 }
 
-.status-clear,
-.status-green {
+.status-green-flag {
     background: rgba(46, 160, 67, 0.15);
     color: #3fb950;
     border-color: #3fb950;
 }
 
-.status-red {
+.status-red-flag {
     background: rgba(248, 81, 73, 0.15);
     color: #f85149;
     border-color: #f85149;
@@ -697,7 +696,7 @@ body.light-mode text.wind-text {
 }
 
 .standings-table tr:hover,
-.timing-table tr:hover {
+.timing-table tr:not(.row-retired, .row-knockedOut):hover {
     background: #1c2128;
 }
 
@@ -2606,4 +2605,14 @@ body.light-mode .summary-item-value {
     }
     100% {
     }
+}
+
+
+.row-retired{
+    opacity: 0.35;
+}
+
+body.light-mode tr.row-knockedOut td,
+.row-knockedOut{
+    background-color: rgba(164, 2, 2, 0.25);
 }
