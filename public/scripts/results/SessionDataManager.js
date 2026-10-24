@@ -4,6 +4,7 @@ class SessionDataManager {
         this.currentPath = null;
         this.sessionData = null;
         this.sessionInfo = null;
+        this.overviewStore = new OverviewStore();
         this.driverStore = new DriverStore();
         this.tyreStore = new TyreStore();
         this.lapTimeStore = new LapTimeStore();
@@ -20,9 +21,15 @@ class SessionDataManager {
     parseSessionInfo(rawInfo) {
         if (!rawInfo) return null;
         if (Array.isArray(rawInfo) && rawInfo.length > 0) {
-            const finalised = rawInfo.slice().reverse().find(entry => entry?.data?.SessionStatus === "Finalised");
+            const finalised = rawInfo
+                .slice()
+                .reverse()
+                .find((entry) => entry?.data?.SessionStatus === "Finalised");
             if (finalised) return finalised.data;
-            const started = rawInfo.slice().reverse().find(entry => entry?.data?.SessionStatus === "Started");
+            const started = rawInfo
+                .slice()
+                .reverse()
+                .find((entry) => entry?.data?.SessionStatus === "Started");
             if (started) return started.data;
             return rawInfo[0].data || rawInfo[0];
         }
@@ -35,13 +42,24 @@ class SessionDataManager {
         if (!activePath) throw new Error("Session path not specified.");
 
         try {
-            const [sessionRes, infoRes, driversRes, tyresRes, stintsRes, lapTimesRes] = await Promise.all([
+            const [
+                sessionRes,
+                infoRes,
+                driversRes,
+                tyresRes,
+                stintsRes,
+                lapTimesRes,
+                lapSeriesRes,
+                finalPositionsRes,
+            ] = await Promise.all([
                 fetch(`${this.baseUrl}/session/${activePath}`),
                 fetch(`${this.baseUrl}/sessionInfo/${activePath}`),
                 fetch(`${this.baseUrl}/driverList/${activePath}`),
                 fetch(`${this.baseUrl}/currentTyres/${activePath}`),
                 fetch(`${this.baseUrl}/tyreStintSeries/${activePath}`),
-                fetch(`${this.baseUrl}/lapTimes/${activePath}`)
+                fetch(`${this.baseUrl}/lapTimes/${activePath}`),
+                fetch(`${this.baseUrl}/lapSeries/${activePath}`),
+                fetch(`${this.baseUrl}/finalPositions/${activePath}`),
             ]);
 
             if (!sessionRes.ok || !infoRes.ok || !driversRes.ok) {
@@ -54,20 +72,38 @@ class SessionDataManager {
 
             const driverList = await driversRes.json();
             const currentTyres = tyresRes.ok ? await tyresRes.json() : null;
-            const tyreStintSeries = stintsRes.ok ? await stintsRes.json() : null;
+            const tyreStintSeries = stintsRes.ok
+                ? await stintsRes.json()
+                : null;
             const lapTimes = lapTimesRes.ok ? await lapTimesRes.json() : null;
+            const lapSeries = lapSeriesRes.ok
+                ? await lapSeriesRes.json()
+                : null;
+            const finalPositions = finalPositionsRes.ok
+                ? await finalPositionsRes.json()
+                : null;
 
             this.driverStore.setDrivers(driverList);
             this.tyreStore.setStints(tyreStintSeries);
             this.tyreStore.setCurrentTyres(currentTyres);
             this.lapTimeStore.setLapTimes(lapTimes);
 
+            this.overviewStore.setBundle({
+                data: {
+                    drivers: driverList,
+                    lapTimes: lapTimes,
+                    lapSeries: lapSeries,
+                    finalPositions: finalPositions,
+                },
+            });
+
             return {
                 sessionData: this.sessionData,
                 sessionInfo: this.sessionInfo,
                 driverStore: this.driverStore,
                 tyreStore: this.tyreStore,
-                lapTimeStore: this.lapTimeStore
+                lapTimeStore: this.lapTimeStore,
+                overviewStore: this.overviewStore,
             };
         } catch (error) {
             console.error("Error loading session data:", error);

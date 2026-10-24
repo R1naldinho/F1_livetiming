@@ -4,6 +4,10 @@ import http from "http";
 import dotenv from "dotenv";
 import axios from "axios";
 import * as cheerio from "cheerio";
+import crypto from "crypto";
+import fs from "fs";
+import { spawn } from "child_process";
+import { EventEmitter } from "events";
 
 dotenv.config();
 
@@ -12,6 +16,14 @@ const PORT = Number(process.env.PORT || 3000);
 const AUTH_TOKEN = process.env.F1_AUTH_TOKEN;
 const F1_API_URL = process.env.F1_API_URL;
 const CARTO_API_KEY = process.env.CARTO_API_KEY || "";
+
+const f1Headers = {
+    headers: {
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        authorization: `Bearer ${process.env.SUBSCRIPTION_TOKEN}`,
+    },
+};
 
 if (!AUTH_TOKEN) {
     throw new Error("F1_AUTH_TOKEN is required");
@@ -74,6 +86,12 @@ const cleanText = (str) => {
         .replace(/\s+/g, " ")
         .trim();
 };
+
+import CircuitEnricher from "./circuitEnricher.js";
+const circuitEnricher = new CircuitEnricher({
+    contact: "your-email@example.com",
+    overrides: {},
+});
 
 const scrapeStandings = async () => {
     try {
@@ -378,18 +396,20 @@ const F1_HEADERS = {
 };
 
 const extractScalarField = (html, key) => {
-    const regex = new RegExp('\\\\"' + key + '\\\\":\\\\"((?:[^\\\\"]|\\\\.|<[^>]*>)*?)\\\\"');
+    const regex = new RegExp(
+        '\\\\"' + key + '\\\\":\\\\"((?:[^\\\\"]|\\\\.|<[^>]*>)*?)\\\\"',
+    );
     const match = html.match(regex);
-    
+
     if (!match) return "";
 
     return match[1]
-        .replace(/<script[\s\S]*?<\/script>/gi, '')
-        .replace(/\\?"]\)\s*(?:self\.__next_f\.push\(\[1,")?/gi, '')
-        .replace(/\\u003C/gi, '<')
-        .replace(/\\u003E/gi, '>')
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/\\?"]\)\s*(?:self\.__next_f\.push\(\[1,")?/gi, "")
+        .replace(/\\u003C/gi, "<")
+        .replace(/\\u003E/gi, ">")
         .replace(/\\"/g, '"')
-        .replace(/\\\\/g, '\\')
+        .replace(/\\\\/g, "\\")
         .trim();
 };
 
@@ -611,9 +631,11 @@ const scrapeCalendar = async () => {
             }),
         );
 
+        const finalRaces = await circuitEnricher.enrich(enrichedRaces);
+
         cachedCalendar = {
             year: currentYear,
-            races: enrichedRaces,
+            races: finalRaces,
         };
         lastCalendarScrapedTime = Date.now();
         return cachedCalendar;
@@ -880,7 +902,6 @@ function connectToF1() {
                 if (parsed.type === 3 && parsed.result) {
                     processSnapshot(parsed.result);
                 }
-
             } catch (error) {
                 console.error(
                     JSON.stringify({
@@ -905,7 +926,7 @@ function connectToF1() {
 
 connectToF1();
 
-function getPath(req){
+function getPath(req) {
     const splat = req.params.splat;
 
     if (!splat) {
@@ -915,7 +936,6 @@ function getPath(req){
     return Array.isArray(splat) ? splat.join("/") : splat;
 }
 
-// Utility function to parse streamed JSON data from the F1 API
 function parseStreamToJson(stream) {
     const lines = stream.split(/\r?\n/);
     const result = [];
@@ -945,12 +965,7 @@ function parseStreamToJson(stream) {
     return result;
 }
 
-// Multiviewer API
-
-// API to get circuit map data
-// used to get the circuit map data for a specific year and circuit key from the Multiviewer API
-// to do: not use this API, create mine api
-app.get("/api/multiviewer/circuitMap/:year/:circuitKey", async(req, res) => {
+app.get("/api/multiviewer/circuitMap/:year/:circuitKey", async (req, res) => {
     const { year, circuitKey } = req.params;
     try {
         const response = await axios.get(
@@ -963,13 +978,18 @@ app.get("/api/multiviewer/circuitMap/:year/:circuitKey", async(req, res) => {
     }
 });
 
-app.get("/api/races/:year", async(req, res) => {
+app.get("/api/races/:year", async (req, res) => {
     const { year } = req.params;
     try {
-        const response = await axios.get(`${F1_API_URL}${year}/Index.json`);
-        console.log(year)
-        if(year == 2021){
-            response.data.Meetings[response.data.Meetings.length - 2].Sessions.pop();
+        const response = await axios.get(
+            `${F1_API_URL}${year}/Index.json`,
+            f1Headers,
+        );
+        console.log(year);
+        if (year == 2021) {
+            response.data.Meetings[
+                response.data.Meetings.length - 2
+            ].Sessions.pop();
         }
         res.json(response.data);
     } catch (error) {
@@ -978,11 +998,14 @@ app.get("/api/races/:year", async(req, res) => {
     }
 });
 
-app.get("/api/session/*splat", async(req, res) => {
+app.get("/api/session/*splat", async (req, res) => {
     const path = getPath(req, res);
 
     try {
-        const response = await axios.get(`${F1_API_URL}${path}Index.json`);
+        const response = await axios.get(
+            `${F1_API_URL}${path}Index.json`,
+            f1Headers,
+        );
         res.json(response.data);
     } catch (error) {
         console.error("Error fetching data:", error.message);
@@ -990,12 +1013,13 @@ app.get("/api/session/*splat", async(req, res) => {
     }
 });
 
-app.get("/api/sessionInfo/*splat", async(req, res) => {
+app.get("/api/sessionInfo/*splat", async (req, res) => {
     const path = getPath(req, res);
 
     try {
         const response = await axios.get(
             `${F1_API_URL}${path}SessionInfo.jsonStream`,
+            f1Headers,
         );
         res.json(parseStreamToJson(response.data));
     } catch (error) {
@@ -1004,12 +1028,13 @@ app.get("/api/sessionInfo/*splat", async(req, res) => {
     }
 });
 
-app.get("/api/driverList/*splat", async(req, res) => {
+app.get("/api/driverList/*splat", async (req, res) => {
     const path = getPath(req, res);
 
     try {
         const response = await axios.get(
             `${F1_API_URL}${path}DriverList.json`,
+            f1Headers,
         );
         res.json(response.data);
     } catch (error) {
@@ -1018,12 +1043,13 @@ app.get("/api/driverList/*splat", async(req, res) => {
     }
 });
 
-app.get("/api/tyreStintSeries/*splat", async(req, res) => {
+app.get("/api/tyreStintSeries/*splat", async (req, res) => {
     const path = getPath(req, res);
 
     try {
         const response = await axios.get(
             `${F1_API_URL}${path}TyreStintSeries.json`,
+            f1Headers,
         );
         res.json(response.data);
     } catch (error) {
@@ -1032,12 +1058,13 @@ app.get("/api/tyreStintSeries/*splat", async(req, res) => {
     }
 });
 
-app.get("/api/currentTyres/*splat", async(req, res) => {
+app.get("/api/currentTyres/*splat", async (req, res) => {
     const path = getPath(req, res);
 
     try {
         const response = await axios.get(
             `${F1_API_URL}${path}CurrentTyres.json`,
+            f1Headers,
         );
         res.json(response.data);
     } catch (error) {
@@ -1094,25 +1121,31 @@ function extractLapSectorTimes(jsonStream) {
                     sector1: null,
                     sector2: null,
                     sector3: null,
-                    lastLapTime: null
+                    lastLapTime: null,
                 };
             }
 
             const driver = pending[driverNumber];
 
             if (driverData.Sectors) {
-                if (driverData.Sectors[0]?.Value !== undefined &&
-                    driverData.Sectors[0].Value !== "") {
+                if (
+                    driverData.Sectors[0]?.Value !== undefined &&
+                    driverData.Sectors[0].Value !== ""
+                ) {
                     driver.sector1 = parseTime(driverData.Sectors[0].Value);
                 }
 
-                if (driverData.Sectors[1]?.Value !== undefined &&
-                    driverData.Sectors[1].Value !== "") {
+                if (
+                    driverData.Sectors[1]?.Value !== undefined &&
+                    driverData.Sectors[1].Value !== ""
+                ) {
                     driver.sector2 = parseTime(driverData.Sectors[1].Value);
                 }
 
-                if (driverData.Sectors[2]?.Value !== undefined &&
-                    driverData.Sectors[2].Value !== "") {
+                if (
+                    driverData.Sectors[2]?.Value !== undefined &&
+                    driverData.Sectors[2].Value !== ""
+                ) {
                     driver.sector3 = parseTime(driverData.Sectors[2].Value);
                 }
             }
@@ -1137,7 +1170,7 @@ function extractLapSectorTimes(jsonStream) {
                     sector1: driver.sector1?.toFixed(3) || null,
                     sector2: driver.sector2?.toFixed(3) || null,
                     sector3: driver.sector3?.toFixed(3) || null,
-                    lapTime: driver.lastLapTime?.toFixed(3) || null
+                    lapTime: driver.lastLapTime?.toFixed(3) || null,
                 });
 
                 driver.sector1 = null;
@@ -1151,7 +1184,7 @@ function extractLapSectorTimes(jsonStream) {
     return result;
 }
 
-app.get("/api/lapTimes/*splat", async(req, res) => {
+app.get("/api/lapTimes/*splat", async (req, res) => {
     const splat = req.params.splat;
 
     if (!splat) {
@@ -1163,6 +1196,7 @@ app.get("/api/lapTimes/*splat", async(req, res) => {
     try {
         const response = await axios.get(
             `${F1_API_URL}${path}TimingData.jsonStream`,
+            f1Headers,
         );
         res.json(extractLapSectorTimes(response.data));
     } catch (error) {
@@ -1171,59 +1205,65 @@ app.get("/api/lapTimes/*splat", async(req, res) => {
     }
 });
 
-// API to get weather data series
-    app.get("/api/weatherDataSeries/*splat", async(req, res) => {
-        const path = getPath(req, res);
+app.get("/api/weatherDataSeries/*splat", async (req, res) => {
+    const path = getPath(req, res);
 
-        try {
-            const response = await axios.get(
-                `${F1_API_URL}${path}WeatherDataSeries.json`,
-            );
-            res.json(response.data);
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            res.status(500).json({ error: "Server error" });
-        }
-    });
+    try {
+        const response = await axios.get(
+            `${F1_API_URL}${path}WeatherDataSeries.json`,
+            f1Headers,
+        );
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
 
-    // API to get lap series data
-    app.get("/api/lapSeries/*splat", async(req, res) => {
-        const path = getPath(req, res);
+app.get("/api/lapSeries/*splat", async (req, res) => {
+    const path = getPath(req, res);
 
-        try {
-            const response = await axios.get(`${F1_API_URL}${path}LapSeries.json`);
-            res.json(response.data);
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            res.status(500).json({ error: "Server error" });
-        }
-    });
+    try {
+        const response = await axios.get(
+            `${F1_API_URL}${path}LapSeries.json`,
+            f1Headers,
+        );
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
 
-    // API to get top three drivers data
-    app.get("/api/topThree/*splat", async(req, res) => {
-        const path = getPath(req, res);
+app.get("/api/topThree/*splat", async (req, res) => {
+    const path = getPath(req, res);
 
-        try {
-            const response = await axios.get(`${F1_API_URL}${path}TopThree.json`);
-            res.json(response.data);
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            res.status(500).json({ error: "Server error" });
-        }
-    });
+    try {
+        const response = await axios.get(
+            `${F1_API_URL}${path}TopThree.json`,
+            f1Headers,
+        );
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
 
-    // API to get final order of a session
-    app.get("/api/finalPositions/*splat", async(req, res) => {
-        const path = getPath(req, res);
+app.get("/api/finalPositions/*splat", async (req, res) => {
+    const path = getPath(req, res);
 
-        try {
-            const response = await axios.get(`${F1_API_URL}${path}DriverRaceInfo.json`);
-            res.json(response.data);
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            res.status(500).json({ error: "Server error" });
-        }
-    });
+    try {
+        const response = await axios.get(
+            `${F1_API_URL}${path}DriverTracker.json`,
+            f1Headers,
+        );
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
 
 function extractLapStarts(stream) {
     const lines = stream.split(/\r?\n/);
@@ -1255,7 +1295,7 @@ function extractLapStarts(stream) {
     return result;
 }
 
-app.get("/api/sessionData/*splat", async(req, res) => {
+app.get("/api/sessionData/*splat", async (req, res) => {
     const splat = req.params.splat;
 
     if (!splat) {
@@ -1267,6 +1307,7 @@ app.get("/api/sessionData/*splat", async(req, res) => {
     try {
         const response = await axios.get(
             `${F1_API_URL}${path}TimingData.jsonStream`,
+            f1Headers,
         );
         res.json({
             data: parseStreamToJson(response.data),
@@ -1278,8 +1319,7 @@ app.get("/api/sessionData/*splat", async(req, res) => {
     }
 });
 
-// API to get telemetry data (runs Python script to process data)
-app.get("/api/carData/*splat", async(req, res) => {
+app.get("/api/carData/*splat", async (req, res) => {
     const splat = req.params.splat;
 
     if (!splat) {
@@ -1291,7 +1331,7 @@ app.get("/api/carData/*splat", async(req, res) => {
     res.json({ status: "started" });
 });
 
-app.get("/api/telemetry/*splat", async(req, res) => {
+app.get("/api/telemetry/*splat", async (req, res) => {
     const splat = req.params.splat;
     if (!splat) return res.status(400).json({ error: "Missing path" });
 
@@ -1300,15 +1340,14 @@ app.get("/api/telemetry/*splat", async(req, res) => {
     const driversQuery = req.query.drivers;
     let selectedDrivers = driversQuery ? driversQuery.split(",") : [];
 
-    // --- LOGICA DI COORDINAZIONE ---
     try {
         if (!fs.existsSync(cacheFile)) {
-
-            // Creiamo una promessa che si risolve quando il file è pronto
             const waitForFile = new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
                     telemetryEvents.removeAllListeners(`finished:${path}`);
-                    reject(new Error("Timeout: Python ha impiegato più di 60s"));
+                    reject(
+                        new Error("Timeout: Python ha impiegato più di 60s"),
+                    );
                 }, 60000);
 
                 telemetryEvents.once(`finished:${path}`, () => {
@@ -1317,7 +1356,6 @@ app.get("/api/telemetry/*splat", async(req, res) => {
                 });
             });
 
-            // Se carData non è già in esecuzione, lo avviamo con un "dummy socket"
             if (!runningJobsTelemetry.has(path)) {
                 carData({ emit: () => {} }, path);
             }
@@ -1325,7 +1363,6 @@ app.get("/api/telemetry/*splat", async(req, res) => {
             await waitForFile;
         }
 
-        // --- CARICAMENTO DATI ---
         const [sessionRes, telemetryRaw] = await Promise.all([
             fetch(`http://localhost:3000/api/sessionData/${path}`).then((r) =>
                 r.json(),
@@ -1333,16 +1370,14 @@ app.get("/api/telemetry/*splat", async(req, res) => {
             JSON.parse(fs.readFileSync(cacheFile, "utf8")),
         ]);
 
-
-        const telemetryData = Array.isArray(telemetryRaw) ?
-            telemetryRaw :
-            telemetryRaw.data || [];
+        const telemetryData = Array.isArray(telemetryRaw)
+            ? telemetryRaw
+            : telemetryRaw.data || [];
 
         if (selectedDrivers.length === 0) {
             selectedDrivers = Object.keys(sessionRes.lapTimes || {});
         }
 
-        // --- FUNZIONI DI UTILITÀ ---
         const timeToMs = (t) => {
             if (!t || typeof t !== "string") return 0;
             const parts = t.split(":");
@@ -1358,7 +1393,6 @@ app.get("/api/telemetry/*splat", async(req, res) => {
 
         const finalResult = {};
 
-        // --- ELABORAZIONE FISICA E FILTRAGGIO ---
         selectedDrivers.forEach((driver) => {
             const drv = String(driver);
             finalResult[drv] = {};
@@ -1366,11 +1400,10 @@ app.get("/api/telemetry/*splat", async(req, res) => {
 
             laps.forEach((lapInfo, index) => {
                 const startMs = timeToMs(lapInfo.start);
-                const endMs = laps[index + 1] ?
-                    timeToMs(laps[index + 1].start) :
-                    Infinity;
+                const endMs = laps[index + 1]
+                    ? timeToMs(laps[index + 1].start)
+                    : Infinity;
 
-                // Variabili per calcoli progressivi (Distanza ed ERS 2026)
                 let lapDist = 0;
                 let lastTimeMs = null;
 
@@ -1379,28 +1412,26 @@ app.get("/api/telemetry/*splat", async(req, res) => {
                 telemetryData.forEach((packet) => {
                     const tMs = timeToMs(packet.time);
                     if (tMs >= startMs && tMs < endMs) {
-                        // 1. Verifichiamo che la struttura dati esista per evitare crash
                         const entries = packet.data?.Entries;
                         if (Array.isArray(entries)) {
-                            // 2. Cerchiamo l'entry che contiene la macchina del pilota (drv)
-                            const entry = entries.find((e) => e.Cars && e.Cars[drv]);
+                            const entry = entries.find(
+                                (e) => e.Cars && e.Cars[drv],
+                            );
 
                             if (entry) {
                                 const carData = entry.Cars[drv];
                                 const channels = carData.Channels;
 
-                                // 3. Calcolo delta tempo per integrazione distanza
                                 if (lastTimeMs !== null) {
                                     const dt = (tMs - lastTimeMs) / 1000;
-                                    // Usiamo + per assicurarci che sia un numero, '2' è la velocità
-                                    const speedKmh = parseFloat(channels["2"] || 0);
+                                    const speedKmh = parseFloat(
+                                        channels["2"] || 0,
+                                    );
 
-                                    // Integrazione: v (m/s) * dt (s)
                                     lapDist += (speedKmh / 3.6) * dt;
                                 }
                                 lastTimeMs = tMs;
 
-                                // 4. Push del punto elaborato
                                 points.push({
                                     dist: Math.round(lapDist),
                                     time: packet.time,
@@ -1424,7 +1455,6 @@ app.get("/api/telemetry/*splat", async(req, res) => {
     }
 });
 
-// Function to process telemetry data using a Python script
 const runningJobsTelemetry = new Map();
 
 function getCacheFileT(path) {
@@ -1432,7 +1462,6 @@ function getCacheFileT(path) {
     return `./doc/json/carData/telemetry_${hash}.json`;
 }
 
-import { EventEmitter } from "events";
 const telemetryEvents = new EventEmitter();
 
 function carData(socket, path) {
@@ -1458,11 +1487,9 @@ function carData(socket, path) {
     }
 
     if (runningJobsTelemetry.has(path)) {
-
         runningJobsTelemetry.get(path).sockets.push(socket);
         return;
     }
-
 
     runningJobsTelemetry.set(path, {
         sockets: [socket],
@@ -1477,7 +1504,6 @@ function carData(socket, path) {
     python.stdout.on("data", (data) => {
         const text = data.toString().trim();
         if (!text) return;
-
 
         if (text.startsWith("PROGRESS:")) {
             const percent = parseInt(text.split(":")[1]);
@@ -1532,8 +1558,7 @@ function carData(socket, path) {
     });
 }
 
-// API to get position data (runs Python script to process data)
-app.get("/api/carPosition/*splat", async(req, res) => {
+app.get("/api/carPosition/*splat", async (req, res) => {
     const splat = req.params.splat;
 
     if (!splat) {
@@ -1545,7 +1570,6 @@ app.get("/api/carPosition/*splat", async(req, res) => {
     res.json({ status: "started" });
 });
 
-// Function to process telemetry data using a Python script
 const runningJobsPosition = new Map();
 
 function getCacheFileP(path) {
@@ -1576,11 +1600,9 @@ function carPosition(socket, path) {
     }
 
     if (runningJobsPosition.has(path)) {
-
         runningJobsPosition.get(path).sockets.push(socket);
         return;
     }
-
 
     runningJobsPosition.set(path, {
         sockets: [socket],
@@ -1595,7 +1617,6 @@ function carPosition(socket, path) {
     python.stdout.on("data", (data) => {
         const text = data.toString().trim();
         if (!text) return;
-
 
         if (text.startsWith("PROGRESS:")) {
             const percent = parseInt(text.split(":")[1]);
@@ -1648,8 +1669,7 @@ function carPosition(socket, path) {
     });
 }
 
-// API to update drivers number and team colors
-app.get("/api/updateDriversNumberAndColour/*splat", async(req, res) => {
+app.get("/api/updateDriversNumberAndColour/*splat", async (req, res) => {
     const splat = req.params.splat;
     if (!splat) return res.status(400).json({ error: "Missing path" });
 
@@ -1671,7 +1691,6 @@ app.get("/api/updateDriversNumberAndColour/*splat", async(req, res) => {
             };
         });
 
-
         res.json({
             success: true,
             data: driversData,
@@ -1682,8 +1701,7 @@ app.get("/api/updateDriversNumberAndColour/*splat", async(req, res) => {
     }
 });
 
-// API to get car position for 3D circuit visualization
-app.get("/api/getCarPositionFor3DCircuit/*splat", async(req, res) => {
+app.get("/api/getCarPositionFor3DCircuit/*splat", async (req, res) => {
     const splat = req.params.splat;
 
     if (!splat) {
@@ -1692,7 +1710,6 @@ app.get("/api/getCarPositionFor3DCircuit/*splat", async(req, res) => {
 
     const path = Array.isArray(splat) ? splat.join("/") : splat;
 
-    // Call the drivers API
     try {
         await axios.get(
             `http://localhost:3000/api/updateDriversNumberAndColour/${path}`,
@@ -1704,7 +1721,6 @@ app.get("/api/getCarPositionFor3DCircuit/*splat", async(req, res) => {
         });
     }
 
-    // Call the car position API
     try {
         await axios.get(`http://localhost:3000/api/carPosition/${path}`);
     } catch (error) {
@@ -1717,5 +1733,4 @@ app.get("/api/getCarPositionFor3DCircuit/*splat", async(req, res) => {
     res.json({ response: "Loaded" });
 });
 
-server.listen(PORT, () => {
-});
+server.listen(PORT, () => {});

@@ -2811,24 +2811,6 @@ class StandingsUI {
             depNav.style.padding = "0";
             depNav.style.flexShrink = "0";
 
-            const btnBar = document.createElement("button");
-            btnBar.className = `standings-nav-btn ${this.depViewMode === "bar" ? "active" : ""}`;
-            btnBar.textContent = "Bar View";
-            btnBar.onclick = () => {
-                this.depViewMode = "bar";
-                updateDash();
-            };
-
-            const btnPie = document.createElement("button");
-            btnPie.className = `standings-nav-btn ${this.depViewMode === "pie" ? "active" : ""}`;
-            btnPie.textContent = "Pie View";
-            btnPie.onclick = () => {
-                this.depViewMode = "pie";
-                updateDash();
-            };
-
-            depNav.appendChild(btnPie);
-            depNav.appendChild(btnBar);
             depBox.appendChild(depNav);
 
             const contentSplitter = document.createElement("div");
@@ -3094,101 +3076,35 @@ class StandingsUI {
 
             depPercDiv.appendChild(depList);
 
-            if (this.depViewMode === "bar") {
-                this.charts.push(
-                    new Chart(dynamicChartCanvas, {
-                        type: "bar",
-                        data: {
-                            labels: driverNames,
-                            datasets: [
-                                {
-                                    label: "% of Team Points",
-                                    data: driverPcts,
-                                    backgroundColor: driverShades,
-                                    borderRadius: 6,
-                                },
-                            ],
-                        },
-                        options: {
-                            indexAxis: "y",
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                title: {
-                                    display: true,
-                                    text: "Drivers points (%)",
-                                    color: this.textColor,
-                                },
-                                zoom: true,
-                            },
-                            scales: {
-                                x: {
-                                    min: 0,
-                                    max: 100,
-                                    ticks: { color: this.textColor },
-                                    grid: { color: this.gridColor },
-                                },
-                                y: {
-                                    ticks: { color: this.textColor },
-                                    grid: { color: this.gridColor },
-                                },
-                            },
-                        },
-                        plugins: [
+            this.charts.push(
+                new Chart(dynamicChartCanvas, {
+                    type: "doughnut",
+                    data: {
+                        labels: driverNames,
+                        datasets: [
                             {
-                                id: "thresholdLine",
-                                afterDraw: (chart) => {
-                                    const xAxis = chart.scales.x;
-                                    const yAxis = chart.scales.y;
-                                    if (!xAxis) return;
-                                    const xPos = xAxis.getPixelForValue(50);
-                                    const ctx = chart.ctx;
-                                    ctx.save();
-                                    ctx.beginPath();
-                                    ctx.setLineDash([5, 5]);
-                                    ctx.strokeStyle = "#ED1131";
-                                    ctx.lineWidth = 2;
-                                    ctx.moveTo(xPos, yAxis.top);
-                                    ctx.lineTo(xPos, yAxis.bottom);
-                                    ctx.stroke();
-                                    ctx.restore();
-                                },
+                                data: driverPts,
+                                backgroundColor: driverShades,
+                                borderColor: this.cardBg,
+                                borderWidth: 2,
                             },
                         ],
-                    }),
-                );
-            } else {
-                this.charts.push(
-                    new Chart(dynamicChartCanvas, {
-                        type: "doughnut",
-                        data: {
-                            labels: driverNames,
-                            datasets: [
-                                {
-                                    data: driverPts,
-                                    backgroundColor: driverShades,
-                                    borderColor: this.cardBg,
-                                    borderWidth: 2,
-                                },
-                            ],
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { labels: { color: this.textColor } },
-                                title: {
-                                    display: true,
-                                    text: "Points Distribution (points)",
-                                    color: this.textColor,
-                                },
-                                zoom: false,
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: this.textColor } },
+                            title: {
+                                display: true,
+                                text: "Points Distribution (points)",
+                                color: this.textColor,
                             },
+                            zoom: false,
                         },
-                    }),
-                );
-            }
+                    },
+                }),
+            );
         };
 
         select.addEventListener("change", updateDash);
@@ -4372,7 +4288,7 @@ class StandingsUI {
                 );
                 return this.el(
                     "tr",
-                    {  },
+                    {},
                     this.el(
                         "td",
                         {},

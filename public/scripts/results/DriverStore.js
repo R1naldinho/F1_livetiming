@@ -17,7 +17,9 @@ class DriverStore {
 
     getFormattedName(id) {
         const driver = this.getDriver(id);
-        return driver ? `${driver.Tla} (#${driver.RacingNumber})` : `Driver ${id}`;
+        return driver
+            ? `${driver.Tla} (#${driver.RacingNumber})`
+            : `Driver ${id}`;
     }
 
     getAllDrivers() {

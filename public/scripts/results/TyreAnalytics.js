@@ -5,7 +5,7 @@ class TyreAnalytics {
         this.lapTimeStore = lapTimeStore;
 
         this.sessionType = this.classifySessionType(
-            options.sessionType || options.sessionName || ""
+            options.sessionType || options.sessionName || "",
         );
 
         this.sessionName = options.sessionName || "";
@@ -21,7 +21,7 @@ class TyreAnalytics {
             "HARD",
             "INTERMEDIATE",
             "WET",
-            "UNKNOWN"
+            "UNKNOWN",
         ];
     }
 
@@ -29,7 +29,9 @@ class TyreAnalytics {
         if (timeValue === null || timeValue === undefined) return null;
 
         if (typeof timeValue === "number") {
-            return Number.isFinite(timeValue) && timeValue > 0 ? timeValue : null;
+            return Number.isFinite(timeValue) && timeValue > 0
+                ? timeValue
+                : null;
         }
 
         if (typeof timeValue !== "string") return null;
@@ -69,9 +71,8 @@ class TyreAnalytics {
         const seconds = (value % 60).toFixed(3);
 
         if (minutes > 0) {
-            const formattedSeconds = Number(seconds) < 10
-                ? `0${seconds}`
-                : seconds;
+            const formattedSeconds =
+                Number(seconds) < 10 ? `0${seconds}` : seconds;
 
             return `${minutes}:${formattedSeconds}`;
         }
@@ -91,9 +92,7 @@ class TyreAnalytics {
         const seconds = (value % 60).toFixed(3);
 
         const formattedMinutes = String(minutes).padStart(2, "0");
-        const formattedSeconds = Number(seconds) < 10
-            ? `0${seconds}`
-            : seconds;
+        const formattedSeconds = Number(seconds) < 10 ? `0${seconds}` : seconds;
 
         if (hours > 0) {
             return `${hours}:${formattedMinutes}:${formattedSeconds}`;
@@ -161,7 +160,7 @@ class TyreAnalytics {
                 "runAnalysis",
                 "newVsUsed",
                 "sectorAnalysis",
-                "warmUp"
+                "warmUp",
             ],
             SPRINT_QUALIFYING: [
                 "bestLap",
@@ -172,7 +171,7 @@ class TyreAnalytics {
                 "runAnalysis",
                 "progression",
                 "tyreAge",
-                "warmUp"
+                "warmUp",
             ],
             SPRINT: [
                 "strategyTimeline",
@@ -185,7 +184,7 @@ class TyreAnalytics {
                 "degradation",
                 "tyreAge",
                 "best3and5",
-                "strategyVsResult"
+                "strategyVsResult",
             ],
             QUALIFYING: [
                 "bestLap",
@@ -196,7 +195,7 @@ class TyreAnalytics {
                 "newVsUsed",
                 "tyreAge",
                 "progression",
-                "warmUp"
+                "warmUp",
             ],
             RACE: [
                 "overview",
@@ -215,8 +214,8 @@ class TyreAnalytics {
                 "strategyVsResult",
                 "driverComparison",
                 "teamComparison",
-                "records"
-            ]
+                "records",
+            ],
         };
 
         return configs[sessionType] || configs.RACE;
@@ -247,7 +246,7 @@ class TyreAnalytics {
         let sumXY = 0;
         let sumXX = 0;
 
-        pairs.forEach(pair => {
+        pairs.forEach((pair) => {
             sumX += pair.x;
             sumY += pair.y;
             sumXY += pair.x * pair.y;
@@ -271,21 +270,20 @@ class TyreAnalytics {
 
         const values = array
             .map(Number)
-            .filter(value => Number.isFinite(value));
+            .filter((value) => Number.isFinite(value));
 
         if (!values.length) {
             return 0;
         }
 
-        const avg = mean !== undefined
-            ? Number(mean)
-            : values.reduce((sum, value) => sum + value, 0) / values.length;
+        const avg =
+            mean !== undefined
+                ? Number(mean)
+                : values.reduce((sum, value) => sum + value, 0) / values.length;
 
         const variance =
-            values.reduce(
-                (sum, value) => sum + Math.pow(value - avg, 2),
-                0
-            ) / values.length;
+            values.reduce((sum, value) => sum + Math.pow(value - avg, 2), 0) /
+            values.length;
 
         return Math.sqrt(variance);
     }
@@ -297,7 +295,7 @@ class TyreAnalytics {
 
         const sorted = [...values]
             .map(Number)
-            .filter(value => Number.isFinite(value))
+            .filter((value) => Number.isFinite(value))
             .sort((a, b) => a - b);
 
         if (!sorted.length) {
@@ -324,9 +322,7 @@ class TyreAnalytics {
 
         const normalized = String(compound).trim().toUpperCase();
 
-        return this.compoundOrder.includes(normalized)
-            ? normalized
-            : "UNKNOWN";
+        return this.compoundOrder.includes(normalized) ? normalized : "UNKNOWN";
     }
 
     isWetCompound(compound) {
@@ -353,7 +349,7 @@ class TyreAnalytics {
             stint?.TotalLaps,
             stint?.Laps,
             stint?.LapCount,
-            stint?.Length
+            stint?.Length,
         ];
 
         for (const candidate of candidates) {
@@ -369,15 +365,10 @@ class TyreAnalytics {
 
     getStintTyreStartAge(stint) {
         const value = Number(
-            stint?.StartLaps ??
-            stint?.TyreAge ??
-            stint?.StartingTyreAge ??
-            0
+            stint?.StartLaps ?? stint?.TyreAge ?? stint?.StartingTyreAge ?? 0,
         );
 
-        return Number.isFinite(value) && value >= 0
-            ? value
-            : 0;
+        return Number.isFinite(value) && value >= 0 ? value : 0;
     }
 
     normalizeLapCollection(rawLaps) {
@@ -389,22 +380,18 @@ class TyreAnalytics {
             return rawLaps
                 .map((lap, index) => ({
                     key: Number(lap?.lap ?? lap?.Lap ?? index + 1),
-                    data: lap || {}
+                    data: lap || {},
                 }))
-                .filter(item => Number.isFinite(item.key));
+                .filter((item) => Number.isFinite(item.key));
         }
 
         if (typeof rawLaps === "object") {
             return Object.entries(rawLaps)
                 .map(([key, value]) => ({
-                    key: Number(
-                        value?.lap ??
-                        value?.Lap ??
-                        key
-                    ),
-                    data: value || {}
+                    key: Number(value?.lap ?? value?.Lap ?? key),
+                    data: value || {},
                 }))
-                .filter(item => Number.isFinite(item.key))
+                .filter((item) => Number.isFinite(item.key))
                 .sort((a, b) => a.key - b.key);
         }
 
@@ -414,10 +401,10 @@ class TyreAnalytics {
     getRawLapTime(lapData) {
         return this.parseTimeStringToSeconds(
             lapData?.lapTime ??
-            lapData?.LapTime ??
-            lapData?.lastLapTime ??
-            lapData?.LastLapTime ??
-            lapData?.time
+                lapData?.LapTime ??
+                lapData?.lastLapTime ??
+                lapData?.LastLapTime ??
+                lapData?.time,
         );
     }
 
@@ -426,7 +413,7 @@ class TyreAnalytics {
             `sector${sectorNumber}`,
             `Sector${sectorNumber}`,
             `s${sectorNumber}`,
-            `S${sectorNumber}`
+            `S${sectorNumber}`,
         ];
 
         for (const key of sectorKeys) {
@@ -454,7 +441,7 @@ class TyreAnalytics {
 
     getStintStrategyString(stints) {
         return stints
-            .map(stint => this.normalizeCompound(stint.Compound))
+            .map((stint) => this.normalizeCompound(stint.Compound))
             .join(" → ");
     }
 
@@ -483,34 +470,28 @@ class TyreAnalytics {
     createRawDriverLaps(driverStints, driverLapsRaw) {
         const normalizedLaps = this.normalizeLapCollection(driverLapsRaw);
         const rawLapMap = new Map(
-            normalizedLaps.map(item => [item.key, item.data])
+            normalizedLaps.map((item) => [item.key, item.data]),
         );
 
         const totalRawLaps = normalizedLaps.length;
 
-        const stintLengths = driverStints.map(stint =>
-            this.getStintLapCount(stint)
+        const stintLengths = driverStints.map((stint) =>
+            this.getStintLapCount(stint),
         );
 
-        let knownLaps = stintLengths.reduce(
-            (sum, value) => sum + value,
-            0
-        );
+        let knownLaps = stintLengths.reduce((sum, value) => sum + value, 0);
 
-        const missingStints = stintLengths.filter(value => value <= 0).length;
+        const missingStints = stintLengths.filter((value) => value <= 0).length;
 
         if (missingStints > 0 && totalRawLaps > knownLaps) {
             const remainingLaps = totalRawLaps - knownLaps;
-            const fallbackLength = Math.floor(
-                remainingLaps / missingStints
-            );
+            const fallbackLength = Math.floor(remainingLaps / missingStints);
 
             let remainder = remainingLaps % missingStints;
 
             for (let i = 0; i < stintLengths.length; i++) {
                 if (stintLengths[i] <= 0) {
-                    stintLengths[i] =
-                        fallbackLength + (remainder > 0 ? 1 : 0);
+                    stintLengths[i] = fallbackLength + (remainder > 0 ? 1 : 0);
 
                     if (remainder > 0) {
                         remainder--;
@@ -526,8 +507,7 @@ class TyreAnalytics {
         ) {
             const lastIndex = stintLengths.length - 1;
             stintLengths[lastIndex] +=
-                totalRawLaps -
-                stintLengths.reduce((a, b) => a + b, 0);
+                totalRawLaps - stintLengths.reduce((a, b) => a + b, 0);
         }
 
         const laps = [];
@@ -538,10 +518,7 @@ class TyreAnalytics {
             const compound = this.normalizeCompound(stint?.Compound);
             const isNew = this.normalizeBoolean(stint?.New);
             const startTyreAge = this.getStintTyreStartAge(stint);
-            const stintLength = Math.max(
-                0,
-                stintLengths[stintIndex] || 0
-            );
+            const stintLength = Math.max(0, stintLengths[stintIndex] || 0);
 
             for (let i = 0; i < stintLength; i++) {
                 let lapNumber = currentRaceLap;
@@ -560,13 +537,9 @@ class TyreAnalytics {
                 const sector2 = this.getRawSectorTime(rawLapData, 2);
                 const sector3 = this.getRawSectorTime(rawLapData, 3);
 
-                const isPitOut =
-                    stintIndex > 0 &&
-                    i === 0;
+                const isPitOut = stintIndex > 0 && i === 0;
 
-                const isWarmupLap =
-                    stintIndex > 0 &&
-                    i < this.warmupLapsCount;
+                const isWarmupLap = stintIndex > 0 && i < this.warmupLapsCount;
 
                 const isPitIn =
                     stintIndex < driverStints.length - 1 &&
@@ -589,7 +562,7 @@ class TyreAnalytics {
                     isWarmupLap,
                     is107Valid: false,
                     isValidPaceLap: false,
-                    isCleanLap: false
+                    isCleanLap: false,
                 });
 
                 currentRaceLap++;
@@ -618,7 +591,7 @@ class TyreAnalytics {
                     isWarmupLap: false,
                     is107Valid: false,
                     isValidPaceLap: false,
-                    isCleanLap: false
+                    isCleanLap: false,
                 });
             });
         }
@@ -629,12 +602,9 @@ class TyreAnalytics {
     calculateSessionBestLap(allDriversLaps, conditionGroup = null) {
         const times = [];
 
-        Object.values(allDriversLaps).forEach(laps => {
-            laps.forEach(lap => {
-                if (
-                    Number.isFinite(lap.lapTime) &&
-                    lap.lapTime > 0
-                ) {
+        Object.values(allDriversLaps).forEach((laps) => {
+            laps.forEach((lap) => {
+                if (Number.isFinite(lap.lapTime) && lap.lapTime > 0) {
                     if (
                         conditionGroup &&
                         this.getConditionGroup(lap.compound) !== conditionGroup
@@ -668,24 +638,22 @@ class TyreAnalytics {
             dry: dryBest,
             wet: wetBest,
             overall: [dryBest, wetBest]
-                .filter(value => Number.isFinite(value))
+                .filter((value) => Number.isFinite(value))
                 .reduce(
-                    (min, value) => (min === null ? value : Math.min(min, value)),
-                    null
-                )
+                    (min, value) =>
+                        min === null ? value : Math.min(min, value),
+                    null,
+                ),
         };
 
         this.percent107Threshold = {
             dry: dryBest ? dryBest * 1.07 : null,
-            wet: wetBest ? wetBest * 1.07 : null
+            wet: wetBest ? wetBest * 1.07 : null,
         };
 
-        Object.values(dataset).forEach(driver => {
-            driver.laps.forEach(lap => {
-                if (
-                    !Number.isFinite(lap.lapTime) ||
-                    lap.lapTime <= 0
-                ) {
+        Object.values(dataset).forEach((driver) => {
+            driver.laps.forEach((lap) => {
+                if (!Number.isFinite(lap.lapTime) || lap.lapTime <= 0) {
                     lap.is107Valid = false;
                     lap.isValidPaceLap = false;
                     lap.isCleanLap = false;
@@ -693,7 +661,9 @@ class TyreAnalytics {
                 }
 
                 const threshold =
-                    this.percent107Threshold[this.getConditionGroup(lap.compound)];
+                    this.percent107Threshold[
+                        this.getConditionGroup(lap.compound)
+                    ];
 
                 lap.is107Valid =
                     !this.use107PercentFilter ||
@@ -701,9 +671,7 @@ class TyreAnalytics {
                     lap.lapTime <= threshold;
 
                 lap.isCleanLap =
-                    lap.is107Valid &&
-                    !lap.isPitOut &&
-                    !lap.isPitIn;
+                    lap.is107Valid && !lap.isPitOut && !lap.isPitIn;
 
                 lap.isValidPaceLap = lap.isCleanLap;
             });
@@ -721,28 +689,26 @@ class TyreAnalytics {
 
         const driverIds = new Set([
             ...Object.keys(stintsData),
-            ...Object.keys(lapTimesData)
+            ...Object.keys(lapTimesData),
         ]);
 
-        driverIds.forEach(driverId => {
+        driverIds.forEach((driverId) => {
             const driverStints = Array.isArray(stintsData[driverId])
                 ? stintsData[driverId]
                 : [];
 
             const rawDriverLapData =
-                lapTimesData[driverId]?.Laps ??
-                lapTimesData[driverId] ??
-                {};
+                lapTimesData[driverId]?.Laps ?? lapTimesData[driverId] ?? {};
 
             const lapsList = this.createRawDriverLaps(
                 driverStints,
-                rawDriverLapData
+                rawDriverLapData,
             );
 
             unified[driverId] = {
                 driverName: this.getDriverName(driverId),
-                strategy: driverStints.map(stint =>
-                    this.normalizeCompound(stint?.Compound)
+                strategy: driverStints.map((stint) =>
+                    this.normalizeCompound(stint?.Compound),
                 ),
                 strategyString: this.getStintStrategyString(driverStints),
                 pitStops: Math.max(0, driverStints.length - 1),
@@ -754,7 +720,7 @@ class TyreAnalytics {
                 bestS1: null,
                 bestS2: null,
                 bestS3: null,
-                theoreticalBest: null
+                theoreticalBest: null,
             };
         });
 
@@ -767,20 +733,18 @@ class TyreAnalytics {
 
             const parsedRuns = driverStints.map((stint, index) => {
                 const runLaps = driver.laps.filter(
-                    lap => lap.run === index + 1
+                    (lap) => lap.run === index + 1,
                 );
 
-                const validLaps = runLaps.filter(
-                    lap => lap.isValidPaceLap
-                );
+                const validLaps = runLaps.filter((lap) => lap.isValidPaceLap);
 
                 const validTimes = validLaps
-                    .map(lap => lap.lapTime)
+                    .map((lap) => lap.lapTime)
                     .filter(Number.isFinite);
 
                 const warmupLaps = runLaps
-                    .filter(lap => lap.isWarmupLap)
-                    .filter(lap => Number.isFinite(lap.lapTime));
+                    .filter((lap) => lap.isWarmupLap)
+                    .filter((lap) => Number.isFinite(lap.lapTime));
 
                 const first3Times = validTimes.slice(0, 3);
                 const last3Times = validTimes.slice(-3);
@@ -798,29 +762,26 @@ class TyreAnalytics {
                         : null;
 
                 const degradationDelta =
-                    first3Avg !== null &&
-                    last3Avg !== null
+                    first3Avg !== null && last3Avg !== null
                         ? last3Avg - first3Avg
                         : null;
 
-                const regressionPairs = validLaps
-                    .filter(
-                        lap =>
-                            Number.isFinite(lap.tyreAge) &&
-                            Number.isFinite(lap.lapTime)
-                    );
+                const regressionPairs = validLaps.filter(
+                    (lap) =>
+                        Number.isFinite(lap.tyreAge) &&
+                        Number.isFinite(lap.lapTime),
+                );
 
                 const degradationSlope =
                     regressionPairs.length >= 2
                         ? this.calculateLinearRegression(
-                              regressionPairs.map(lap => lap.tyreAge),
-                              regressionPairs.map(lap => lap.lapTime)
+                              regressionPairs.map((lap) => lap.tyreAge),
+                              regressionPairs.map((lap) => lap.lapTime),
                           )
                         : 0;
 
                 const lapsDriven = runLaps.length;
-                const startTyreAge =
-                    this.getStintTyreStartAge(stint);
+                const startTyreAge = this.getStintTyreStartAge(stint);
 
                 const endTyreAge =
                     lapsDriven > 0
@@ -831,8 +792,8 @@ class TyreAnalytics {
                     lapsDriven <= 3
                         ? "SHORT_RUN"
                         : lapsDriven <= 8
-                            ? "MEDIUM_RUN"
-                            : "LONG_RUN";
+                          ? "MEDIUM_RUN"
+                          : "LONG_RUN";
 
                 return {
                     runNumber: index + 1,
@@ -840,8 +801,7 @@ class TyreAnalytics {
                     compound: this.normalizeCompound(stint?.Compound),
                     isNew: this.normalizeBoolean(stint?.New),
                     startLap: runLaps[0]?.lap || 0,
-                    endLap:
-                        runLaps[runLaps.length - 1]?.lap || 0,
+                    endLap: runLaps[runLaps.length - 1]?.lap || 0,
                     lapsDriven,
                     validLapsCount: validTimes.length,
                     warmupLapsCount: warmupLaps.length,
@@ -851,24 +811,16 @@ class TyreAnalytics {
                     last3Avg,
                     degradationDelta,
                     degradationSlope,
-                    bestLap: validTimes.length
-                        ? Math.min(...validTimes)
-                        : null,
+                    bestLap: validTimes.length ? Math.min(...validTimes) : null,
                     avgLap: validTimes.length
-                        ? validTimes.reduce(
-                              (a, b) => a + b,
-                              0
-                          ) / validTimes.length
+                        ? validTimes.reduce((a, b) => a + b, 0) /
+                          validTimes.length
                         : null,
-                    medianLap:
-                        validTimes.length
-                            ? this.calculatePercentile(
-                                  validTimes,
-                                  50
-                              )
-                            : null,
+                    medianLap: validTimes.length
+                        ? this.calculatePercentile(validTimes, 50)
+                        : null,
                     stdDev: this.calculateStdDev(validTimes),
-                    runType
+                    runType,
                 };
             });
 
@@ -876,12 +828,12 @@ class TyreAnalytics {
             driver.runs = parsedRuns;
 
             const validDriverLaps = driver.laps.filter(
-                lap => lap.isValidPaceLap
+                (lap) => lap.isValidPaceLap,
             );
 
-            this.compoundOrder.forEach(compound => {
+            this.compoundOrder.forEach((compound) => {
                 const compoundLaps = validDriverLaps.filter(
-                    lap => lap.compound === compound
+                    (lap) => lap.compound === compound,
                 );
 
                 if (!compoundLaps.length) {
@@ -889,7 +841,7 @@ class TyreAnalytics {
                 }
 
                 const times = compoundLaps
-                    .map(lap => lap.lapTime)
+                    .map((lap) => lap.lapTime)
                     .filter(Number.isFinite)
                     .sort((a, b) => a - b);
 
@@ -898,56 +850,38 @@ class TyreAnalytics {
 
                 const best3Average =
                     times.length >= 3
-                        ? times.slice(0, 3).reduce(
-                              (a, b) => a + b,
-                              0
-                          ) / 3
+                        ? times.slice(0, 3).reduce((a, b) => a + b, 0) / 3
                         : null;
 
                 const best5Average =
                     times.length >= 5
-                        ? times.slice(0, 5).reduce(
-                              (a, b) => a + b,
-                              0
-                          ) / 5
+                        ? times.slice(0, 5).reduce((a, b) => a + b, 0) / 5
                         : null;
 
                 const best10Average =
                     times.length >= 10
-                        ? times.slice(0, 10).reduce(
-                              (a, b) => a + b,
-                              0
-                          ) / 10
+                        ? times.slice(0, 10).reduce((a, b) => a + b, 0) / 10
                         : null;
 
-                const average =
-                    times.reduce((a, b) => a + b, 0) /
-                    times.length;
+                const average = times.reduce((a, b) => a + b, 0) / times.length;
 
-                const median =
-                    this.calculatePercentile(times, 50);
+                const median = this.calculatePercentile(times, 50);
 
-                const p10 =
-                    this.calculatePercentile(times, 10);
+                const p10 = this.calculatePercentile(times, 10);
 
-                const p90 =
-                    this.calculatePercentile(times, 90);
+                const p90 = this.calculatePercentile(times, 90);
 
                 const regressionPairs = compoundLaps.filter(
-                    lap =>
+                    (lap) =>
                         Number.isFinite(lap.tyreAge) &&
-                        Number.isFinite(lap.lapTime)
+                        Number.isFinite(lap.lapTime),
                 );
 
                 const degradationPerLap =
                     regressionPairs.length >= 2
                         ? this.calculateLinearRegression(
-                              regressionPairs.map(
-                                  lap => lap.tyreAge
-                              ),
-                              regressionPairs.map(
-                                  lap => lap.lapTime
-                              )
+                              regressionPairs.map((lap) => lap.tyreAge),
+                              regressionPairs.map((lap) => lap.lapTime),
                           )
                         : 0;
 
@@ -962,24 +896,21 @@ class TyreAnalytics {
                     average,
                     p10,
                     p90,
-                    stdDev: this.calculateStdDev(
-                        times,
-                        average
-                    ),
-                    degradationPerLap
+                    stdDev: this.calculateStdDev(times, average),
+                    degradationPerLap,
                 };
             });
 
             const sector1Values = validDriverLaps
-                .map(lap => lap.sector1)
+                .map((lap) => lap.sector1)
                 .filter(Number.isFinite);
 
             const sector2Values = validDriverLaps
-                .map(lap => lap.sector2)
+                .map((lap) => lap.sector2)
                 .filter(Number.isFinite);
 
             const sector3Values = validDriverLaps
-                .map(lap => lap.sector3)
+                .map((lap) => lap.sector3)
                 .filter(Number.isFinite);
 
             driver.bestS1 = sector1Values.length
@@ -1003,7 +934,7 @@ class TyreAnalytics {
                               driver.bestS1 +
                               driver.bestS2 +
                               driver.bestS3
-                          ).toFixed(3)
+                          ).toFixed(3),
                       )
                     : null;
         });
@@ -1029,7 +960,7 @@ class TyreAnalytics {
         }
 
         return conditionGroup
-            ? this.sessionBestLap[conditionGroup] ?? null
+            ? (this.sessionBestLap[conditionGroup] ?? null)
             : this.sessionBestLap.overall;
     }
 
@@ -1043,8 +974,10 @@ class TyreAnalytics {
         }
 
         return conditionGroup
-            ? this.percent107Threshold[conditionGroup] ?? null
-            : this.percent107Threshold.dry ?? this.percent107Threshold.wet ?? null;
+            ? (this.percent107Threshold[conditionGroup] ?? null)
+            : (this.percent107Threshold.dry ??
+                  this.percent107Threshold.wet ??
+                  null);
     }
 
     getMaxSessionLaps() {
@@ -1052,16 +985,14 @@ class TyreAnalytics {
 
         let maxLaps = 0;
 
-        Object.values(dataset).forEach(driver => {
+        Object.values(dataset).forEach((driver) => {
             const validRaceLaps = driver.laps.filter(
-                lap =>
-                    Number.isFinite(lap.lap) &&
-                    lap.lap > 0
+                (lap) => Number.isFinite(lap.lap) && lap.lap > 0,
             );
 
             if (validRaceLaps.length) {
                 const highestLap = Math.max(
-                    ...validRaceLaps.map(lap => lap.lap)
+                    ...validRaceLaps.map((lap) => lap.lap),
                 );
 
                 maxLaps = Math.max(maxLaps, highestLap);
@@ -1075,11 +1006,10 @@ class TyreAnalytics {
         const distribution = {};
         const summaries = this.getDriverSummaries();
 
-        summaries.forEach(summary => {
+        summaries.forEach((summary) => {
             const stops = Number(summary.pitStops) || 0;
 
-            distribution[stops] =
-                (distribution[stops] || 0) + 1;
+            distribution[stops] = (distribution[stops] || 0) + 1;
         });
 
         return distribution;
@@ -1089,23 +1019,20 @@ class TyreAnalytics {
         const distribution = {};
         const dataset = this.buildUnifiedDataset();
 
-        Object.values(dataset).forEach(driver => {
-            driver.laps.forEach(lap => {
+        Object.values(dataset).forEach((driver) => {
+            driver.laps.forEach((lap) => {
                 if (
                     lap.isValidPaceLap &&
                     Number.isFinite(lap.lapTime) &&
                     lap.lapTime > 0
                 ) {
-                    const compound =
-                        lap.compound || "UNKNOWN";
+                    const compound = lap.compound || "UNKNOWN";
 
                     if (!distribution[compound]) {
                         distribution[compound] = [];
                     }
 
-                    distribution[compound].push(
-                        lap.lapTime
-                    );
+                    distribution[compound].push(lap.lapTime);
                 }
             });
         });
@@ -1120,7 +1047,7 @@ class TyreAnalytics {
                 q1: null,
                 median: null,
                 q3: null,
-                max: null
+                max: null,
             };
         }
 
@@ -1135,7 +1062,7 @@ class TyreAnalytics {
                 q1: null,
                 median: null,
                 q3: null,
-                max: null
+                max: null,
             };
         }
 
@@ -1144,25 +1071,25 @@ class TyreAnalytics {
             q1: this.calculatePercentile(sorted, 25),
             median: this.calculatePercentile(sorted, 50),
             q3: this.calculatePercentile(sorted, 75),
-            max: sorted[sorted.length - 1]
+            max: sorted[sorted.length - 1],
         };
     }
 
     getOutlapProgressionByCompound() {
         const raw = {};
 
-        this.compoundOrder.forEach(compound => {
+        this.compoundOrder.forEach((compound) => {
             raw[compound] = {
                 0: [],
                 1: [],
-                2: []
+                2: [],
             };
         });
 
         const dataset = this.buildUnifiedDataset();
 
-        Object.values(dataset).forEach(driver => {
-            driver.laps.forEach(lap => {
+        Object.values(dataset).forEach((driver) => {
+            driver.laps.forEach((lap) => {
                 if (
                     lap.stintLapIndex < 0 ||
                     lap.stintLapIndex >= 3 ||
@@ -1179,56 +1106,35 @@ class TyreAnalytics {
                 }
 
                 if (lap.lapTime < 180) {
-                    raw[compound][lap.stintLapIndex].push(
-                        lap.lapTime
-                    );
+                    raw[compound][lap.stintLapIndex].push(lap.lapTime);
                 }
             });
         });
 
         const result = {};
 
-        Object.entries(raw).forEach(
-            ([compound, values]) => {
-                const lap1 = values[0];
-                const lap2 = values[1];
-                const lap3 = values[2];
+        Object.entries(raw).forEach(([compound, values]) => {
+            const lap1 = values[0];
+            const lap2 = values[1];
+            const lap3 = values[2];
 
-                if (
-                    !lap1.length ||
-                    !lap2.length ||
-                    !lap3.length
-                ) {
-                    return;
-                }
-
-                result[compound] = {
-                    lap1: Number(
-                        (
-                            lap1.reduce((a, b) => a + b, 0) /
-                            lap1.length
-                        ).toFixed(3)
-                    ),
-                    lap2: Number(
-                        (
-                            lap2.reduce((a, b) => a + b, 0) /
-                            lap2.length
-                        ).toFixed(3)
-                    ),
-                    lap3: Number(
-                        (
-                            lap3.reduce((a, b) => a + b, 0) /
-                            lap3.length
-                        ).toFixed(3)
-                    ),
-                    sampleSize: [
-                        lap1.length,
-                        lap2.length,
-                        lap3.length
-                    ]
-                };
+            if (!lap1.length || !lap2.length || !lap3.length) {
+                return;
             }
-        );
+
+            result[compound] = {
+                lap1: Number(
+                    (lap1.reduce((a, b) => a + b, 0) / lap1.length).toFixed(3),
+                ),
+                lap2: Number(
+                    (lap2.reduce((a, b) => a + b, 0) / lap2.length).toFixed(3),
+                ),
+                lap3: Number(
+                    (lap3.reduce((a, b) => a + b, 0) / lap3.length).toFixed(3),
+                ),
+                sampleSize: [lap1.length, lap2.length, lap3.length],
+            };
+        });
 
         return result;
     }
@@ -1237,8 +1143,8 @@ class TyreAnalytics {
         const result = {};
         const dataset = this.buildUnifiedDataset();
 
-        Object.values(dataset).forEach(driver => {
-            driver.stints.forEach(stint => {
+        Object.values(dataset).forEach((driver) => {
+            driver.stints.forEach((stint) => {
                 const compound = stint.compound;
 
                 if (!compound || compound === "UNKNOWN") {
@@ -1247,17 +1153,15 @@ class TyreAnalytics {
 
                 if (
                     !result[compound] ||
-                    stint.lapsDriven >
-                        result[compound].lapsDriven
+                    stint.lapsDriven > result[compound].lapsDriven
                 ) {
                     result[compound] = {
                         driverName: driver.driverName,
                         lapsDriven: stint.lapsDriven,
                         avgPace: stint.avgLap,
-                        degradation:
-                            stint.degradationSlope,
+                        degradation: stint.degradationSlope,
                         startLap: stint.startLap,
-                        endLap: stint.endLap
+                        endLap: stint.endLap,
                     };
                 }
             });
@@ -1269,12 +1173,12 @@ class TyreAnalytics {
     getQualifyingNewVsUsedPerformance() {
         const result = {};
 
-        this.compoundOrder.forEach(compound => {
+        this.compoundOrder.forEach((compound) => {
             result[compound] = {
                 new: null,
                 used: null,
                 newSampleSize: 0,
-                usedSampleSize: 0
+                usedSampleSize: 0,
             };
         });
 
@@ -1283,17 +1187,14 @@ class TyreAnalytics {
         const newTimes = {};
         const usedTimes = {};
 
-        Object.keys(result).forEach(compound => {
+        Object.keys(result).forEach((compound) => {
             newTimes[compound] = [];
             usedTimes[compound] = [];
         });
 
-        Object.values(dataset).forEach(driver => {
-            driver.laps.forEach(lap => {
-                if (
-                    !lap.isValidPaceLap ||
-                    !Number.isFinite(lap.lapTime)
-                ) {
+        Object.values(dataset).forEach((driver) => {
+            driver.laps.forEach((lap) => {
+                if (!lap.isValidPaceLap || !Number.isFinite(lap.lapTime)) {
                     return;
                 }
 
@@ -1304,32 +1205,24 @@ class TyreAnalytics {
                 }
 
                 if (lap.new || lap.tyreAge <= 2) {
-                    newTimes[compound].push(
-                        lap.lapTime
-                    );
+                    newTimes[compound].push(lap.lapTime);
                 } else {
-                    usedTimes[compound].push(
-                        lap.lapTime
-                    );
+                    usedTimes[compound].push(lap.lapTime);
                 }
             });
         });
 
-        Object.keys(result).forEach(compound => {
+        Object.keys(result).forEach((compound) => {
             if (newTimes[compound].length) {
-                result[compound].new =
-                    Math.min(...newTimes[compound]);
+                result[compound].new = Math.min(...newTimes[compound]);
 
-                result[compound].newSampleSize =
-                    newTimes[compound].length;
+                result[compound].newSampleSize = newTimes[compound].length;
             }
 
             if (usedTimes[compound].length) {
-                result[compound].used =
-                    Math.min(...usedTimes[compound]);
+                result[compound].used = Math.min(...usedTimes[compound]);
 
-                result[compound].usedSampleSize =
-                    usedTimes[compound].length;
+                result[compound].usedSampleSize = usedTimes[compound].length;
             }
         });
 
@@ -1340,15 +1233,14 @@ class TyreAnalytics {
         const result = {};
         const dataset = this.buildUnifiedDataset();
 
-        Object.values(dataset).forEach(driver => {
-            driver.laps.forEach(lap => {
+        Object.values(dataset).forEach((driver) => {
+            driver.laps.forEach((lap) => {
                 if (
                     lap.isValidPaceLap &&
                     Number.isFinite(lap.lapTime) &&
                     lap.lapTime > 0
                 ) {
-                    const compound =
-                        lap.compound || "UNKNOWN";
+                    const compound = lap.compound || "UNKNOWN";
 
                     if (
                         result[compound] === undefined ||
@@ -1367,17 +1259,17 @@ class TyreAnalytics {
         const longRunPace = {};
         const dataset = this.buildUnifiedDataset();
 
-        Object.values(dataset).forEach(driver => {
-            driver.stints.forEach(stint => {
+        Object.values(dataset).forEach((driver) => {
+            driver.stints.forEach((stint) => {
                 if (stint.lapsDriven < 5) {
                     return;
                 }
 
                 const validLaps = driver.laps.filter(
-                    lap =>
+                    (lap) =>
                         lap.stint === stint.stintNumber &&
                         lap.isValidPaceLap &&
-                        Number.isFinite(lap.lapTime)
+                        Number.isFinite(lap.lapTime),
                 );
 
                 if (validLaps.length < 5) {
@@ -1385,39 +1277,28 @@ class TyreAnalytics {
                 }
 
                 const average =
-                    validLaps.reduce(
-                        (sum, lap) => sum + lap.lapTime,
-                        0
-                    ) / validLaps.length;
+                    validLaps.reduce((sum, lap) => sum + lap.lapTime, 0) /
+                    validLaps.length;
 
                 if (!longRunPace[driver.driverName]) {
                     longRunPace[driver.driverName] = [];
                 }
 
-                longRunPace[driver.driverName].push(
-                    average
-                );
+                longRunPace[driver.driverName].push(average);
             });
         });
 
         const result = {};
 
-        Object.entries(longRunPace).forEach(
-            ([driverName, values]) => {
-                if (!values.length) {
-                    return;
-                }
-
-                result[driverName] = Number(
-                    (
-                        values.reduce(
-                            (a, b) => a + b,
-                            0
-                        ) / values.length
-                    ).toFixed(3)
-                );
+        Object.entries(longRunPace).forEach(([driverName, values]) => {
+            if (!values.length) {
+                return;
             }
-        );
+
+            result[driverName] = Number(
+                (values.reduce((a, b) => a + b, 0) / values.length).toFixed(3),
+            );
+        });
 
         return result;
     }
@@ -1425,64 +1306,49 @@ class TyreAnalytics {
     getDriverSummaries() {
         const dataset = this.buildUnifiedDataset();
 
-        return Object.entries(dataset).map(
-            ([driverId, data]) => {
-                const compoundLaps = {
-                    SOFT: 0,
-                    MEDIUM: 0,
-                    HARD: 0,
-                    INTERMEDIATE: 0,
-                    WET: 0,
-                    UNKNOWN: 0
-                };
+        return Object.entries(dataset).map(([driverId, data]) => {
+            const compoundLaps = {
+                SOFT: 0,
+                MEDIUM: 0,
+                HARD: 0,
+                INTERMEDIATE: 0,
+                WET: 0,
+                UNKNOWN: 0,
+            };
 
-                data.laps.forEach(lap => {
-                    const compound =
-                        compoundLaps[lap.compound] !== undefined
-                            ? lap.compound
-                            : "UNKNOWN";
+            data.laps.forEach((lap) => {
+                const compound =
+                    compoundLaps[lap.compound] !== undefined
+                        ? lap.compound
+                        : "UNKNOWN";
 
-                    compoundLaps[compound]++;
-                });
+                compoundLaps[compound]++;
+            });
 
-                const newLapsCount = data.laps.filter(
-                    lap => lap.new
-                ).length;
+            const newLapsCount = data.laps.filter((lap) => lap.new).length;
 
-                const totalLaps = data.laps.length;
+            const totalLaps = data.laps.length;
 
-                return {
-                    driverId,
-                    driverName: data.driverName,
-                    stintCount: data.stints.length,
-                    pitStops: data.pitStops,
-                    tyreChanges: data.tyreChanges,
-                    totalLaps,
-                    strategySeq: data.strategyString,
-                    compoundLaps,
-                    newLapsPct: totalLaps
-                        ? Number(
-                              (
-                                  (newLapsCount /
-                                      totalLaps) *
-                                  100
-                              ).toFixed(1)
-                          )
-                        : 0,
-                    firstCompound:
-                        data.strategy[0] || "N/A",
-                    lastCompound:
-                        data.strategy[
-                            data.strategy.length - 1
-                        ] || "N/A",
-                    bestS1: data.bestS1,
-                    bestS2: data.bestS2,
-                    bestS3: data.bestS3,
-                    theoreticalBest:
-                        data.theoreticalBest
-                };
-            }
-        );
+            return {
+                driverId,
+                driverName: data.driverName,
+                stintCount: data.stints.length,
+                pitStops: data.pitStops,
+                tyreChanges: data.tyreChanges,
+                totalLaps,
+                strategySeq: data.strategyString,
+                compoundLaps,
+                newLapsPct: totalLaps
+                    ? Number(((newLapsCount / totalLaps) * 100).toFixed(1))
+                    : 0,
+                firstCompound: data.strategy[0] || "N/A",
+                lastCompound: data.strategy[data.strategy.length - 1] || "N/A",
+                bestS1: data.bestS1,
+                bestS2: data.bestS2,
+                bestS3: data.bestS3,
+                theoreticalBest: data.theoreticalBest,
+            };
+        });
     }
 
     getGlobalCompoundPerformance() {
@@ -1490,206 +1356,141 @@ class TyreAnalytics {
 
         const grouped = {};
 
-        this.compoundOrder.forEach(compound => {
+        this.compoundOrder.forEach((compound) => {
             grouped[compound] = {
                 laps: [],
                 sector1: [],
                 sector2: [],
                 sector3: [],
                 driverIds: new Set(),
-                stintSlopes: []
+                stintSlopes: [],
             };
         });
 
-        Object.entries(dataset).forEach(
-            ([driverId, driver]) => {
-                driver.laps.forEach(lap => {
-                    if (
-                        !lap.isValidPaceLap ||
-                        !Number.isFinite(lap.lapTime)
-                    ) {
-                        return;
-                    }
+        Object.entries(dataset).forEach(([driverId, driver]) => {
+            driver.laps.forEach((lap) => {
+                if (!lap.isValidPaceLap || !Number.isFinite(lap.lapTime)) {
+                    return;
+                }
 
-                    const compound =
-                        grouped[lap.compound]
-                            ? lap.compound
-                            : "UNKNOWN";
+                const compound = grouped[lap.compound]
+                    ? lap.compound
+                    : "UNKNOWN";
 
-                    const group = grouped[compound];
+                const group = grouped[compound];
 
-                    group.laps.push(lap);
-                    group.driverIds.add(driverId);
+                group.laps.push(lap);
+                group.driverIds.add(driverId);
 
-                    if (Number.isFinite(lap.sector1)) {
-                        group.sector1.push(lap);
-                    }
+                if (Number.isFinite(lap.sector1)) {
+                    group.sector1.push(lap);
+                }
 
-                    if (Number.isFinite(lap.sector2)) {
-                        group.sector2.push(lap);
-                    }
+                if (Number.isFinite(lap.sector2)) {
+                    group.sector2.push(lap);
+                }
 
-                    if (Number.isFinite(lap.sector3)) {
-                        group.sector3.push(lap);
-                    }
-                });
-            }
-        );
+                if (Number.isFinite(lap.sector3)) {
+                    group.sector3.push(lap);
+                }
+            });
+        });
 
-        Object.values(dataset).forEach(driver => {
-            driver.stints.forEach(stint => {
+        Object.values(dataset).forEach((driver) => {
+            driver.stints.forEach((stint) => {
                 if (
                     stint.validLapsCount >= 3 &&
                     Number.isFinite(stint.degradationSlope)
                 ) {
-                    const compound =
-                        grouped[stint.compound]
-                            ? stint.compound
-                            : "UNKNOWN";
+                    const compound = grouped[stint.compound]
+                        ? stint.compound
+                        : "UNKNOWN";
 
-                    grouped[compound].stintSlopes.push(
-                        stint.degradationSlope
-                    );
+                    grouped[compound].stintSlopes.push(stint.degradationSlope);
                 }
             });
         });
 
         const performance = {};
 
-        Object.entries(grouped).forEach(
-            ([compound, data]) => {
-                if (!data.laps.length) {
-                    return;
+        Object.entries(grouped).forEach(([compound, data]) => {
+            if (!data.laps.length) {
+                return;
+            }
+
+            const times = data.laps
+                .map((lap) => lap.lapTime)
+                .filter(Number.isFinite)
+                .sort((a, b) => a - b);
+
+            const best = times[0];
+            const worst = times[times.length - 1];
+
+            const best3Average =
+                times.length >= 3
+                    ? times.slice(0, 3).reduce((a, b) => a + b, 0) / 3
+                    : null;
+
+            const best5Average =
+                times.length >= 5
+                    ? times.slice(0, 5).reduce((a, b) => a + b, 0) / 5
+                    : null;
+
+            const best10Average =
+                times.length >= 10
+                    ? times.slice(0, 10).reduce((a, b) => a + b, 0) / 10
+                    : null;
+
+            const average = times.reduce((a, b) => a + b, 0) / times.length;
+
+            const median = this.calculatePercentile(times, 50);
+
+            const p10 = this.calculatePercentile(times, 10);
+
+            const p90 = this.calculatePercentile(times, 90);
+
+            const sectorRegression = (sectorNumber) => {
+                const pairs = data.laps.filter(
+                    (lap) =>
+                        Number.isFinite(lap.tyreAge) &&
+                        Number.isFinite(lap[`sector${sectorNumber}`]),
+                );
+
+                if (pairs.length < 2) {
+                    return 0;
                 }
 
-                const times = data.laps
-                    .map(lap => lap.lapTime)
-                    .filter(Number.isFinite)
-                    .sort((a, b) => a - b);
+                return this.calculateLinearRegression(
+                    pairs.map((lap) => lap.tyreAge),
+                    pairs.map((lap) => lap[`sector${sectorNumber}`]),
+                );
+            };
 
-                const best = times[0];
-                const worst =
-                    times[times.length - 1];
+            const medianStintSlope = data.stintSlopes.length
+                ? this.calculatePercentile(data.stintSlopes, 50)
+                : 0;
 
-                const best3Average =
-                    times.length >= 3
-                        ? times
-                              .slice(0, 3)
-                              .reduce(
-                                  (a, b) => a + b,
-                                  0
-                              ) / 3
-                        : null;
-
-                const best5Average =
-                    times.length >= 5
-                        ? times
-                              .slice(0, 5)
-                              .reduce(
-                                  (a, b) => a + b,
-                                  0
-                              ) / 5
-                        : null;
-
-                const best10Average =
-                    times.length >= 10
-                        ? times
-                              .slice(0, 10)
-                              .reduce(
-                                  (a, b) => a + b,
-                                  0
-                              ) / 10
-                        : null;
-
-                const average =
-                    times.reduce(
-                        (a, b) => a + b,
-                        0
-                    ) / times.length;
-
-                const median =
-                    this.calculatePercentile(
-                        times,
-                        50
-                    );
-
-                const p10 =
-                    this.calculatePercentile(
-                        times,
-                        10
-                    );
-
-                const p90 =
-                    this.calculatePercentile(
-                        times,
-                        90
-                    );
-
-                const sectorRegression = (
-                    sectorNumber
-                ) => {
-                    const pairs = data.laps
-                        .filter(
-                            lap =>
-                                Number.isFinite(
-                                    lap.tyreAge
-                                ) &&
-                                Number.isFinite(
-                                    lap[`sector${sectorNumber}`]
-                                )
-                        );
-
-                    if (pairs.length < 2) {
-                        return 0;
-                    }
-
-                    return this.calculateLinearRegression(
-                        pairs.map(
-                            lap => lap.tyreAge
-                        ),
-                        pairs.map(
-                            lap =>
-                                lap[
-                                    `sector${sectorNumber}`
-                                ]
-                        )
-                    );
-                };
-
-                const medianStintSlope =
-                    data.stintSlopes.length
-                        ? this.calculatePercentile(
-                              data.stintSlopes,
-                              50
-                          )
-                        : 0;
-
-                performance[compound] = {
-                    laps: times.length,
-                    drivers: data.driverIds.size,
-                    bestLap: best,
-                    worstLap: worst,
-                    best3Average,
-                    best5Average,
-                    best10Average,
-                    median,
-                    average,
-                    p10,
-                    p90,
-                    stdDev: this.calculateStdDev(
-                        times,
-                        average
-                    ),
-                    degradationPerLap:
-                        medianStintSlope,
-                    sectorDegradation: {
-                        s1: sectorRegression(1),
-                        s2: sectorRegression(2),
-                        s3: sectorRegression(3)
-                    }
-                };
-            }
-        );
+            performance[compound] = {
+                laps: times.length,
+                drivers: data.driverIds.size,
+                bestLap: best,
+                worstLap: worst,
+                best3Average,
+                best5Average,
+                best10Average,
+                median,
+                average,
+                p10,
+                p90,
+                stdDev: this.calculateStdDev(times, average),
+                degradationPerLap: medianStintSlope,
+                sectorDegradation: {
+                    s1: sectorRegression(1),
+                    s2: sectorRegression(2),
+                    s3: sectorRegression(3),
+                },
+            };
+        });
 
         return performance;
     }
@@ -1722,28 +1523,28 @@ class TyreAnalytics {
             .map(([driverId, driver]) => {
                 const compoundBreakdown = {};
 
-                this.compoundOrder.forEach(compound => {
+                this.compoundOrder.forEach((compound) => {
                     const compoundData = driver.compounds[compound];
 
                     if (compoundData) {
                         compoundBreakdown[compound] = {
                             degradationPerLap: compoundData.degradationPerLap,
                             lapsCount: compoundData.lapsCount,
-                            average: compoundData.average
+                            average: compoundData.average,
                         };
                     }
                 });
 
                 const validStints = driver.stints.filter(
-                    stint =>
+                    (stint) =>
                         stint.validLapsCount >= 3 &&
-                        Number.isFinite(stint.degradationSlope)
+                        Number.isFinite(stint.degradationSlope),
                 );
 
                 const overallDegradation = validStints.length
                     ? validStints.reduce(
                           (sum, stint) => sum + stint.degradationSlope,
-                          0
+                          0,
                       ) / validStints.length
                     : null;
 
@@ -1757,13 +1558,13 @@ class TyreAnalytics {
                             : null,
                     compoundBreakdown,
                     stints: driver.stints.length,
-                    strategy: driver.strategyString
+                    strategy: driver.strategyString,
                 };
             })
             .filter(
-                entry =>
+                (entry) =>
                     entry.overallDegradation !== null ||
-                    Object.keys(entry.compoundBreakdown).length
+                    Object.keys(entry.compoundBreakdown).length,
             )
             .sort((a, b) => {
                 if (a.overallDegradation === null) return 1;
@@ -1776,7 +1577,7 @@ class TyreAnalytics {
         const drivers = this.getDriverDegradationComparison();
         const teams = {};
 
-        drivers.forEach(driver => {
+        drivers.forEach((driver) => {
             const team = driver.team || "UNKNOWN";
 
             if (!teams[team]) {
@@ -1784,7 +1585,7 @@ class TyreAnalytics {
                     team,
                     drivers: [],
                     degradationValues: [],
-                    compoundBreakdown: {}
+                    compoundBreakdown: {},
                 };
             }
 
@@ -1802,15 +1603,15 @@ class TyreAnalytics {
 
                     if (Number.isFinite(data.degradationPerLap)) {
                         teams[team].compoundBreakdown[compound].push(
-                            data.degradationPerLap
+                            data.degradationPerLap,
                         );
                     }
-                }
+                },
             );
         });
 
         return Object.values(teams)
-            .map(team => {
+            .map((team) => {
                 const compoundAverages = {};
 
                 Object.entries(team.compoundBreakdown).forEach(
@@ -1820,10 +1621,10 @@ class TyreAnalytics {
                                   (
                                       values.reduce((a, b) => a + b, 0) /
                                       values.length
-                                  ).toFixed(4)
+                                  ).toFixed(4),
                               )
                             : null;
-                    }
+                    },
                 );
 
                 return {
@@ -1834,12 +1635,12 @@ class TyreAnalytics {
                               (
                                   team.degradationValues.reduce(
                                       (a, b) => a + b,
-                                      0
+                                      0,
                                   ) / team.degradationValues.length
-                              ).toFixed(4)
+                              ).toFixed(4),
                           )
                         : null,
-                    compoundBreakdown: compoundAverages
+                    compoundBreakdown: compoundAverages,
                 };
             })
             .sort((a, b) => {
@@ -1853,10 +1654,10 @@ class TyreAnalytics {
         const dataset = this.buildUnifiedDataset();
         const losses = [];
 
-        Object.values(dataset).forEach(driver => {
+        Object.values(dataset).forEach((driver) => {
             const cleanTimes = driver.laps
-                .filter(lap => lap.isCleanLap && Number.isFinite(lap.lapTime))
-                .map(lap => lap.lapTime)
+                .filter((lap) => lap.isCleanLap && Number.isFinite(lap.lapTime))
+                .map((lap) => lap.lapTime)
                 .sort((a, b) => a - b);
 
             if (cleanTimes.length < 3) {
@@ -1934,7 +1735,7 @@ class TyreAnalytics {
             HARD: 0.85,
             INTERMEDIATE: 0.6,
             WET: 0.7,
-            UNKNOWN: 0.6
+            UNKNOWN: 0.6,
         };
 
         return ratios[compound] || 0.6;
@@ -1954,9 +1755,7 @@ class TyreAnalytics {
             90;
 
         const basePace =
-            compoundData?.best5Average ||
-            compoundData?.average ||
-            fallbackBase;
+            compoundData?.best5Average || compoundData?.average || fallbackBase;
 
         const degradationPerLap =
             Number(compoundData?.degradationPerLap) > 0
@@ -1966,8 +1765,8 @@ class TyreAnalytics {
         const cliffLimit = Math.max(
             8,
             Math.floor(
-                (totalLaps || 50) * this.getCompoundCliffRatio(compound)
-            )
+                (totalLaps || 50) * this.getCompoundCliffRatio(compound),
+            ),
         );
 
         return {
@@ -1975,7 +1774,7 @@ class TyreAnalytics {
             basePace,
             degradationPerLap,
             cliffLimit,
-            fuelEffectPerLap: this.estimateFuelEffectPerLap()
+            fuelEffectPerLap: this.estimateFuelEffectPerLap(),
         };
     }
 
@@ -2008,12 +1807,10 @@ class TyreAnalytics {
                 stintLap: i + 1,
                 raceLap: raceLapOffset + i + 1,
                 predictedLapTime: Number(
-                    this.estimateLapTime(
-                        model,
-                        i,
-                        raceLapOffset + i
-                    ).toFixed(3)
-                )
+                    this.estimateLapTime(model, i, raceLapOffset + i).toFixed(
+                        3,
+                    ),
+                ),
             });
         }
 
@@ -2023,7 +1820,7 @@ class TyreAnalytics {
             degradationPerLap: model.degradationPerLap,
             fuelEffectPerLap: model.fuelEffectPerLap,
             cliffLimit: model.cliffLimit,
-            projection
+            projection,
         };
     }
 
@@ -2035,43 +1832,32 @@ class TyreAnalytics {
         const firstCompound = {};
         const lastCompound = {};
 
-        Object.values(dataset).forEach(driver => {
-            const sequence =
-                driver.strategyString || "UNKNOWN";
+        Object.values(dataset).forEach((driver) => {
+            const sequence = driver.strategyString || "UNKNOWN";
 
-            sequences[sequence] =
-                (sequences[sequence] || 0) + 1;
+            sequences[sequence] = (sequences[sequence] || 0) + 1;
 
-            const stops =
-                Number(driver.pitStops) || 0;
+            const stops = Number(driver.pitStops) || 0;
 
-            stopCounts[stops] =
-                (stopCounts[stops] || 0) + 1;
+            stopCounts[stops] = (stopCounts[stops] || 0) + 1;
 
-            const first =
-                driver.strategy[0] || "UNKNOWN";
+            const first = driver.strategy[0] || "UNKNOWN";
 
-            firstCompound[first] =
-                (firstCompound[first] || 0) + 1;
+            firstCompound[first] = (firstCompound[first] || 0) + 1;
 
             const last =
-                driver.strategy[
-                    driver.strategy.length - 1
-                ] || "UNKNOWN";
+                driver.strategy[driver.strategy.length - 1] || "UNKNOWN";
 
-            lastCompound[last] =
-                (lastCompound[last] || 0) + 1;
+            lastCompound[last] = (lastCompound[last] || 0) + 1;
         });
 
         return {
-            sequences: Object.entries(sequences).sort(
-                (a, b) => b[1] - a[1]
-            ),
+            sequences: Object.entries(sequences).sort((a, b) => b[1] - a[1]),
             stopCounts: Object.entries(stopCounts).sort(
-                (a, b) => Number(a[0]) - Number(b[0])
+                (a, b) => Number(a[0]) - Number(b[0]),
             ),
             firstCompound,
-            lastCompound
+            lastCompound,
         };
     }
 
@@ -2079,9 +1865,8 @@ class TyreAnalytics {
         const dataset = this.buildUnifiedDataset();
         const result = {};
 
-        Object.values(dataset).forEach(driver => {
-            const strategy =
-                driver.strategyString || "UNKNOWN";
+        Object.values(dataset).forEach((driver) => {
+            const strategy = driver.strategyString || "UNKNOWN";
 
             if (!result[strategy]) {
                 result[strategy] = {
@@ -2089,7 +1874,7 @@ class TyreAnalytics {
                     validLaps: 0,
                     averagePace: [],
                     degradation: [],
-                    pitStops: driver.pitStops
+                    pitStops: driver.pitStops,
                 };
             }
 
@@ -2098,59 +1883,42 @@ class TyreAnalytics {
             entry.count++;
 
             const validLaps = driver.laps.filter(
-                lap =>
-                    lap.isValidPaceLap &&
-                    Number.isFinite(lap.lapTime)
+                (lap) => lap.isValidPaceLap && Number.isFinite(lap.lapTime),
             );
 
             entry.validLaps += validLaps.length;
 
             if (validLaps.length) {
                 entry.averagePace.push(
-                    validLaps.reduce(
-                        (sum, lap) =>
-                            sum + lap.lapTime,
-                        0
-                    ) / validLaps.length
+                    validLaps.reduce((sum, lap) => sum + lap.lapTime, 0) /
+                        validLaps.length,
                 );
             }
 
-            driver.stints.forEach(stint => {
-                if (
-                    Number.isFinite(
-                        stint.degradationSlope
-                    )
-                ) {
-                    entry.degradation.push(
-                        stint.degradationSlope
-                    );
+            driver.stints.forEach((stint) => {
+                if (Number.isFinite(stint.degradationSlope)) {
+                    entry.degradation.push(stint.degradationSlope);
                 }
             });
         });
 
-        Object.values(result).forEach(entry => {
-            entry.averagePace =
-                entry.averagePace.length
-                    ? Number(
-                          (
-                              entry.averagePace.reduce(
-                                  (a, b) => a + b,
-                                  0
-                              ) /
-                              entry.averagePace.length
-                          ).toFixed(3)
-                      )
-                    : null;
+        Object.values(result).forEach((entry) => {
+            entry.averagePace = entry.averagePace.length
+                ? Number(
+                      (
+                          entry.averagePace.reduce((a, b) => a + b, 0) /
+                          entry.averagePace.length
+                      ).toFixed(3),
+                  )
+                : null;
 
-            entry.degradation =
-                entry.degradation.length
-                    ? Number(
-                          this.calculatePercentile(
-                              entry.degradation,
-                              50
-                          ).toFixed(3)
-                      )
-                    : null;
+            entry.degradation = entry.degradation.length
+                ? Number(
+                      this.calculatePercentile(entry.degradation, 50).toFixed(
+                          3,
+                      ),
+                  )
+                : null;
         });
 
         return result;
@@ -2163,17 +1931,11 @@ class TyreAnalytics {
             return [];
         }
 
-        const performance =
-            this.getGlobalCompoundPerformance();
+        const performance = this.getGlobalCompoundPerformance();
 
-        const dryCompounds = [
-            "SOFT",
-            "MEDIUM",
-            "HARD"
-        ].filter(
-            compound =>
-                performance[compound] &&
-                performance[compound].laps >= 5
+        const dryCompounds = ["SOFT", "MEDIUM", "HARD"].filter(
+            (compound) =>
+                performance[compound] && performance[compound].laps >= 5,
         );
 
         if (dryCompounds.length < 2) {
@@ -2183,8 +1945,8 @@ class TyreAnalytics {
         const pitLossTime = this.estimatePitStopLoss();
         const fuelEffectPerLap = this.estimateFuelEffectPerLap();
 
-        const fallbackBase = performance.HARD
-            ?.best5Average ||
+        const fallbackBase =
+            performance.HARD?.best5Average ||
             performance.HARD?.average ||
             performance.MEDIUM?.best5Average ||
             performance.MEDIUM?.average ||
@@ -2195,55 +1957,35 @@ class TyreAnalytics {
         const baseOffsets = {
             SOFT: -0.5,
             MEDIUM: -0.2,
-            HARD: 0
+            HARD: 0,
         };
 
         const maxUsableLaps = {
-            SOFT: Math.max(
-                10,
-                Math.floor(totalLaps * 0.35)
-            ),
-            MEDIUM: Math.max(
-                15,
-                Math.floor(totalLaps * 0.55)
-            ),
-            HARD: Math.max(
-                20,
-                Math.floor(totalLaps * 0.85)
-            )
+            SOFT: Math.max(10, Math.floor(totalLaps * 0.35)),
+            MEDIUM: Math.max(15, Math.floor(totalLaps * 0.55)),
+            HARD: Math.max(20, Math.floor(totalLaps * 0.85)),
         };
 
-        const calculateStintTime = (
-            compound,
-            laps,
-            raceLapOffset = 0
-        ) => {
+        const calculateStintTime = (compound, laps, raceLapOffset = 0) => {
             if (laps <= 0) {
                 return Infinity;
             }
 
-            const compoundData =
-                performance[compound];
+            const compoundData = performance[compound];
 
             const basePace =
                 compoundData?.best5Average ||
                 compoundData?.average ||
                 fallbackBase;
 
-            const offset =
-                baseOffsets[compound] || 0;
+            const offset = baseOffsets[compound] || 0;
 
             const degradation =
-                Number(
-                    compoundData?.degradationPerLap
-                ) > 0
-                    ? Number(
-                          compoundData.degradationPerLap
-                      )
+                Number(compoundData?.degradationPerLap) > 0
+                    ? Number(compoundData.degradationPerLap)
                     : 0.05;
 
-            const cliffLimit =
-                maxUsableLaps[compound] || 20;
+            const cliffLimit = maxUsableLaps[compound] || 20;
 
             let total = 0;
 
@@ -2252,16 +1994,12 @@ class TyreAnalytics {
                     basePace +
                     offset +
                     degradation * lap -
-                    fuelEffectPerLap *
-                        (raceLapOffset + lap);
+                    fuelEffectPerLap * (raceLapOffset + lap);
 
                 if (lap > cliffLimit) {
-                    const overLimit =
-                        lap - cliffLimit;
+                    const overLimit = lap - cliffLimit;
 
-                    lapTime +=
-                        Math.pow(overLimit, 2) *
-                        0.15;
+                    lapTime += Math.pow(overLimit, 2) * 0.15;
                 }
 
                 total += lapTime;
@@ -2281,26 +2019,13 @@ class TyreAnalytics {
                 let bestTime = Infinity;
                 let bestWindow = null;
 
-                for (
-                    let pit1 = 8;
-                    pit1 <= totalLaps - 8;
-                    pit1++
-                ) {
+                for (let pit1 = 8; pit1 <= totalLaps - 8; pit1++) {
                     const stint1 = pit1;
-                    const stint2 =
-                        totalLaps - pit1;
+                    const stint2 = totalLaps - pit1;
 
                     const totalTime =
-                        calculateStintTime(
-                            c1,
-                            stint1,
-                            0
-                        ) +
-                        calculateStintTime(
-                            c2,
-                            stint2,
-                            stint1
-                        ) +
+                        calculateStintTime(c1, stint1, 0) +
+                        calculateStintTime(c2, stint2, stint1) +
                         pitLossTime;
 
                     if (totalTime < bestTime) {
@@ -2314,7 +2039,7 @@ class TyreAnalytics {
                         combo: `${c1} → ${c2}`,
                         stops: 1,
                         window: bestWindow,
-                        totalTime: bestTime
+                        totalTime: bestTime,
                     });
                 }
             }
@@ -2324,70 +2049,46 @@ class TyreAnalytics {
             for (const c1 of dryCompounds) {
                 for (const c2 of dryCompounds) {
                     for (const c3 of dryCompounds) {
-                        if (
-                            new Set([c1, c2, c3]).size <
-                            2
-                        ) {
+                        if (new Set([c1, c2, c3]).size < 2) {
                             continue;
                         }
 
                         let bestTime = Infinity;
                         let bestWindow = null;
 
-                        for (
-                            let pit1 = 8;
-                            pit1 <= totalLaps - 16;
-                            pit1 += 2
-                        ) {
+                        for (let pit1 = 8; pit1 <= totalLaps - 16; pit1 += 2) {
                             for (
                                 let pit2 = pit1 + 8;
                                 pit2 <= totalLaps - 8;
                                 pit2 += 2
                             ) {
                                 const stint1 = pit1;
-                                const stint2 =
-                                    pit2 - pit1;
-                                const stint3 =
-                                    totalLaps - pit2;
+                                const stint2 = pit2 - pit1;
+                                const stint3 = totalLaps - pit2;
 
                                 const totalTime =
-                                    calculateStintTime(
-                                        c1,
-                                        stint1,
-                                        0
-                                    ) +
-                                    calculateStintTime(
-                                        c2,
-                                        stint2,
-                                        stint1
-                                    ) +
+                                    calculateStintTime(c1, stint1, 0) +
+                                    calculateStintTime(c2, stint2, stint1) +
                                     calculateStintTime(
                                         c3,
                                         stint3,
-                                        stint1 + stint2
+                                        stint1 + stint2,
                                     ) +
                                     pitLossTime * 2;
 
-                                if (
-                                    totalTime <
-                                    bestTime
-                                ) {
-                                    bestTime =
-                                        totalTime;
-                                    bestWindow =
-                                        `${pit1} / ${pit2}`;
+                                if (totalTime < bestTime) {
+                                    bestTime = totalTime;
+                                    bestWindow = `${pit1} / ${pit2}`;
                                 }
                             }
                         }
 
-                        if (
-                            Number.isFinite(bestTime)
-                        ) {
+                        if (Number.isFinite(bestTime)) {
                             strategies.push({
                                 combo: `${c1} → ${c2} → ${c3}`,
                                 stops: 2,
                                 window: bestWindow,
-                                totalTime: bestTime
+                                totalTime: bestTime,
                             });
                         }
                     }
@@ -2400,14 +2101,7 @@ class TyreAnalytics {
                 for (const c2 of dryCompounds) {
                     for (const c3 of dryCompounds) {
                         for (const c4 of dryCompounds) {
-                            if (
-                                new Set([
-                                    c1,
-                                    c2,
-                                    c3,
-                                    c4
-                                ]).size < 2
-                            ) {
+                            if (new Set([c1, c2, c3, c4]).size < 2) {
                                 continue;
                             }
 
@@ -2416,87 +2110,61 @@ class TyreAnalytics {
 
                             for (
                                 let pit1 = 6;
-                                pit1 <=
-                                totalLaps - 18;
+                                pit1 <= totalLaps - 18;
                                 pit1 += 3
                             ) {
                                 for (
-                                    let pit2 =
-                                        pit1 + 6;
-                                    pit2 <=
-                                        totalLaps - 12;
+                                    let pit2 = pit1 + 6;
+                                    pit2 <= totalLaps - 12;
                                     pit2 += 3
                                 ) {
                                     for (
-                                        let pit3 =
-                                            pit2 + 6;
-                                        pit3 <=
-                                            totalLaps - 6;
+                                        let pit3 = pit2 + 6;
+                                        pit3 <= totalLaps - 6;
                                         pit3 += 3
                                     ) {
-                                        const stint1 =
-                                            pit1;
+                                        const stint1 = pit1;
 
-                                        const stint2 =
-                                            pit2 - pit1;
+                                        const stint2 = pit2 - pit1;
 
-                                        const stint3 =
-                                            pit3 - pit2;
+                                        const stint3 = pit3 - pit2;
 
-                                        const stint4 =
-                                            totalLaps -
-                                            pit3;
+                                        const stint4 = totalLaps - pit3;
 
                                         const totalTime =
-                                            calculateStintTime(
-                                                c1,
-                                                stint1,
-                                                0
-                                            ) +
+                                            calculateStintTime(c1, stint1, 0) +
                                             calculateStintTime(
                                                 c2,
                                                 stint2,
-                                                stint1
+                                                stint1,
                                             ) +
                                             calculateStintTime(
                                                 c3,
                                                 stint3,
-                                                stint1 + stint2
+                                                stint1 + stint2,
                                             ) +
                                             calculateStintTime(
                                                 c4,
                                                 stint4,
-                                                stint1 +
-                                                    stint2 +
-                                                    stint3
+                                                stint1 + stint2 + stint3,
                                             ) +
-                                            pitLossTime *
-                                                3;
+                                            pitLossTime * 3;
 
-                                        if (
-                                            totalTime <
-                                            bestTime
-                                        ) {
-                                            bestTime =
-                                                totalTime;
+                                        if (totalTime < bestTime) {
+                                            bestTime = totalTime;
 
-                                            bestWindow =
-                                                `${pit1} / ${pit2} / ${pit3}`;
+                                            bestWindow = `${pit1} / ${pit2} / ${pit3}`;
                                         }
                                     }
                                 }
                             }
 
-                            if (
-                                Number.isFinite(
-                                    bestTime
-                                )
-                            ) {
+                            if (Number.isFinite(bestTime)) {
                                 strategies.push({
                                     combo: `${c1} → ${c2} → ${c3} → ${c4}`,
                                     stops: 3,
                                     window: bestWindow,
-                                    totalTime: bestTime
+                                    totalTime: bestTime,
                                 });
                             }
                         }
@@ -2505,36 +2173,148 @@ class TyreAnalytics {
             }
         }
 
-        strategies.sort(
-            (a, b) =>
-                a.totalTime - b.totalTime
-        );
+        strategies.sort((a, b) => a.totalTime - b.totalTime);
 
-        const topStrategies =
-            strategies.slice(0, 8);
+        const topStrategies = strategies.slice(0, 8);
 
-        const baseline =
-            topStrategies[0]?.totalTime || 0;
+        const baseline = topStrategies[0]?.totalTime || 0;
 
-        return topStrategies.map(strategy => ({
+        return topStrategies.map((strategy) => ({
             strategyCombo: strategy.combo,
             pitStops: strategy.stops,
             pitWindow: strategy.window,
-            totalEstimatedTime:
+            totalEstimatedTime: strategy.totalTime,
+            formattedEstimatedTime: this.formatRaceTotalTime(
                 strategy.totalTime,
-            formattedEstimatedTime:
-                this.formatRaceTotalTime(
-                    strategy.totalTime
-                ),
-            delta: Number(
-                (
-                    strategy.totalTime -
-                    baseline
-                ).toFixed(3)
             ),
+            delta: Number((strategy.totalTime - baseline).toFixed(3)),
             pitLossTimeUsed: pitLossTime,
-            fuelEffectPerLapUsed: fuelEffectPerLap
+            fuelEffectPerLapUsed: fuelEffectPerLap,
         }));
     }
-}
 
+    calculateSectorDegradation(laps) {
+        const validLaps = laps.filter(
+            (lap) => lap.isValidPaceLap || lap.isCleanLap,
+        );
+        const getSlope = (sectorKey) => {
+            const points = validLaps
+                .map((lap) => ({
+                    x: Number(lap.tyreAge),
+                    y: Number(lap[sectorKey]),
+                }))
+                .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+            if (points.length < 3) return null;
+            return this.calculateLinearRegression(
+                points.map((p) => p.x),
+                points.map((p) => p.y),
+            );
+        };
+        return {
+            s1Degradation: getSlope("sector1"),
+            s2Degradation: getSlope("sector2"),
+            s3Degradation: getSlope("sector3"),
+        };
+    }
+
+    getDriverDetailedDegradation(driverId) {
+        const dataset = this.buildUnifiedDataset();
+        const driverData = dataset[driverId];
+        if (!driverData) return null;
+        const stintAnalysis = driverData.stints.map((stint) => {
+            const stintLaps = driverData.laps.filter(
+                (l) => l.stint === stint.stintNumber && l.isValidPaceLap,
+            );
+            const sectorDeg = this.calculateSectorDegradation(stintLaps);
+            return {
+                stintNumber: stint.stintNumber,
+                compound: stint.compound,
+                lapsDriven: stint.lapsDriven,
+                overallDegradation: stint.degradationSlope,
+                s1Degradation: sectorDeg.s1Degradation,
+                s2Degradation: sectorDeg.s2Degradation,
+                s3Degradation: sectorDeg.s3Degradation,
+                bestLap: stint.bestLap,
+                avgLap: stint.avgLap,
+            };
+        });
+        return {
+            driverName: driverData.driverName,
+            stints: stintAnalysis,
+        };
+    }
+
+    calculateSectorDegradation(laps) {
+        const validLaps = laps.filter(
+            (lap) => lap.isValidPaceLap || lap.isCleanLap,
+        );
+        const getSlope = (sectorKey) => {
+            const points = validLaps
+                .map((lap) => ({
+                    x: Number(lap.tyreAge),
+                    y: Number(lap[sectorKey]),
+                }))
+                .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+            if (points.length < 3) return null;
+            return this.calculateLinearRegression(
+                points.map((p) => p.x),
+                points.map((p) => p.y),
+            );
+        };
+        return {
+            s1Degradation: getSlope("sector1"),
+            s2Degradation: getSlope("sector2"),
+            s3Degradation: getSlope("sector3"),
+        };
+    }
+
+    getDriverDetailedDegradation(driverId) {
+        const dataset = this.buildUnifiedDataset();
+        const driverData = dataset[driverId];
+        if (!driverData) return null;
+        const stintAnalysis = driverData.stints.map((stint) => {
+            const stintLaps = driverData.laps.filter(
+                (l) => l.stint === stint.stintNumber && l.isValidPaceLap,
+            );
+            const sectorDeg = this.calculateSectorDegradation(stintLaps);
+            return {
+                stintNumber: stint.stintNumber,
+                compound: stint.compound,
+                lapsDriven: stint.lapsDriven,
+                overallDegradation: stint.degradationSlope,
+                s1Degradation: sectorDeg.s1Degradation,
+                s2Degradation: sectorDeg.s2Degradation,
+                s3Degradation: sectorDeg.s3Degradation,
+                bestLap: stint.bestLap,
+                avgLap: stint.avgLap,
+            };
+        });
+        return {
+            driverName: driverData.driverName,
+            stints: stintAnalysis,
+        };
+    }
+
+    getDriversDegradationComparisonData(driverIds) {
+        const dataset = this.buildUnifiedDataset();
+        const result = {};
+        driverIds.forEach((id) => {
+            const driver = dataset[id];
+            if (!driver) return;
+            const laps = driver.laps.filter((l) => l.isValidPaceLap);
+            result[id] = {
+                driverName: driver.driverName,
+                laps: laps.map((l) => ({
+                    tyreAge: l.tyreAge,
+                    lapTime: l.lapTime,
+                    sector1: l.sector1,
+                    sector2: l.sector2,
+                    sector3: l.sector3,
+                    compound: l.compound,
+                    stint: l.stint,
+                })),
+            };
+        });
+        return result;
+    }
+}

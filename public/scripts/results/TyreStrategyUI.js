@@ -345,7 +345,9 @@ class TyreStrategyUI {
         grid.appendChild(
             this.ui.createChartCard("Strategy Usage", "tyreStrategyUsageChart"),
         );
-        grid.appendChild(this.ui.createChartCard("Tyre Usage", "tyreUsageChart"));
+        grid.appendChild(
+            this.ui.createChartCard("Tyre Usage", "tyreUsageChart"),
+        );
         grid.appendChild(
             this.ui.createChartCard(
                 "Pit Stop Distribution",
@@ -356,9 +358,7 @@ class TyreStrategyUI {
 
         card.appendChild(this.renderTyreDegradationTable(stats));
         card.appendChild(this.renderStintAnalysisTable(stints));
-        card.appendChild(
-            this.renderStrategyAnalysisTable(strategies, dataset),
-        );
+        card.appendChild(this.renderStrategyAnalysisTable(strategies, dataset));
 
         contentContainer.appendChild(card);
 
@@ -368,6 +368,7 @@ class TyreStrategyUI {
         this.renderTyreStrategyUsageChart(strategies);
         this.renderTyreUsageChart(dataset);
         this.renderTyrePitDistributionChart(dataset);
+        this.renderDriverComparisonSection(contentContainer, dataset);
     }
 
     renderTyreDegradationTable(stats) {
@@ -424,7 +425,10 @@ class TyreStrategyUI {
                 row,
                 this.ui.formatSecondsToLapTime(data.paceAt10),
             );
-            this.ui.appendCell(row, `${data.degradationPerLap.toFixed(3)} s/lap`);
+            this.ui.appendCell(
+                row,
+                `${data.degradationPerLap.toFixed(3)} s/lap`,
+            );
             this.ui.appendCell(row, `${data.ageMin}–${data.ageMax}`);
             tbody.appendChild(row);
         });
@@ -939,6 +943,234 @@ class TyreStrategyUI {
                 },
                 scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
                 plugins: { legend: { display: false } },
+            },
+        });
+    }
+
+    renderDriverComparisonSection(contentContainer, dataset) {
+        const section = document.createElement("div");
+        section.className = "ui-card";
+        section.style.marginTop = "28px";
+
+        const title = document.createElement("h2");
+        title.className = "ui-section-title";
+        title.textContent = "Driver Degradation & Sector Comparison";
+        section.appendChild(title);
+
+        const controlsContainer = document.createElement("div");
+        controlsContainer.style.display = "flex";
+        controlsContainer.style.gap = "16px";
+        controlsContainer.style.alignItems = "center";
+        controlsContainer.style.flexWrap = "wrap";
+        controlsContainer.style.marginBottom = "20px";
+
+        const label = document.createElement("label");
+        label.style.color = "#ee3737d7";
+        label.style.fontWeight = "bold";
+        label.textContent = "Select Drivers to Compare:";
+
+        const select = document.createElement("select");
+        select.className = "selector-dropdown";
+        select.multiple = true;
+        select.style.height = "100px";
+        select.style.minWidth = "220px";
+
+        Object.entries(dataset).forEach(([id, driver]) => {
+            const opt = document.createElement("option");
+            opt.value = id;
+            opt.textContent = driver.driverName;
+            select.appendChild(opt);
+        });
+
+        controlsContainer.appendChild(label);
+        controlsContainer.appendChild(select);
+        section.appendChild(controlsContainer);
+
+        const chartCard = this.ui.createChartCard(
+            "Driver Pace & Degradation Overlay",
+            "driverComparisonChart",
+            true,
+        );
+        section.appendChild(chartCard);
+
+        const detailsContainer = document.createElement("div");
+        detailsContainer.style.marginTop = "20px";
+        section.appendChild(detailsContainer);
+
+        contentContainer.appendChild(section);
+
+        const updateComparison = () => {
+            const selectedIds = Array.from(select.selectedOptions).map(
+                (opt) => opt.value,
+            );
+            if (!selectedIds.length) return;
+
+            this.renderDriverComparisonChart(selectedIds);
+
+            detailsContainer.innerHTML = "";
+            const wrapper = document.createElement("div");
+            wrapper.className = "table-wrapper";
+            const table = document.createElement("table");
+            table.className = "stint-stats-table";
+
+            table.appendChild(
+                this.ui.createTableHead([
+                    "Driver",
+                    "Stint",
+                    "Compound",
+                    "Laps",
+                    "Overall Deg.",
+                    "S1 Deg.",
+                    "S2 Deg.",
+                    "S3 Deg.",
+                ]),
+            );
+
+            const tbody = document.createElement("tbody");
+
+            selectedIds.forEach((id) => {
+                const details =
+                    this.ui.analytics.getDriverDetailedDegradation(id);
+                if (!details) return;
+
+                details.stints.forEach((s) => {
+                    const row = document.createElement("tr");
+                    this.ui.appendCell(row, details.driverName);
+                    this.ui.appendCell(row, `Stint ${s.stintNumber}`);
+                    this.ui.appendCell(row, s.compound);
+                    this.ui.appendCell(row, s.lapsDriven);
+                    this.ui.appendCell(
+                        row,
+                        s.overallDegradation !== null
+                            ? `${s.overallDegradation.toFixed(3)} s/lap`
+                            : "N/A",
+                    );
+                    this.ui.appendCell(
+                        row,
+                        s.s1Degradation !== null
+                            ? `${s.s1Degradation.toFixed(3)} s/lap`
+                            : "N/A",
+                    );
+                    this.ui.appendCell(
+                        row,
+                        s.s2Degradation !== null
+                            ? `${s.s2Degradation.toFixed(3)} s/lap`
+                            : "N/A",
+                    );
+                    this.ui.appendCell(
+                        row,
+                        s.s3Degradation !== null
+                            ? `${s.s3Degradation.toFixed(3)} s/lap`
+                            : "N/A",
+                    );
+                    tbody.appendChild(row);
+                });
+            });
+
+            table.appendChild(tbody);
+            wrapper.appendChild(table);
+            detailsContainer.appendChild(wrapper);
+        };
+
+        select.addEventListener("change", updateComparison);
+
+        const initialDrivers = Object.keys(dataset).slice(0, 2);
+        initialDrivers.forEach((id) => {
+            const option = select.querySelector(`option[value="${id}"]`);
+            if (option) option.selected = true;
+        });
+
+        if (initialDrivers.length) {
+            updateComparison();
+        }
+    }
+
+    renderDriverComparisonChart(driverIds) {
+        const canvas = document.getElementById("driverComparisonChart");
+        if (!canvas) return;
+
+        if (this.ui.charts.driverComparison) {
+            this.ui.charts.driverComparison.destroy();
+        }
+
+        const comparisonData =
+            this.ui.analytics.getDriversDegradationComparisonData(driverIds);
+        const datasets = [];
+        const colors = [
+            "#E10600",
+            "#00D2BE",
+            "#FF8700",
+            "#0600EF",
+            "#006F62",
+            "#FFF500",
+        ];
+
+        let colorIdx = 0;
+        Object.entries(comparisonData).forEach(([id, data]) => {
+            const driverColor = colors[colorIdx % colors.length];
+            colorIdx++;
+
+            const points = data.laps
+                .map((l) => ({ x: Number(l.tyreAge), y: Number(l.lapTime) }))
+                .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+
+            datasets.push({
+                label: `${data.driverName} Pace`,
+                data: points,
+                type: "scatter",
+                backgroundColor: driverColor,
+                borderColor: driverColor,
+                pointRadius: 3,
+            });
+
+            const regression = this.calculateTyreRegression(points);
+            if (regression && points.length >= 2) {
+                const minX = Math.min(...points.map((p) => p.x));
+                const maxX = Math.max(...points.map((p) => p.x));
+                datasets.push({
+                    label: `${data.driverName} Trend`,
+                    data: [
+                        {
+                            x: minX,
+                            y: regression.intercept + regression.slope * minX,
+                        },
+                        {
+                            x: maxX,
+                            y: regression.intercept + regression.slope * maxX,
+                        },
+                    ],
+                    type: "line",
+                    borderColor: driverColor,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                });
+            }
+        });
+
+        this.ui.charts.driverComparison = new Chart(canvas, {
+            type: "scatter",
+            data: { datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: "linear",
+                        title: { display: true, text: "Tyre Age (laps)" },
+                    },
+                    y: {
+                        title: { display: true, text: "Lap Time (seconds)" },
+                        ticks: {
+                            callback: (value) =>
+                                this.ui.formatSecondsToLapTime(value),
+                        },
+                    },
+                },
+                plugins: {
+                    legend: { labels: { color: "#FFFFFF" } },
+                    zoom: this.ui.getZoomOptions(),
+                },
             },
         });
     }

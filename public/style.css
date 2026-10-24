@@ -249,7 +249,9 @@ body.light-mode text.wind-text {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: background 0.2s, border-color 0.2s;
+    transition:
+        background 0.2s,
+        border-color 0.2s;
 }
 
 .theme-toggle-btn:hover {
@@ -354,7 +356,7 @@ body.light-mode text.wind-text {
     min-width: 280px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; 
+    justify-content: space-between;
 }
 
 .race-control-panel {
@@ -411,9 +413,9 @@ body.light-mode text.wind-text {
 .race-control-list {
     display: flex;
     flex-direction: column;
-    flex: 1;               
-    max-height: 190px;      
-    min-height: 120px;      
+    flex: 1;
+    max-height: 190px;
+    min-height: 120px;
     overflow-y: auto;
     padding: 4px 0;
 }
@@ -423,7 +425,7 @@ body.light-mode text.wind-text {
     color: #8b949e;
     font-size: 0.85rem;
     font-style: italic;
-    margin: auto;         
+    margin: auto;
 }
 
 .race-control-item {
@@ -2607,12 +2609,82 @@ body.light-mode .summary-item-value {
     }
 }
 
-
-.row-retired{
+.row-retired {
     opacity: 0.35;
 }
 
 body.light-mode tr.row-knockedOut td,
-.row-knockedOut{
+.row-knockedOut {
     background-color: rgba(164, 2, 2, 0.25);
+}
+
+.overview-section {
+    margin-top: 28px;
+}
+
+.overview-table td {
+    white-space: nowrap;
+}
+
+.overview-driver {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.overview-swatch {
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    border-radius: 2px;
+}
+
+.overview-code {
+    font-weight: 700;
+}
+
+.overview-name {
+    opacity: 0.65;
+    font-size: 0.85em;
+}
+
+.overview-team {
+    opacity: 0.8;
+}
+
+.time-overall-best {
+    color: #b36bff;
+    font-weight: 700;
+}
+
+.time-personal-best {
+    color: #3ddc84;
+    font-weight: 600;
+}
+
+.overview-controls {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.overview-control {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.overview-control:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 700px) {
+    .overview-name {
+        display: none;
+    }
 }

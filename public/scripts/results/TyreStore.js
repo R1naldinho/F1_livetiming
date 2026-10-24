@@ -8,7 +8,7 @@ class TyreStore {
             HARD: "#FFFFFF",
             INTERMEDIATE: "#00A651",
             WET: "#0067B9",
-            UNKNOWN: "#808080"
+            UNKNOWN: "#808080",
         };
     }
 
@@ -18,7 +18,7 @@ class TyreStore {
         if (!stintsData) return;
 
         Object.entries(stintsData).forEach(([driverId, stintList]) => {
-            const parsedStints = stintList.map(stint => {
+            const parsedStints = stintList.map((stint) => {
                 const totalLaps = Number(stint.TotalLaps || 0);
                 const startLaps = Number(stint.StartLaps || 0);
                 const actualLapsDriven = Math.max(0, totalLaps - startLaps);
@@ -31,7 +31,7 @@ class TyreStore {
                     TotalLaps: totalLaps,
                     StartLaps: startLaps,
                     ActualLapsDriven: actualLapsDriven,
-                    TyresNotChanged: isNotChanged
+                    TyresNotChanged: isNotChanged,
                 };
             });
             this.stints.set(String(driverId), parsedStints);
@@ -46,7 +46,7 @@ class TyreStore {
         Object.entries(tyres).forEach(([driverId, tyre]) => {
             this.currentTyres.set(String(driverId), {
                 ...tyre,
-                Compound: (tyre.Compound || "UNKNOWN").toUpperCase()
+                Compound: (tyre.Compound || "UNKNOWN").toUpperCase(),
             });
         });
     }
@@ -66,9 +66,10 @@ class TyreStore {
 
     calculateCompoundTotals() {
         const totals = {};
-        this.stints.forEach(stintList => {
-            stintList.forEach(stint => {
-                totals[stint.Compound] = (totals[stint.Compound] || 0) + stint.ActualLapsDriven;
+        this.stints.forEach((stintList) => {
+            stintList.forEach((stint) => {
+                totals[stint.Compound] =
+                    (totals[stint.Compound] || 0) + stint.ActualLapsDriven;
             });
         });
         return totals;
@@ -76,7 +77,7 @@ class TyreStore {
 
     calculateCurrentDistribution() {
         const counts = {};
-        this.currentTyres.forEach(tyre => {
+        this.currentTyres.forEach((tyre) => {
             counts[tyre.Compound] = (counts[tyre.Compound] || 0) + 1;
         });
         return counts;
@@ -84,7 +85,7 @@ class TyreStore {
 
     getMaxStintCount() {
         let max = 0;
-        this.stints.forEach(stintList => {
+        this.stints.forEach((stintList) => {
             if (stintList.length > max) max = stintList.length;
         });
         return max;

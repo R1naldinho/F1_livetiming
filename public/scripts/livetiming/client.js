@@ -147,9 +147,9 @@ class F1LiveClient {
                     this._resolveSessionReady = null;
                 }
                 if (this.ui) {
-                    Promise.resolve(this.ui.updateSession(this.sessionInfo)).catch(
-                        () => {},
-                    );
+                    Promise.resolve(
+                        this.ui.updateSession(this.sessionInfo),
+                    ).catch(() => {});
                 }
                 this.scheduleUIRefresh();
                 break;
@@ -345,10 +345,7 @@ class F1LiveClient {
         const type = String(this.sessionInfo?.Type || "").toLowerCase();
         const name = String(this.sessionInfo?.Name || "").toLowerCase();
 
-        if (
-            type === "race" ||
-            name.includes("race")
-        ) {
+        if (type === "race" || name.includes("race")) {
             return "race";
         }
 
@@ -431,7 +428,6 @@ class F1LiveClient {
 
     getDriverData(driverNum) {
         const info = this.timingData[driverNum] || {};
-        console.log(info)
         const stats = this.timingStats[driverNum] || {};
         const appData = this.timingAppData[driverNum] || {};
         const driverObj = this.drivers[driverNum] || {};

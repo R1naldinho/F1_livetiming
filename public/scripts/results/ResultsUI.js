@@ -13,6 +13,7 @@ class ResultsUI {
         this.sessionData = null;
         this.preparedAnalytics = null;
         this.tyreUI = new TyreStrategyUI(this);
+        this.overviewUI = new OverviewUI(this);
 
         this.compoundOrder = [
             "SOFT",
@@ -225,7 +226,6 @@ class ResultsUI {
         if (!this.racesData?.Meetings?.length) return;
 
         const now = Date.now();
-
         let selectedSession = null;
         let selectedMeeting = null;
         let latestDate = 0;
@@ -247,20 +247,11 @@ class ResultsUI {
         }
 
         if (!selectedSession || !selectedMeeting) {
-            for (const meeting of this.racesData.Meetings) {
-                if (!meeting.Sessions?.length) continue;
-
-                for (const session of meeting.Sessions) {
-                    const date = new Date(session.StartDate).getTime();
-
-                    if (!Number.isFinite(date)) continue;
-
-                    if (date > latestDate) {
-                        latestDate = date;
-                        selectedSession = session;
-                        selectedMeeting = meeting;
-                    }
-                }
+            const firstMeeting = this.racesData.Meetings[0];
+            if (firstMeeting?.Sessions?.length) {
+                selectedMeeting = firstMeeting;
+                selectedSession =
+                    firstMeeting.Sessions[firstMeeting.Sessions.length - 1];
             }
         }
 
@@ -268,6 +259,59 @@ class ResultsUI {
             this.selectedMeetingKey = selectedMeeting.Key;
             this.selectedSessionKey = selectedSession.Key;
         }
+    }
+
+    async handleMeetingChange(event) {
+        this.selectedMeetingKey = event.target.value;
+
+        const currentMeeting = this.racesData?.Meetings?.find(
+            (meeting) =>
+                String(meeting.Key) === String(this.selectedMeetingKey),
+        );
+
+        if (currentMeeting?.Sessions?.length) {
+            const now = Date.now();
+            let selectedSession = null;
+            let latestTime = 0;
+
+            for (const session of currentMeeting.Sessions) {
+                const endTime = new Date(
+                    session.EndDate || session.StartDate,
+                ).getTime();
+                if (
+                    Number.isFinite(endTime) &&
+                    endTime <= now &&
+                    endTime > latestTime
+                ) {
+                    latestTime = endTime;
+                    selectedSession = session;
+                }
+            }
+
+            if (!selectedSession) {
+                let earliestFutureSession = currentMeeting.Sessions[0];
+                let earliestFutureTime = new Date(
+                    earliestFutureSession.StartDate,
+                ).getTime();
+
+                for (const session of currentMeeting.Sessions) {
+                    const sessionTime = new Date(session.StartDate).getTime();
+                    if (
+                        Number.isFinite(sessionTime) &&
+                        sessionTime < earliestFutureTime
+                    ) {
+                        earliestFutureTime = sessionTime;
+                        earliestFutureSession = session;
+                    }
+                }
+                selectedSession = earliestFutureSession;
+            }
+
+            this.selectedSessionKey = selectedSession.Key;
+        }
+
+        this.updateSessionDropdown();
+        await this.handleSessionUpdate();
     }
 
     updateDropdowns() {
@@ -283,7 +327,7 @@ class ResultsUI {
         const currentYear = new Date().getFullYear();
 
         for (let year = currentYear; year > 2018; year--) {
-            if(year == 2022){
+            if (year == 2022) {
                 continue;
             }
             const option = document.createElement("option");
@@ -350,22 +394,6 @@ class ResultsUI {
 
         this.selectMostRecentSession();
         this.updateDropdowns();
-        await this.handleSessionUpdate();
-    }
-
-    async handleMeetingChange(event) {
-        this.selectedMeetingKey = event.target.value;
-
-        const currentMeeting = this.racesData?.Meetings?.find(
-            (meeting) =>
-                String(meeting.Key) === String(this.selectedMeetingKey),
-        );
-
-        if (currentMeeting?.Sessions?.length) {
-            this.selectedSessionKey = currentMeeting.Sessions[0].Key;
-        }
-
-        this.updateSessionDropdown();
         await this.handleSessionUpdate();
     }
 
@@ -450,14 +478,15 @@ class ResultsUI {
         if (year === 2021 && year === 2022) {
             return (
                 (type === "qualifying" ||
-                type.includes("qualifying") ||
-                type.includes("shootout") ||
-                name.includes("qualifying") ||
-                name.includes("shootout") ||
-                name.includes("sprint quali") ||
-                name.includes("q1") ||
-                name.includes("q2") ||
-                name.includes("q3")) && type !== "sprint-qualifying"
+                    type.includes("qualifying") ||
+                    type.includes("shootout") ||
+                    name.includes("qualifying") ||
+                    name.includes("shootout") ||
+                    name.includes("sprint quali") ||
+                    name.includes("q1") ||
+                    name.includes("q2") ||
+                    name.includes("q3")) &&
+                type !== "sprint-qualifying"
             );
         }
         return (
@@ -478,7 +507,7 @@ class ResultsUI {
     renderSelectedSessionInfo(
         meeting,
         session,
-        { sessionInfo, driverStore, tyreStore, lapTimeStore },
+        { sessionInfo, driverStore, tyreStore, lapTimeStore, overviewStore },
     ) {
         this.destroyCharts();
 
@@ -504,6 +533,7 @@ class ResultsUI {
             driverStore,
             tyreStore,
             lapTimeStore,
+            overviewStore,
         };
 
         const isQuali = this.isQualifyingSession(
@@ -552,7 +582,7 @@ class ResultsUI {
         if (this.activeTab === "tyre" && !isQuali) {
             this.tyreUI.render(contentContainer);
         } else if (this.activeTab === "overview") {
-            this.renderEmptyTab(contentContainer, "Overview");
+            this.overviewUI.render(contentContainer);
         } else if (this.activeTab === "laps") {
             this.renderEmptyTab(contentContainer, "Lap Times");
         }
