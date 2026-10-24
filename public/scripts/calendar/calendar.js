@@ -267,7 +267,7 @@ class CalendarUI {
             }
         }
 
-        const circuitInfo = race.circuitInfo;
+        /*const circuitInfo = race.circuitInfo;
         console.log(circuitInfo);
         this.addDetailItem(
             detailsGrid,
@@ -293,7 +293,7 @@ class CalendarUI {
             this.addDetailItem(detailsGrid, "Operator", circuitInfo.operator);
             this.addDetailItem(detailsGrid, "Region", circuitInfo.region);
             this.addDetailItem(detailsGrid, "Time Zone", circuitInfo.timezone);
-        }
+        }*/
 
         card.appendChild(detailsGrid);
 

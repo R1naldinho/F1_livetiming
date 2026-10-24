@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>F1 Token Sync</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <h1>F1 Token Sync</h1>
+
+    <section class="status" id="status">
+        <div class="status-line" id="statusMessage">Loading...</div>
+        <div class="status-detail" id="statusDetail"></div>
+        <div class="status-warning" id="statusWarning" hidden></div>
+    </section>
+
+    <label class="field">
+        <span>Server URL</span>
+        <input id="serverUrl" type="url" placeholder="https://your-app.onrender.com" autocomplete="off">
+    </label>
+
+    <label class="field">
+        <span>Admin secret</span>
+        <input id="adminSecret" type="password" autocomplete="off">
+    </label>
+
+    <div class="actions">
+        <button id="save" type="button">Save and sync</button>
+        <button id="sync" type="button" class="secondary">Sync now</button>
+    </div>
+
+    <p class="hint" id="hint"></p>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>

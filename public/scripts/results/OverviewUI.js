@@ -30,13 +30,18 @@ class OverviewUI {
         const stints = tyreStore.getStintsByDriver(driverId);
         let cumulative = 0;
         stints.slice(0, -1).forEach((stint, index) => {
-            cumulative += Number(stint.ActualLapsDriven || stint.TotalLaps || 0);
+            cumulative += Number(
+                stint.ActualLapsDriven || stint.TotalLaps || 0,
+            );
             const nextStint = stints[index + 1];
             const tyresNotChanged = nextStint?.TyresNotChanged;
-            const isChanged = tyresNotChanged !== true && String(tyresNotChanged).toLowerCase() !== "true";
+            const isChanged =
+                tyresNotChanged !== true &&
+                String(tyresNotChanged).toLowerCase() !== "true";
 
             if (cumulative > 0 && nextStint && isChanged) {
-                const compound = nextStint.Compound || nextStint.New || "UNKNOWN";
+                const compound =
+                    nextStint.Compound || nextStint.New || "UNKNOWN";
                 pitMap.set(cumulative, compound);
             }
         });
@@ -100,10 +105,45 @@ class OverviewUI {
         return cell;
     }
 
+    createGridCell(summary) {
+        const cell = document.createElement("td");
+        cell.className = "overview-grid-cell";
+
+        const gridVal = summary.grid;
+        const posVal = summary.position ?? summary.rank;
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "grid-number";
+        textSpan.textContent = gridVal !== null && gridVal !== undefined ? gridVal : "—";
+        cell.appendChild(textSpan);
+
+        if (gridVal !== null && gridVal !== undefined && posVal !== null && posVal !== undefined && Number.isFinite(gridVal) && Number.isFinite(posVal)) {
+            const diff = gridVal - posVal;
+            const badge = document.createElement("span");
+            badge.className = "position-diff-badge";
+
+            if (diff > 0) {
+                badge.classList.add("gained");
+                badge.innerHTML = `▲ +${diff}`;
+                badge.title = `Gained ${diff} positions`;
+            } else if (diff < 0) {
+                badge.classList.add("lost");
+                badge.innerHTML = `▼ ${diff}`;
+                badge.title = `Lost ${Math.abs(diff)} positions`;
+            } else {
+                badge.classList.add("same");
+                badge.innerHTML = `=`;
+                badge.title = "No change in position";
+            }
+            cell.appendChild(badge);
+        }
+
+        return cell;
+    }
+
     createRow(summary, bests, raceLike) {
         const row = document.createElement("tr");
         row.appendChild(this.createCell(summary.rank, "overview-rank"));
-        if (raceLike) row.appendChild(this.createCell(summary.grid));
         row.appendChild(this.createDriverCell(summary));
         row.appendChild(this.createCell(summary.driver.team, "overview-team"));
         row.appendChild(this.createCell(summary.laps || null));
@@ -128,14 +168,18 @@ class OverviewUI {
         }
         row.appendChild(idealCell);
         row.appendChild(this.createCell(summary.pitStops));
+
+        if (raceLike) {
+            row.appendChild(this.createGridCell(summary));
+        }
+
         return row;
     }
 
     renderClassification(summaries, bests, raceLike) {
         const container = this.createSection("Session Classification");
-        const headers = ["Pos"];
-        if (raceLike) headers.push("Grid");
-        headers.push(
+        const headers = [
+            "Pos",
             "Driver",
             "Team",
             "Laps",
@@ -147,7 +191,8 @@ class OverviewUI {
             "Best S3",
             "Ideal Lap",
             raceLike ? "Pit Stops" : "Stints",
-        );
+        ];
+        if (raceLike) headers.push("Grid");
 
         const wrapper = document.createElement("div");
         wrapper.className = "table-wrapper";
@@ -287,9 +332,16 @@ class OverviewUI {
         if (OverviewUI.tyreImageCache.has(key))
             return OverviewUI.tyreImageCache.get(key);
 
-        const img = new Image(18, 18);
+        const img = new Image(20, 20);
         img.src =
             OverviewUI.TYRE_SVG_ICONS[key] || OverviewUI.TYRE_SVG_ICONS.UNKNOWN;
+        
+        img.onload = () => {
+            if (this.ui.charts.overviewPosition) {
+                this.ui.charts.overviewPosition.update();
+            }
+        };
+
         OverviewUI.tyreImageCache.set(key, img);
         return img;
     }
@@ -304,13 +356,6 @@ class OverviewUI {
                 .join("");
         const num = parseInt(c, 16);
         return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
-    }
-
-    getCssVariable(varName, fallback) {
-        const val = getComputedStyle(document.body)
-            .getPropertyValue(varName)
-            .trim();
-        return val || fallback;
     }
 
     buildPositionDatasets(store, summaries) {
@@ -333,15 +378,18 @@ class OverviewUI {
 
             const pointStyles = [];
             const pointRadii = [];
+            const pointHoverRadii = [];
 
             points.forEach((pt) => {
                 if (pitLapsMap.has(pt.x)) {
                     const compound = pitLapsMap.get(pt.x);
                     pointStyles.push(this.getTyreImage(compound));
-                    pointRadii.push(9);
+                    pointRadii.push(10);
+                    pointHoverRadii.push(12);
                 } else {
                     pointStyles.push("circle");
                     pointRadii.push(0);
+                    pointHoverRadii.push(6);
                 }
             });
 
@@ -359,7 +407,7 @@ class OverviewUI {
                 spanGaps: false,
                 pointStyle: pointStyles,
                 pointRadius: pointRadii,
-                pointHoverRadius: 10,
+                pointHoverRadius: pointHoverRadii,
             });
         });
 
@@ -387,20 +435,11 @@ class OverviewUI {
             return;
         }
 
-        const textColorGetter = () =>
-            this.getCssVariable(
-                "--chart-text-color",
-                document.body.classList.contains("light-mode")
-                    ? "#212529"
-                    : "#FFFFFF",
-            );
-        const gridColorGetter = () =>
-            this.getCssVariable(
-                "--chart-grid-color",
-                document.body.classList.contains("light-mode")
-                    ? "rgba(0, 0, 0, 0.1)"
-                    : "rgba(255, 255, 255, 0.1)",
-            );
+        const isLightMode = document.body.classList.contains("light-mode");
+        const textColor = isLightMode ? "#212529" : "#FFFFFF";
+        const gridColor = isLightMode ? "rgba(0, 0, 0, 0.1)" : "rgba(255, 255, 255, 0.1)";
+        const tooltipBg = isLightMode ? "rgba(255, 255, 255, 0.85)" : "rgba(0, 0, 0, 0.75)";
+        const tooltipBorder = isLightMode ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.2)";
 
         this.ui.charts.overviewPosition = new Chart(canvas, {
             type: "line",
@@ -415,48 +454,40 @@ class OverviewUI {
                         type: "linear",
                         min: 0,
                         max: store.getMaxLap(),
-                        title: {
-                            display: true,
-                            text: "Lap",
-                            color: () => textColorGetter(),
-                        },
+                        title: { display: true, text: "Lap", color: textColor },
                         ticks: {
                             stepSize: 1,
                             precision: 0,
-                            color: () => textColorGetter(),
+                            color: textColor,
                             callback: (value) => {
                                 if (!Number.isInteger(value)) return "";
                                 return value === 0 ? "Grid" : value;
                             },
                         },
-                        grid: { color: () => gridColorGetter() },
+                        grid: { color: gridColor },
                     },
                     y: {
                         type: "linear",
                         reverse: true,
                         min: 0.5,
                         max: datasets.length + 0.5,
-                        title: {
-                            display: true,
-                            text: "Position",
-                            color: () => textColorGetter(),
-                        },
+                        title: { display: true, text: "Position", color: textColor },
                         ticks: {
                             stepSize: 1,
                             precision: 0,
-                            color: () => textColorGetter(),
+                            color: textColor,
                             callback: (value) => {
                                 if (!Number.isInteger(value)) return "";
                                 return `P${value}`;
                             },
                         },
-                        grid: { color: () => gridColorGetter() },
+                        grid: { color: gridColor },
                     },
                 },
                 plugins: {
                     legend: {
                         labels: {
-                            color: () => textColorGetter(),
+                            color: textColor,
                             usePointStyle: true,
                             generateLabels: (chart) => {
                                 const original =
@@ -479,6 +510,11 @@ class OverviewUI {
                     },
                     tooltip: {
                         itemSort: (a, b) => a.parsed.y - b.parsed.y,
+                        backgroundColor: tooltipBg,
+                        titleColor: textColor,
+                        bodyColor: textColor,
+                        borderColor: tooltipBorder,
+                        borderWidth: 1,
                         callbacks: {
                             title: (items) => {
                                 const lap = items[0]?.parsed.x;

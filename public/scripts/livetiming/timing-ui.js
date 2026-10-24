@@ -42,12 +42,12 @@ class F1LiveTimingUI {
             "Last S2",
             "Last S3",
             "Best Lap",
-            "Ideal Lap",
             "Best S1",
             "Best S2",
             "Best S3",
             "Pit Stops",
             "Laps",
+            "Ideal Lap"
         ];
         headers.forEach((text, idx) => {
             const th = document.createElement("th");
@@ -1029,12 +1029,12 @@ class F1LiveTimingUI {
             row.appendChild(lastS2Cell.td);
             row.appendChild(lastS3Cell.td);
             row.appendChild(bestLapCell);
-            row.appendChild(idealLapCell);
             row.appendChild(bestS1Cell.td);
             row.appendChild(bestS2Cell.td);
             row.appendChild(bestS3Cell.td);
             row.appendChild(pitStopsCell);
             row.appendChild(lapsCell);
+            row.appendChild(idealLapCell);
             row.cache = {
                 flagSpan,
                 posSpan,

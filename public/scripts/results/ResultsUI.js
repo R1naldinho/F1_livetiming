@@ -131,6 +131,7 @@ class ResultsUI {
         if (!this.resultsContainer) return;
 
         this.renderLayout();
+        this.initThemeToggle();
         await this.fetchData();
 
         if (!this.racesData) return;
@@ -138,6 +139,66 @@ class ResultsUI {
         this.selectMostRecentSession();
         this.updateDropdowns();
         await this.handleSessionUpdate();
+    }
+
+    initThemeToggle() {
+        const themeBtn = document.querySelector(".theme-toggle-btn");
+        if (!themeBtn) return;
+
+        const iconSpan = themeBtn.querySelector(".theme-icon");
+        const textSpan = themeBtn.querySelector(".theme-text");
+
+        const updateThemeUI = (isLight) => {
+            if (isLight) {
+                if (iconSpan) iconSpan.textContent = "☾";
+                if (textSpan) textSpan.textContent = "Dark Mode";
+            } else {
+                if (iconSpan) iconSpan.textContent = "☀︎";
+                if (textSpan) textSpan.textContent = "Light Mode";
+            }
+        };
+
+        updateThemeUI(document.body.classList.contains("light-mode"));
+
+        themeBtn.addEventListener("click", () => {
+            document.body.classList.toggle("light-mode");
+            const isLight = document.body.classList.contains("light-mode");
+
+            updateThemeUI(isLight);
+
+            const textColor = isLight ? "#212529" : "#FFFFFF";
+            const gridColor = isLight ? "rgba(0, 0, 0, 0.1)" : "rgba(255, 255, 255, 0.1)";
+            const tooltipBg = isLight ? "rgba(255, 255, 255, 0.85)" : "rgba(0, 0, 0, 0.75)";
+            const tooltipBorder = isLight ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.2)";
+
+            if (this.charts) {
+                Object.values(this.charts).forEach((chart) => {
+                    if (!chart || !chart.options) return;
+
+                    if (chart.options.scales) {
+                        Object.values(chart.options.scales).forEach((scale) => {
+                            if (scale.title) scale.title.color = textColor;
+                            if (scale.ticks) scale.ticks.color = textColor;
+                            if (scale.grid) scale.grid.color = gridColor;
+                        });
+                    }
+
+                    if (chart.options.plugins) {
+                        if (chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+                            chart.options.plugins.legend.labels.color = textColor;
+                        }
+                        if (chart.options.plugins.tooltip) {
+                            chart.options.plugins.tooltip.backgroundColor = tooltipBg;
+                            chart.options.plugins.tooltip.titleColor = textColor;
+                            chart.options.plugins.tooltip.bodyColor = textColor;
+                            chart.options.plugins.tooltip.borderColor = tooltipBorder;
+                        }
+                    }
+
+                    chart.update();
+                });
+            }
+        });
     }
 
     renderLayout() {

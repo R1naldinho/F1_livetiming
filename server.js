@@ -1733,4 +1733,57 @@ app.get("/api/getCarPositionFor3DCircuit/*splat", async (req, res) => {
     res.json({ response: "Loaded" });
 });
 
+let subscriptionToken = process.env.SUBSCRIPTION_TOKEN || "";
+
+function isTokenExpired(token) {
+    try {
+        const payload = JSON.parse(
+            Buffer.from(token.split(".")[1], "base64url").toString("utf8")
+        );
+
+        return !payload.exp || payload.exp * 1000 <= Date.now();
+    } catch {
+        return true;
+    }
+}
+
+function authorizeAdmin(req, res, next) {
+    const secret = process.env.ADMIN_SECRET;
+
+    if (!secret || req.headers["x-admin-secret"] !== secret) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    next();
+}
+
+app.get("/api/admin/f1-token", authorizeAdmin, (req, res) => {
+    res.json({
+        present: Boolean(subscriptionToken),
+        expired: !subscriptionToken || isTokenExpired(subscriptionToken)
+    });
+});
+
+app.post(
+    "/api/admin/f1-token",
+    express.json(),
+    authorizeAdmin,
+    (req, res) => {
+        const token = req.body?.token;
+
+        if (typeof token !== "string" || token.split(".").length !== 3) {
+            return res.status(400).json({ error: "Invalid token" });
+        }
+
+        subscriptionToken = token;
+        f1Headers.headers.authorization = `Bearer ${subscriptionToken}`;
+
+        res.json({
+            success: true,
+            present: true,
+            expired: isTokenExpired(subscriptionToken)
+        });
+    }
+);
+
 server.listen(PORT, () => {});

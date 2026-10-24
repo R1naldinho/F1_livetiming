@@ -2688,3 +2688,40 @@ body.light-mode tr.row-knockedOut td,
         display: none;
     }
 }
+
+.overview-grid-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.position-diff-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.position-diff-badge.gained {
+    color: #22c55e;
+    background-color: rgba(34, 197, 94, 0.15);
+}
+
+.position-diff-badge.lost {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.15);
+}
+
+.position-diff-badge.same {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+body.light-mode .position-diff-badge.same {
+    color: #212529;
+    background-color: rgba(0, 0, 0, 0.1);
+}
