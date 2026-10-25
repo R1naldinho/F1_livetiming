@@ -1,5 +1,13 @@
 class F1LiveClient {
     constructor(uiManager = null) {
+        this.delayMs = 30000;
+        this.streamQueue = [];
+        this.streamTimer = null;
+        this.isInitialized = false;
+        this.countdownInterval = null;
+        this.syncStartTime = null;
+        this.syncDurationMs = 30000;
+
         this.ui = uiManager;
         this.drivers = {};
         this.timingData = {};
@@ -15,7 +23,149 @@ class F1LiveClient {
         this.sessionReadyPromise = new Promise((resolve) => {
             this._resolveSessionReady = resolve;
         });
+
+        this.initDelayConfig();
         this.initWebSocket();
+        this.initTabVisibilityListener();
+    }
+
+    initDelayConfig() {
+        const savedDelay = localStorage.getItem("f1_live_delay");
+        if (savedDelay !== null) {
+            const val = Number(savedDelay);
+            if (!isNaN(val)) {
+                this.delayMs = Math.max(0, Math.min(300, val)) * 1000;
+            }
+        } else {
+            localStorage.setItem("f1_live_delay", "30");
+        }
+
+        if (this.delayMs === 0) {
+            this.isInitialized = true;
+        } else {
+            this.syncDurationMs = this.delayMs;
+            this.syncStartTime = Date.now();
+        }
+
+        this.createDelayControlDOM();
+    }
+
+    initTabVisibilityListener() {
+        const checkVisibility = () => {
+            const livetimingEl = document.getElementById("livetiming");
+            const loadingDiv = document.getElementById("loading_livetiming");
+            if (!livetimingEl) return;
+
+            const isVisible = getComputedStyle(livetimingEl).display !== "none" || livetimingEl.style.display === "block";
+
+            if (!isVisible && (!loadingDiv || loadingDiv.style.display === "none")) {
+                if (loadingDiv) loadingDiv.style.display = "none";
+            } else {
+                const now = Date.now();
+                const elapsed = this.syncStartTime ? now - this.syncStartTime : this.syncDurationMs;
+                if (!this.isInitialized && elapsed < this.syncDurationMs) {
+                    livetimingEl.style.display = "none";
+                    this.showSyncContainer(this.syncDurationMs - elapsed);
+                } else {
+                    this.hideSyncContainer();
+                }
+            }
+        };
+
+        const observer = new MutationObserver(checkVisibility);
+        const livetimingEl = document.getElementById("livetiming");
+        if (livetimingEl) {
+            observer.observe(livetimingEl, { attributes: true, attributeFilter: ["style", "class"] });
+        }
+
+        const handleInitialLoad = () => {
+            if (this.delayMs > 0 && !this.isInitialized) {
+                const elapsed = Date.now() - (this.syncStartTime || Date.now());
+                if (elapsed < this.syncDurationMs) {
+                    this.showSyncContainer(this.syncDurationMs - elapsed);
+                }
+            }
+        };
+
+        if (document.readyState === "loading") {
+            window.addEventListener("DOMContentLoaded", handleInitialLoad);
+        } else {
+            setTimeout(handleInitialLoad, 50);
+        }
+    }
+
+    createDelayControlDOM() {
+        if (document.getElementById("liveDelayContainer")) return;
+
+        const container = document.createElement("div");
+        container.id = "liveDelayContainer";
+
+        const label = document.createElement("label");
+        label.htmlFor = "liveDelaySelect";
+        label.textContent = "Live Delay:";
+
+        const select = document.createElement("select");
+        select.id = "liveDelaySelect";
+
+        const options = [
+            { val: "0", label: "Real time" },
+            { val: "5", label: "5 seconds" },
+            { val: "10", label: "10 seconds" },
+            { val: "15", label: "15 seconds" },
+            { val: "20", label: "20 seconds" },
+            { val: "30", label: "30 seconds" },
+            { val: "45", label: "45 seconds" },
+            { val: "60", label: "60 seconds" },
+            { val: "custom", label: "Custom..." },
+        ];
+
+        const currentSecs = this.getDelay();
+        let matched = false;
+
+        options.forEach((opt) => {
+            const optionEl = document.createElement("option");
+            optionEl.value = opt.val;
+            optionEl.textContent = opt.label;
+            if (opt.val !== "custom" && Number(opt.val) === currentSecs) {
+                optionEl.selected = true;
+                matched = true;
+            }
+            select.appendChild(optionEl);
+        });
+
+        const customInput = document.createElement("input");
+        customInput.type = "number";
+        customInput.id = "liveDelayCustomInput";
+        customInput.min = "0";
+        customInput.max = "300";
+        customInput.style.display = "none";
+
+        if (!matched) {
+            select.value = "custom";
+            customInput.value = currentSecs;
+            customInput.style.display = "inline-block";
+        }
+
+        select.addEventListener("change", () => {
+            if (select.value === "custom") {
+                customInput.style.display = "inline-block";
+                customInput.focus();
+            } else {
+                customInput.style.display = "none";
+                this.setDelay(select.value);
+            }
+        });
+
+        customInput.addEventListener("change", () => {
+            this.setDelay(customInput.value);
+        });
+
+        container.appendChild(label);
+        container.appendChild(select);
+        container.appendChild(customInput);
+
+        const targetContainer = document.getElementById("navbarDelayContainer") || document.body;
+        targetContainer.appendChild(container);
     }
 
     initWebSocket() {
@@ -42,7 +192,7 @@ class F1LiveClient {
                 const message = JSON.parse(event.data);
 
                 if (message.type === 3 && message.result) {
-                    this.applySnapshot(message.result);
+                    this.enqueueStream("__snapshot", message.result);
                     return;
                 }
 
@@ -51,13 +201,14 @@ class F1LiveClient {
                     Array.isArray(message.arguments) &&
                     message.arguments.length >= 2
                 ) {
-                    const streamType = message.arguments[0];
-                    const streamData = message.arguments[1];
-                    this.handleStream(streamType, streamData);
+                    this.enqueueStream(
+                        message.arguments[0],
+                        message.arguments[1],
+                    );
                     return;
                 }
 
-                this.handleStream(message.streamType, message.data);
+                this.enqueueStream(message.streamType, message.data);
             } catch (error) {}
         };
 
@@ -70,7 +221,205 @@ class F1LiveClient {
         };
     }
 
-    applySnapshot(snapshot) {
+    enqueueStream(type, data) {
+        if (type === "SessionInfo" || type === "WeatherData" || type === "SessionStatus" || type === "TrackStatus" || type === "ExtrapolatedClock") {
+            this.applyStream(type, data);
+        }
+
+        if (this.delayMs === 0) {
+            this.isInitialized = true;
+            if (type === "__snapshot") {
+                this.applySnapshotNow(data);
+            } else {
+                this.applyStream(type, data);
+            }
+            return;
+        }
+
+        this.streamQueue.push({
+            type,
+            data,
+            receivedAt: Date.now(),
+        });
+
+        if (type === "__snapshot" && data && data.SessionInfo) {
+            this.applyStream("SessionInfo", data.SessionInfo);
+        }
+
+        this.processStreamQueue();
+    }
+
+    processStreamQueue() {
+        if (this.delayMs === 0) return;
+
+        const now = Date.now();
+        const elapsed = now - this.syncStartTime;
+
+        if (!this.isInitialized) {
+            if (elapsed < this.syncDurationMs) {
+                const livetimingEl = document.getElementById("livetiming");
+                const isVisible = livetimingEl && getComputedStyle(livetimingEl).display !== "none";
+                if (isVisible) {
+                    this.showSyncContainer(this.syncDurationMs - elapsed);
+                }
+                if (!this.streamTimer) {
+                    this.streamTimer = setTimeout(
+                        () => this.processStreamQueue(),
+                        this.syncDurationMs - elapsed,
+                    );
+                }
+                return;
+            } else {
+                this.isInitialized = true;
+                this.hideSyncContainer();
+            }
+        }
+
+        while (this.streamQueue.length > 0) {
+            const item = this.streamQueue.shift();
+            if (item.type === "__snapshot") {
+                this.applySnapshotNow(item.data);
+            } else {
+                this.applyStream(item.type, item.data);
+            }
+        }
+    }
+
+    showSyncContainer(initialRemainingMs) {
+        const livetimingEl = document.getElementById("livetiming");
+        const appDiv = document.getElementById("app") || document.body;
+
+        if (livetimingEl) livetimingEl.style.display = "none";
+
+        let loadingDiv = document.getElementById("loading_livetiming");
+        if (!loadingDiv) {
+            loadingDiv = document.createElement("div");
+            loadingDiv.id = "loading_livetiming";
+
+            const titleEl = document.createElement("h2");
+            titleEl.textContent = "Synchronizing with TV live stream...";
+            loadingDiv.appendChild(titleEl);
+
+            const lightsWrapper = document.createElement("div");
+            lightsWrapper.id = "f1SyncLights";
+
+            for (let c = 1; c <= 5; c++) {
+                const colEl = document.createElement("div");
+                for (let l = 0; l < 2; l++) {
+                    const lightEl = document.createElement("div");
+                    colEl.appendChild(lightEl);
+                }
+                lightsWrapper.appendChild(colEl);
+            }
+            loadingDiv.appendChild(lightsWrapper);
+
+            const timeEl = document.createElement("p");
+            timeEl.id = "f1SyncTime";
+            loadingDiv.appendChild(timeEl);
+
+            appDiv.appendChild(loadingDiv);
+        } else {
+            loadingDiv.style.display = "flex";
+        }
+
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+        }
+
+        const updateView = () => {
+            const now = Date.now();
+            const currentRemaining = Math.max(0, (this.syncStartTime + this.syncDurationMs) - now);
+            const totalSec = currentRemaining / 1000;
+            const secs = Math.floor(totalSec);
+            const ms = Math.floor(currentRemaining % 1000);
+
+            const timeEl = document.getElementById("f1SyncTime");
+            if (timeEl) {
+                timeEl.textContent = `${secs}.${String(ms).padStart(3, "0")}s`;
+            }
+
+            const activeColumns = totalSec <= 5 ? Math.min(5, Math.max(0, 5 - Math.floor(totalSec))) : 0;
+            const lightsWrapper = document.getElementById("f1SyncLights");
+            if (lightsWrapper) {
+                const columns = lightsWrapper.children;
+                for (let c = 0; c < columns.length; c++) {
+                    const colEl = columns[c];
+                    const isOn = (c + 1) <= activeColumns;
+                    const bulbs = colEl.children;
+                    for (let l = 0; l < bulbs.length; l++) {
+                        const bulb = bulbs[l];
+                        bulb.style.background = isOn ? "#ff1801" : "#333";
+                        bulb.style.boxShadow = isOn ? "0 0 15px #ff1801" : "none";
+                    }
+                }
+            }
+
+            if (currentRemaining <= 0) {
+                clearInterval(this.countdownInterval);
+                this.isInitialized = true;
+                this.hideSyncContainer();
+                this.processStreamQueue();
+            }
+        };
+
+        updateView();
+        this.countdownInterval = setInterval(updateView, 30);
+    }
+
+    hideSyncContainer() {
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+        }
+        if (this.streamTimer) {
+            clearTimeout(this.streamTimer);
+            this.streamTimer = null;
+        }
+        const loadingDiv = document.getElementById("loading_livetiming");
+        if (loadingDiv) {
+            loadingDiv.style.display = "none";
+        }
+        const livetimingEl = document.getElementById("livetiming");
+        if (livetimingEl) {
+            const liveTimingBtn = document.querySelector(".nav-link");
+            const isLiveTimingActive = liveTimingBtn && liveTimingBtn.classList.contains("active");
+            if (isLiveTimingActive) {
+                livetimingEl.style.display = "block";
+            } else {
+                livetimingEl.style.display = "none";
+            }
+        }
+    }
+
+    setDelay(seconds) {
+        const value = Math.max(0, Math.min(300, Number(seconds) || 0));
+
+        this.delayMs = value * 1000;
+        localStorage.setItem("f1_live_delay", String(value));
+
+        this.syncDurationMs = this.delayMs;
+        this.syncStartTime = Date.now();
+
+        if (this.delayMs === 0) {
+            this.isInitialized = true;
+            this.hideSyncContainer();
+        } else {
+            this.isInitialized = false;
+            const livetimingEl = document.getElementById("livetiming");
+            const isVisible = livetimingEl && getComputedStyle(livetimingEl).display !== "none";
+            if (isVisible) {
+                this.showSyncContainer(this.syncDurationMs);
+            }
+        }
+
+        this.processStreamQueue();
+    }
+
+    getDelay() {
+        return this.delayMs / 1000;
+    }
+
+    applySnapshotNow(snapshot) {
         this.drivers = this.normalize(snapshot.DriverList || {});
         this.timingData = this.normalizeLines(snapshot.TimingData);
         this.timingStats = this.normalizeLines(snapshot.TimingStats);
@@ -81,12 +430,12 @@ class F1LiveClient {
             snapshot.RaceControlMessages,
         );
 
-        this.handleStream("SessionInfo", snapshot.SessionInfo);
-        this.handleStream("ExtrapolatedClock", snapshot.ExtrapolatedClock);
-        this.handleStream("SessionStatus", snapshot.SessionStatus);
-        this.handleStream("TrackStatus", snapshot.TrackStatus);
-        this.handleStream("LapCount", snapshot.LapCount);
-        this.handleStream("WeatherData", snapshot.WeatherData);
+        this.applyStream("SessionInfo", snapshot.SessionInfo);
+        this.applyStream("ExtrapolatedClock", snapshot.ExtrapolatedClock);
+        this.applyStream("SessionStatus", snapshot.SessionStatus);
+        this.applyStream("TrackStatus", snapshot.TrackStatus);
+        this.applyStream("LapCount", snapshot.LapCount);
+        this.applyStream("WeatherData", snapshot.WeatherData);
         if (this.ui)
             this.ui.updateRaceControlMessages(
                 this.getRaceControlMessagesList(),
@@ -114,7 +463,7 @@ class F1LiveClient {
     }
 
     scheduleUIRefresh() {
-        if (!this.ui || this.isRefreshPending) {
+        if (!this.ui || this.isRefreshPending || !this.isInitialized) {
             return;
         }
 
@@ -134,7 +483,7 @@ class F1LiveClient {
         });
     }
 
-    handleStream(streamType, data) {
+    applyStream(streamType, data) {
         if (!data) {
             return;
         }
@@ -151,19 +500,20 @@ class F1LiveClient {
                         this.ui.updateSession(this.sessionInfo),
                     ).catch(() => {});
                 }
-                this.scheduleUIRefresh();
                 break;
             case "ExtrapolatedClock":
                 this.lastExtrapolatedClock = data;
-                if (this.ui) this.ui.updateClock(data);
+                if (this.ui && this.isInitialized) this.ui.updateClock(data);
                 break;
             case "SessionStatus":
                 this.lastSessionStatus = data;
-                if (this.ui) this.ui.updateSessionStatus(data);
+                if (this.ui && this.isInitialized)
+                    this.ui.updateSessionStatus(data);
                 break;
             case "TrackStatus":
                 this.lastTrackStatus = data;
-                if (this.ui) this.ui.updateTrackStatus(data);
+                if (this.ui && this.isInitialized)
+                    this.ui.updateTrackStatus(data);
                 break;
             case "LapCount":
                 this.lapCount = data;
@@ -171,7 +521,7 @@ class F1LiveClient {
                 break;
             case "WeatherData":
                 this.lastWeatherData = data;
-                if (this.ui) this.ui.updateWeather(data);
+                if (this.ui && this.isInitialized) this.ui.updateWeather(data);
                 break;
             case "DriverList":
                 this.drivers = this.mergeState(this.drivers, data);
@@ -205,7 +555,7 @@ class F1LiveClient {
                     ...this.raceControlMessages,
                     ...incoming,
                 };
-                if (this.ui)
+                if (this.ui && this.isInitialized)
                     this.ui.updateRaceControlMessages(
                         this.getRaceControlMessagesList(),
                     );

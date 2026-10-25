@@ -1,408 +1,408 @@
 {
-    "bahrain international circuit": {
-        "qid": "Q171332",
-        "data": {
-            "wikidataId": "Q171332",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171332",
-            "latitude": 26.0325,
-            "longitude": 50.510555555,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": null,
-            "capacity": null,
-            "region": "Sakhir",
-            "website": "https://www.bahraingp.com/",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/2012%20Bahrain%20Grand%20Prix%202.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+  "bahrain international circuit": {
+    "qid": "Q171332",
+    "data": {
+      "wikidataId": "Q171332",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171332",
+      "latitude": 26.0325,
+      "longitude": 50.510555555,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": null,
+      "capacity": null,
+      "region": "Sakhir",
+      "website": "https://www.bahraingp.com/",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/2012%20Bahrain%20Grand%20Prix%202.jpg?width=800"
     },
-    "albert park grand prix circuit": {
-        "qid": "Q171288",
-        "data": {
-            "wikidataId": "Q171288",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171288",
-            "latitude": -37.849722222,
-            "longitude": 144.968333333,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1953,
-            "operator": null,
-            "capacity": null,
-            "region": "City of Port Phillip",
-            "website": null,
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Melbourne%20Grand%20Prix%20Circuit%20pit%20building.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "albert park grand prix circuit": {
+    "qid": "Q171288",
+    "data": {
+      "wikidataId": "Q171288",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171288",
+      "latitude": -37.849722222,
+      "longitude": 144.968333333,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1953,
+      "operator": null,
+      "capacity": null,
+      "region": "City of Port Phillip",
+      "website": null,
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Melbourne%20Grand%20Prix%20Circuit%20pit%20building.jpg?width=800"
     },
-    "shanghai international circuit": {
-        "qid": "Q171358",
-        "data": {
-            "wikidataId": "Q171358",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171358",
-            "latitude": 31.338888888,
-            "longitude": 121.219722222,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 2003,
-            "operator": null,
-            "capacity": null,
-            "region": "Jiading",
-            "website": "https://www.f1-shanghai.com",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Shanghai%20F1%20Circui%2001.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "shanghai international circuit": {
+    "qid": "Q171358",
+    "data": {
+      "wikidataId": "Q171358",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171358",
+      "latitude": 31.338888888,
+      "longitude": 121.219722222,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 2003,
+      "operator": null,
+      "capacity": null,
+      "region": "Jiading",
+      "website": "https://www.f1-shanghai.com",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Shanghai%20F1%20Circui%2001.jpg?width=800"
     },
-    "suzuka circuit": {
-        "qid": "Q174170",
-        "data": {
-            "wikidataId": "Q174170",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q174170",
-            "latitude": 34.841666666,
-            "longitude": 136.538888888,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1962,
-            "operator": "Honda Mobilityland",
-            "capacity": null,
-            "region": "Suzuka",
-            "website": "https://www.suzukacircuit.jp",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Suzukacircuit%20main-straight.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "suzuka circuit": {
+    "qid": "Q174170",
+    "data": {
+      "wikidataId": "Q174170",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q174170",
+      "latitude": 34.841666666,
+      "longitude": 136.538888888,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1962,
+      "operator": "Honda Mobilityland",
+      "capacity": null,
+      "region": "Suzuka",
+      "website": "https://www.suzukacircuit.jp",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Suzukacircuit%20main-straight.jpg?width=800"
     },
-    "miami international autodrome": {
-        "qid": null,
-        "data": null,
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "miami international autodrome": {
+    "qid": null,
+    "data": null,
+    "fetchedAt": 1792949560560
+  },
+  "circuit gilles-villeneuve": {
+    "qid": "Q172860",
+    "data": {
+      "wikidataId": "Q172860",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q172860",
+      "latitude": 45.500555555,
+      "longitude": -73.5225,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1978,
+      "operator": null,
+      "capacity": 100000,
+      "region": "Montreal",
+      "website": "http://www.circuitgillesvilleneuve.ca",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Circuit%20Gilles%20Villeneuve%20Hairpin.jpg?width=800"
     },
-    "circuit gilles-villeneuve": {
-        "qid": "Q172860",
-        "data": {
-            "wikidataId": "Q172860",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q172860",
-            "latitude": 45.500555555,
-            "longitude": -73.5225,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1978,
-            "operator": null,
-            "capacity": 100000,
-            "region": "Montreal",
-            "website": "http://www.circuitgillesvilleneuve.ca",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Circuit%20Gilles%20Villeneuve%20Hairpin.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "circuit de monaco": {
+    "qid": "Q171400",
+    "data": {
+      "wikidataId": "Q171400",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171400",
+      "latitude": 43.734722222,
+      "longitude": 7.420555555,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": null,
+      "capacity": null,
+      "region": "Monte Carlo",
+      "website": null,
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/MONACO%20FORMULA%201%20TURN%201%20-%20panoramio.jpg?width=800"
     },
-    "circuit de monaco": {
-        "qid": "Q171400",
-        "data": {
-            "wikidataId": "Q171400",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171400",
-            "latitude": 43.734722222,
-            "longitude": 7.420555555,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": null,
-            "capacity": null,
-            "region": "Monte Carlo",
-            "website": null,
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/MONACO%20FORMULA%201%20TURN%201%20-%20panoramio.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "circuit de barcelona-catalunya": {
+    "qid": "Q171404",
+    "data": {
+      "wikidataId": "Q171404",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171404",
+      "latitude": 41.57,
+      "longitude": 2.261111111,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1989,
+      "operator": null,
+      "capacity": null,
+      "region": "Vallès Oriental",
+      "website": "https://circuitcat.com",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/F1%20Circuit%20de%20Catalunya%20-%20Tribuna.jpg?width=800"
     },
-    "circuit de barcelona-catalunya": {
-        "qid": "Q171404",
-        "data": {
-            "wikidataId": "Q171404",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171404",
-            "latitude": 41.57,
-            "longitude": 2.261111111,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1989,
-            "operator": null,
-            "capacity": null,
-            "region": "Vallès Oriental",
-            "website": "https://circuitcat.com",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/F1%20Circuit%20de%20Catalunya%20-%20Tribuna.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "red bull ring": {
+    "qid": "Q171566",
+    "data": {
+      "wikidataId": "Q171566",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171566",
+      "latitude": 47.219722222,
+      "longitude": 14.764722222,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": null,
+      "capacity": null,
+      "region": "Spielberg",
+      "website": "https://www.projekt-spielberg.com/de/der-spielberg/red-bull-ring",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/United%20Autosports%20ELMS%20Red%20Bull%20Ring%202017-218.jpg?width=800"
     },
-    "red bull ring": {
-        "qid": "Q171566",
-        "data": {
-            "wikidataId": "Q171566",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171566",
-            "latitude": 47.219722222,
-            "longitude": 14.764722222,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": null,
-            "capacity": null,
-            "region": "Spielberg",
-            "website": "https://www.projekt-spielberg.com/de/der-spielberg/red-bull-ring",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/United%20Autosports%20ELMS%20Red%20Bull%20Ring%202017-218.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "silverstone circuit": {
+    "qid": "Q171402",
+    "data": {
+      "wikidataId": "Q171402",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171402",
+      "latitude": 52.075,
+      "longitude": -1.016666666,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1947,
+      "operator": null,
+      "capacity": null,
+      "region": "Silverstone",
+      "website": "https://www.silverstone.co.uk",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/McLaren%20MP4-16A%202015%20McLaren%20MP4-16A%20shakedown%20%2821219267118%29.jpg?width=800"
     },
-    "silverstone circuit": {
-        "qid": "Q171402",
-        "data": {
-            "wikidataId": "Q171402",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171402",
-            "latitude": 52.075,
-            "longitude": -1.016666666,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1947,
-            "operator": null,
-            "capacity": null,
-            "region": "Silverstone",
-            "website": "https://www.silverstone.co.uk",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/McLaren%20MP4-16A%202015%20McLaren%20MP4-16A%20shakedown%20%2821219267118%29.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "circuit de spa-francorchamps": {
+    "qid": "Q172851",
+    "data": {
+      "wikidataId": "Q172851",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q172851",
+      "latitude": 50.437222222,
+      "longitude": 5.971388888,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1924,
+      "operator": null,
+      "capacity": null,
+      "region": "Liege",
+      "website": "https://www.spa-francorchamps.be",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/2022%204%20Hours%20of%20Spa-Francorchamps%20-%20Circuit.jpg?width=800"
     },
-    "circuit de spa-francorchamps": {
-        "qid": "Q172851",
-        "data": {
-            "wikidataId": "Q172851",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q172851",
-            "latitude": 50.437222222,
-            "longitude": 5.971388888,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1924,
-            "operator": null,
-            "capacity": null,
-            "region": "Liege",
-            "website": "https://www.spa-francorchamps.be",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/2022%204%20Hours%20of%20Spa-Francorchamps%20-%20Circuit.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "hungaroring": {
+    "qid": "Q171356",
+    "data": {
+      "wikidataId": "Q171356",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171356",
+      "latitude": 47.582222222,
+      "longitude": 19.251111111,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1985,
+      "operator": null,
+      "capacity": null,
+      "region": "Mogyoród",
+      "website": "https://hungaroring.hu",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/2022%20ETCR%20-%20RD2%20-%20Hungaroring%20%2852186703505%29.jpg?width=800"
     },
-    "hungaroring": {
-        "qid": "Q171356",
-        "data": {
-            "wikidataId": "Q171356",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171356",
-            "latitude": 47.582222222,
-            "longitude": 19.251111111,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1985,
-            "operator": null,
-            "capacity": null,
-            "region": "Mogyoród",
-            "website": "https://hungaroring.hu",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/2022%20ETCR%20-%20RD2%20-%20Hungaroring%20%2852186703505%29.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "circuit zandvoort": {
+    "qid": "Q173083",
+    "data": {
+      "wikidataId": "Q173083",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q173083",
+      "latitude": 52.388292,
+      "longitude": 4.543011,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1948,
+      "operator": null,
+      "capacity": null,
+      "region": "Zandvoort",
+      "website": "https://www.circuitzandvoort.nl",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Circuit%20Zandvoort%20aangepast%20aan%20internationale%20normen.%20NL-HlmNHA%2054036948.JPG?width=800"
     },
-    "circuit zandvoort": {
-        "qid": "Q173083",
-        "data": {
-            "wikidataId": "Q173083",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q173083",
-            "latitude": 52.388292,
-            "longitude": 4.543011,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1948,
-            "operator": null,
-            "capacity": null,
-            "region": "Zandvoort",
-            "website": "https://www.circuitzandvoort.nl",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Circuit%20Zandvoort%20aangepast%20aan%20internationale%20normen.%20NL-HlmNHA%2054036948.JPG?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "autodromo nazionale monza": {
+    "qid": "Q171417",
+    "data": {
+      "wikidataId": "Q171417",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171417",
+      "latitude": 45.620555555,
+      "longitude": 9.289444444,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": null,
+      "capacity": null,
+      "region": "Monza",
+      "website": "https://www.monzanet.it",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/1975%20Italian%20GP%20race%20start%20-%20Niki%20Lauda%20%26%20Clay%20Regazzoni%20%28Ferrari%20312T%29.jpg?width=800"
     },
-    "autodromo nazionale monza": {
-        "qid": "Q171417",
-        "data": {
-            "wikidataId": "Q171417",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171417",
-            "latitude": 45.620555555,
-            "longitude": 9.289444444,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": null,
-            "capacity": null,
-            "region": "Monza",
-            "website": "https://www.monzanet.it",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/1975%20Italian%20GP%20race%20start%20-%20Niki%20Lauda%20%26%20Clay%20Regazzoni%20%28Ferrari%20312T%29.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "madring": {
+    "qid": "Q126193406",
+    "data": {
+      "wikidataId": "Q126193406",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q126193406",
+      "latitude": 40.463611,
+      "longitude": -3.617778,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": null,
+      "capacity": null,
+      "region": "Madrid",
+      "website": "https://www.madring.com/en",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Madring%20%282026%29.svg?width=800"
     },
-    "madring": {
-        "qid": "Q126193406",
-        "data": {
-            "wikidataId": "Q126193406",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q126193406",
-            "latitude": 40.463611,
-            "longitude": -3.617778,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": null,
-            "capacity": null,
-            "region": "Madrid",
-            "website": "https://www.madring.com/en",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Madring%20%282026%29.svg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "baku city circuit": {
+    "qid": "Q17004958",
+    "data": {
+      "wikidataId": "Q17004958",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q17004958",
+      "latitude": 40.3725,
+      "longitude": 49.8533,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": null,
+      "capacity": null,
+      "region": "Baku",
+      "website": "https://www.bakucitycircuit.com",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial%20View%20of%20Baku%2C%20May%202012.jpg?width=800"
     },
-    "baku city circuit": {
-        "qid": "Q17004958",
-        "data": {
-            "wikidataId": "Q17004958",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q17004958",
-            "latitude": 40.3725,
-            "longitude": 49.8533,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": null,
-            "capacity": null,
-            "region": "Baku",
-            "website": "https://www.bakucitycircuit.com",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial%20View%20of%20Baku%2C%20May%202012.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "sepang international circuit": {
+    "qid": "Q172738",
+    "data": {
+      "wikidataId": "Q172738",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q172738",
+      "latitude": 2.760555555,
+      "longitude": 101.7375,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 1997,
+      "operator": null,
+      "capacity": null,
+      "region": "Selangor",
+      "website": "https://www.sepangcircuit.com/home",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Sepang%20tribune.jpg?width=800"
     },
-    "sepang international circuit": {
-        "qid": "Q172738",
-        "data": {
-            "wikidataId": "Q172738",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q172738",
-            "latitude": 2.760555555,
-            "longitude": 101.7375,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 1997,
-            "operator": null,
-            "capacity": null,
-            "region": "Selangor",
-            "website": "https://www.sepangcircuit.com/home",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Sepang%20tribune.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "marina bay street circuit": {
+    "qid": "Q171390",
+    "data": {
+      "wikidataId": "Q171390",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171390",
+      "latitude": 1.291403,
+      "longitude": 103.864147,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": null,
+      "capacity": null,
+      "region": null,
+      "website": null,
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Singapore%20%28SG%29%2C%20Marina%20Bay%20Street%20Circuit%2C%20F1%20Pit%20Building%20--%202019%20--%204478.jpg?width=800"
     },
-    "marina bay street circuit": {
-        "qid": "Q171390",
-        "data": {
-            "wikidataId": "Q171390",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171390",
-            "latitude": 1.291403,
-            "longitude": 103.864147,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": null,
-            "capacity": null,
-            "region": null,
-            "website": null,
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Singapore%20%28SG%29%2C%20Marina%20Bay%20Street%20Circuit%2C%20F1%20Pit%20Building%20--%202019%20--%204478.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "circuit of the americas": {
+    "qid": "Q59626",
+    "data": {
+      "wikidataId": "Q59626",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q59626",
+      "latitude": 30.1328,
+      "longitude": -97.6411,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 2010,
+      "operator": null,
+      "capacity": null,
+      "region": "Austin",
+      "website": "http://circuitoftheamericas.com",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Circuit%20of%20the%20americas%20cota%20%2852781066233%29.jpg?width=800"
     },
-    "circuit of the americas": {
-        "qid": "Q59626",
-        "data": {
-            "wikidataId": "Q59626",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q59626",
-            "latitude": 30.1328,
-            "longitude": -97.6411,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 2010,
-            "operator": null,
-            "capacity": null,
-            "region": "Austin",
-            "website": "http://circuitoftheamericas.com",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Circuit%20of%20the%20americas%20cota%20%2852781066233%29.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "autodromo hermanos rodriguez": {
+    "qid": "Q173099",
+    "data": {
+      "wikidataId": "Q173099",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q173099",
+      "latitude": 19.404197222,
+      "longitude": -99.088747222,
+      "elevationM": 2238,
+      "timezone": null,
+      "openedYear": 1962,
+      "operator": null,
+      "capacity": null,
+      "region": "Mexico City",
+      "website": "https://ahr.mx",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Formula%201%202016%20-i---i-%20%2830061627393%29.jpg?width=800"
     },
-    "autodromo hermanos rodriguez": {
-        "qid": "Q173099",
-        "data": {
-            "wikidataId": "Q173099",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q173099",
-            "latitude": 19.404197222,
-            "longitude": -99.088747222,
-            "elevationM": 2238,
-            "timezone": null,
-            "openedYear": 1962,
-            "operator": null,
-            "capacity": null,
-            "region": "Mexico City",
-            "website": "https://ahr.mx",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Formula%201%202016%20-i---i-%20%2830061627393%29.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "autodromo jose carlos pace": {
+    "qid": "Q171387",
+    "data": {
+      "wikidataId": "Q171387",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q171387",
+      "latitude": -23.701111111,
+      "longitude": -46.697222222,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": "São Paulo Turismo SA",
+      "capacity": null,
+      "region": "Cidade Dutra District",
+      "website": "https://autodromodeinterlagos.com.br/",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Aut%C3%B3dromo%20de%20Interlagos%20em%20Dezembro%20de%202023.jpg?width=800"
     },
-    "autodromo jose carlos pace": {
-        "qid": "Q171387",
-        "data": {
-            "wikidataId": "Q171387",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q171387",
-            "latitude": -23.701111111,
-            "longitude": -46.697222222,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": "São Paulo Turismo SA",
-            "capacity": null,
-            "region": "Cidade Dutra District",
-            "website": "https://autodromodeinterlagos.com.br/",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Aut%C3%B3dromo%20de%20Interlagos%20em%20Dezembro%20de%202023.jpg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "las vegas strip circuit": {
+    "qid": "Q113112116",
+    "data": {
+      "wikidataId": "Q113112116",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q113112116",
+      "latitude": 36.110027777,
+      "longitude": -115.161805555,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": null,
+      "operator": null,
+      "capacity": null,
+      "region": "Paradise",
+      "website": "https://www.f1lasvegasgp.com/track-layout/",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/2023%20Las%20Vegas%20street%20circuit.svg?width=800"
     },
-    "las vegas strip circuit": {
-        "qid": "Q113112116",
-        "data": {
-            "wikidataId": "Q113112116",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q113112116",
-            "latitude": 36.110027777,
-            "longitude": -115.161805555,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": null,
-            "operator": null,
-            "capacity": null,
-            "region": "Paradise",
-            "website": "https://www.f1lasvegasgp.com/track-layout/",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/2023%20Las%20Vegas%20street%20circuit.svg?width=800"
-        },
-        "fetchedAt": 1792788491995
+    "fetchedAt": 1792788491995
+  },
+  "lusail international circuit": {
+    "qid": null,
+    "data": null,
+    "fetchedAt": 1792949560560
+  },
+  "yas marina circuit": {
+    "qid": "Q172869",
+    "data": {
+      "wikidataId": "Q172869",
+      "wikidataUrl": "https://www.wikidata.org/wiki/Q172869",
+      "latitude": 24.470244444,
+      "longitude": 54.606075,
+      "elevationM": null,
+      "timezone": null,
+      "openedYear": 2009,
+      "operator": null,
+      "capacity": null,
+      "region": "Abu Dhabi",
+      "website": "https://www.yasmarinacircuit.com",
+      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/YasMarina1.jpeg?width=800"
     },
-    "lusail international circuit": {
-        "qid": null,
-        "data": null,
-        "fetchedAt": 1792788491995
-    },
-    "yas marina circuit": {
-        "qid": "Q172869",
-        "data": {
-            "wikidataId": "Q172869",
-            "wikidataUrl": "https://www.wikidata.org/wiki/Q172869",
-            "latitude": 24.470244444,
-            "longitude": 54.606075,
-            "elevationM": null,
-            "timezone": null,
-            "openedYear": 2009,
-            "operator": null,
-            "capacity": null,
-            "region": "Abu Dhabi",
-            "website": "https://www.yasmarinacircuit.com",
-            "image": "https://commons.wikimedia.org/wiki/Special:FilePath/YasMarina1.jpeg?width=800"
-        },
-        "fetchedAt": 1792788491995
-    }
+    "fetchedAt": 1792788491995
+  }
 }

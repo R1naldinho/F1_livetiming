@@ -5,9 +5,14 @@ if ("scrollRestoration" in history) {
 window.addEventListener(
     "scroll",
     () => {
-        const pos = window.scrollY || document.documentElement.scrollTop;
-        if (pos > 0) {
-            sessionStorage.setItem("pageScrollPos", pos);
+        const liveTimingTab = document.getElementById("livetiming");
+        const isLiveTimingActive = liveTimingTab && getComputedStyle(liveTimingTab).display !== "none";
+
+        if (isLiveTimingActive) {
+            const pos = window.scrollY || document.documentElement.scrollTop;
+            if (pos > 0) {
+                sessionStorage.setItem("pageScrollPos", pos);
+            }
         }
     },
     { passive: true },
@@ -16,7 +21,11 @@ window.addEventListener(
 document.addEventListener(
     "scroll",
     (e) => {
+        const liveTimingTab = document.getElementById("livetiming");
+        const isLiveTimingActive = liveTimingTab && getComputedStyle(liveTimingTab).display !== "none";
+
         if (
+            isLiveTimingActive &&
             e.target &&
             e.target.classList &&
             e.target.classList.contains("table-wrapper")
@@ -30,6 +39,11 @@ document.addEventListener(
 );
 
 function restoreScrollPosition() {
+    const liveTimingTab = document.getElementById("livetiming");
+    const isLiveTimingActive = liveTimingTab && getComputedStyle(liveTimingTab).display !== "none";
+
+    if (!isLiveTimingActive) return;
+
     const pagePos = parseInt(sessionStorage.getItem("pageScrollPos"), 10);
     const wrapperPos = parseInt(sessionStorage.getItem("wrapperScrollPos"), 10);
 
@@ -83,13 +97,35 @@ function createNavbar() {
             document.querySelectorAll(".tab-content").forEach((el) => {
                 el.style.display = "none";
             });
-            const target = document.getElementById(tab.id);
-            if (target) {
-                target.style.display = "block";
 
-                if (tab.id === "standings" && !window.standingsUI) {
-                    window.standingsUI = new StandingsUI("standings");
+            const target = document.getElementById(tab.id);
+            const loadingDiv = document.getElementById("loading_livetiming");
+            const delayContainer = document.getElementById("navbarDelayContainer");
+
+            if (tab.id === "livetiming") {
+                if (delayContainer) delayContainer.style.display = "flex";
+                const client = window.f1Client;
+                const isSyncing = client && !client.isInitialized && client.delayMs > 0;
+
+                if (isSyncing) {
+                    if (target) target.style.display = "none";
+                    if (loadingDiv) loadingDiv.style.display = "flex";
+                } else {
+                    if (loadingDiv) loadingDiv.style.display = "none";
+                    if (target) target.style.display = "block";
                 }
+                restoreScrollPosition();
+            } else {
+                if (delayContainer) delayContainer.style.display = "none";
+                if (loadingDiv) loadingDiv.style.display = "none";
+                if (target) {
+                    target.style.display = "block";
+                }
+                window.scrollTo(0, 0);
+            }
+
+            if (tab.id === "standings" && !window.standingsUI) {
+                window.standingsUI = new StandingsUI("standings");
             }
         });
         li.appendChild(btn);
@@ -98,8 +134,23 @@ function createNavbar() {
 
     nav.appendChild(ul);
 
+    const rightControls = document.createElement("div");
+    rightControls.className = "navbar-right-controls";
+    rightControls.style.cssText = "display: flex; align-items: center; gap: 12px; margin-left: auto;";
+
+    const delayWrapper = document.createElement("div");
+    delayWrapper.id = "navbarDelayContainer";
+
     const themeBtn = document.createElement("button");
     themeBtn.className = "theme-toggle-btn";
+
+    const iconSpan = document.createElement("span");
+    iconSpan.className = "theme-icon";
+    const textSpan = document.createElement("span");
+    textSpan.className = "theme-text";
+
+    themeBtn.appendChild(iconSpan);
+    themeBtn.appendChild(textSpan);
 
     const isLight = localStorage.getItem("theme") === "light";
     if (isLight) {
@@ -107,7 +158,8 @@ function createNavbar() {
     }
 
     const updateThemeBtnContent = (lightActive) => {
-        themeBtn.innerHTML = `<span class="theme-icon">${lightActive ? "☾" : "☀︎"}</span><span class="theme-text">${lightActive ? "Dark Mode" : "Light Mode"}</span>`;
+        iconSpan.textContent = lightActive ? "☾" : "☀︎";
+        textSpan.textContent = lightActive ? "Dark Mode" : "Light Mode";
     };
 
     updateThemeBtnContent(isLight);
@@ -127,7 +179,9 @@ function createNavbar() {
         }
     };
 
-    nav.appendChild(themeBtn);
+    rightControls.appendChild(delayWrapper);
+    rightControls.appendChild(themeBtn);
+    nav.appendChild(rightControls);
     navbarContainer.appendChild(nav);
 }
 
