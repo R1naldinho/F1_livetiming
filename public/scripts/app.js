@@ -73,6 +73,17 @@ function createNavbar() {
     const nav = document.createElement("nav");
     nav.className = "navbar";
 
+    const mobileToggle = document.createElement("button");
+    mobileToggle.className = "nav-mobile-toggle";
+    
+    for (let i = 0; i < 3; i++) {
+        const span = document.createElement("span");
+        mobileToggle.appendChild(span);
+    }
+    
+    const activeIndicator = document.createElement("div");
+    activeIndicator.className = "nav-active-indicator";
+
     const ul = document.createElement("ul");
     ul.className = "nav-links";
 
@@ -83,16 +94,29 @@ function createNavbar() {
         { id: "results", label: "Results" },
     ];
 
+    const updateActiveIndicator = (label) => {
+        activeIndicator.textContent = label;
+    };
+
     tabs.forEach((tab, index) => {
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.className = `nav-link ${index === 0 ? "active" : ""}`;
         btn.textContent = tab.label;
+        
+        if (index === 0) {
+            updateActiveIndicator(tab.label);
+        }
+
         btn.addEventListener("click", () => {
             document
                 .querySelectorAll(".nav-link")
                 .forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
+            updateActiveIndicator(tab.label);
+            
+            ul.classList.remove("mobile-open");
+            mobileToggle.classList.remove("active");
 
             document.querySelectorAll(".tab-content").forEach((el) => {
                 el.style.display = "none";
@@ -132,6 +156,13 @@ function createNavbar() {
         ul.appendChild(li);
     });
 
+    mobileToggle.addEventListener("click", () => {
+        ul.classList.toggle("mobile-open");
+        mobileToggle.classList.toggle("active");
+    });
+
+    nav.appendChild(mobileToggle);
+    nav.appendChild(activeIndicator);
     nav.appendChild(ul);
 
     const rightControls = document.createElement("div");

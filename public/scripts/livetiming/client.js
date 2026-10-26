@@ -108,7 +108,7 @@ class F1LiveClient {
         select.id = "liveDelaySelect";
 
         const options = [
-            { val: "0", label: "Real time" },
+            { val: "0.001", label: "Real time" },
             { val: "5", label: "5 seconds" },
             { val: "10", label: "10 seconds" },
             { val: "15", label: "15 seconds" },
