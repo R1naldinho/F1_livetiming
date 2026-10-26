@@ -2892,7 +2892,6 @@ body.light-mode .nav-active-indicator {
         border: 1px solid var(--border-color, #30363d);
         border-radius: 0 0 8px 8px;
         flex-direction: column;
-        padding: 12px 0;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         z-index: 1000;
         margin: 0;
@@ -2912,6 +2911,10 @@ body.light-mode .nav-active-indicator {
         display: block !important;
         width: 100%;
         padding: 12px;
+    }
+
+    .navbar .nav-links .nav-link.active {
+        background-color: #ff4b4bae;
     }
 
     .nav-mobile-toggle.active span:nth-child(1) {
