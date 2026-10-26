@@ -1259,6 +1259,14 @@ class F1LiveTimingUI {
         }
     }
 
+    resetSession() {
+        if (this.tbody) this.tbody.replaceChildren();
+        this.cars?.clear();
+        if (this.raceControlUI && typeof this.raceControlUI.updateMessages === "function") {
+            this.raceControlUI.updateMessages([]);
+        }
+    }
+
     refreshTable(clientOrData) {
         const pageScroll = window.scrollY || document.documentElement.scrollTop;
         const wrapperScroll = this.tableWrapper
@@ -1301,6 +1309,10 @@ class F1LiveTimingUI {
             const dataA = getDriver(a);
             const dataB = getDriver(b);
             return (dataA.position || 99) - (dataB.position || 99);
+        });
+        const activeRowIds = new Set(driverNums.map((num) => `driver-${num}`));
+        Array.from(this.tbody.children).forEach((row) => {
+            if (!activeRowIds.has(row.id)) row.remove();
         });
         driverNums.forEach((driverNum, index) => {
             const driverData = getDriver(driverNum);

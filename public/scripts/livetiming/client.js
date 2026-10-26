@@ -15,6 +15,7 @@ class F1LiveClient {
         this.timingAppData = {};
         this.sessionData = {};
         this.sessionInfo = null;
+        this.sessionIdentity = null;
         this.raceControlMessages = {};
         this.lapCount = null;
         this.isRefreshPending = false;
@@ -420,6 +421,12 @@ class F1LiveClient {
     }
 
     applySnapshotNow(snapshot) {
+        const snapshotSessionInfo = snapshot.SessionInfo || null;
+        const snapshotIdentity = this.getSessionIdentity(snapshotSessionInfo);
+        if (snapshotIdentity && this.sessionIdentity && snapshotIdentity !== this.sessionIdentity) {
+            this.resetSessionState();
+        }
+        if (snapshotIdentity) this.sessionIdentity = snapshotIdentity;
         this.drivers = this.normalize(snapshot.DriverList || {});
         this.timingData = this.normalizeLines(snapshot.TimingData);
         this.timingStats = this.normalizeLines(snapshot.TimingStats);
@@ -489,8 +496,14 @@ class F1LiveClient {
         }
 
         switch (streamType) {
-            case "SessionInfo":
-                this.sessionInfo = this.normalize(data);
+            case "SessionInfo": {
+                const normalizedSessionInfo = this.normalize(data);
+                const nextIdentity = this.getSessionIdentity(normalizedSessionInfo);
+                if (nextIdentity && this.sessionIdentity && nextIdentity !== this.sessionIdentity) {
+                    this.resetSessionState();
+                }
+                if (nextIdentity) this.sessionIdentity = nextIdentity;
+                this.sessionInfo = normalizedSessionInfo;
                 if (this._resolveSessionReady) {
                     this._resolveSessionReady(this.sessionInfo);
                     this._resolveSessionReady = null;
@@ -501,6 +514,7 @@ class F1LiveClient {
                     ).catch(() => {});
                 }
                 break;
+            }
             case "ExtrapolatedClock":
                 this.lastExtrapolatedClock = data;
                 if (this.ui && this.isInitialized) this.ui.updateClock(data);
@@ -562,6 +576,39 @@ class F1LiveClient {
                 break;
             }
         }
+    }
+
+    getSessionIdentity(info) {
+        if (!info || typeof info !== "object") return "";
+        const meeting = info.Meeting || {};
+        const directKey = info.Path || info.SessionPath || info.Key;
+        if (directKey !== undefined && directKey !== null && String(directKey).trim() !== "") {
+            return String(directKey).trim().toLowerCase();
+        }
+        const parts = [meeting.Key, meeting.Name, info.Name, info.Type]
+            .filter((value) => value !== undefined && value !== null && String(value).trim() !== "");
+        return parts.length ? parts.join("|").toLowerCase() : "";
+    }
+
+    resetSessionState() {
+        this.streamQueue = [];
+        this.timingData = {};
+        this.timingStats = {};
+        this.timingAppData = {};
+        this.sessionData = {};
+        this.raceControlMessages = {};
+        this.lapCount = null;
+        this.lastExtrapolatedClock = null;
+        this.lastSessionStatus = null;
+        this.lastTrackStatus = null;
+        this.lastWeatherData = null;
+        if (this.ui) {
+            if (typeof this.ui.resetSession === "function") {
+                this.ui.resetSession();
+            }
+            this.ui.updateRaceControlMessages([]);
+        }
+        this.scheduleUIRefresh();
     }
 
     normalizeMessages(raw) {
@@ -629,7 +676,12 @@ class F1LiveClient {
         Object.keys(source).forEach((key) => {
             const value = source[key];
 
-            if (value === null || value === undefined) {
+            if (value === null) {
+                delete target[key];
+                return;
+            }
+
+            if (value === undefined) {
                 return;
             }
 
