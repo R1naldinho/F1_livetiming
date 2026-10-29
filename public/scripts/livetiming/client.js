@@ -103,7 +103,7 @@ class F1LiveClient {
 
         const label = document.createElement("label");
         label.htmlFor = "liveDelaySelect";
-        label.textContent = "Live Delay:";
+        label.textContent = "Live Delay: ";
 
         const select = document.createElement("select");
         select.id = "liveDelaySelect";

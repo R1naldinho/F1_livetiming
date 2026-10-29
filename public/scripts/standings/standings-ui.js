@@ -429,23 +429,14 @@ class StandingsUI {
     }
 
     getChampionshipRowClass(status) {
-        return status === "eliminated"
-            ? "championship-eliminated"
-            : status === "champion"
-              ? "championship-clinched"
-              : "";
+        return status === "champion" ? "championship-clinched" : "";
     }
 
     createChampionshipStatus(status) {
-        if (status === "eliminated")
-            return this.el("span", {
-                className: "championship-status eliminated",
-                textContent: "OUT",
-            });
         if (status === "champion")
             return this.el("span", {
                 className: "championship-status champion",
-                textContent: "CHAMP",
+                textContent: "CHAMPION",
             });
         return null;
     }
@@ -677,6 +668,7 @@ class StandingsUI {
             if (this.driverSubMode === "total") this.renderDriversTotalTable();
             else this.renderDriversRaceTable();
             this.renderTopDriversChart();
+            this.renderChampionshipScenarios("drivers");
         } else {
             const constructorToggle = this.el(
                 "div",
@@ -707,7 +699,483 @@ class StandingsUI {
                 this.renderConstructorsTotalTable();
             else this.renderConstructorsRaceTable();
             this.renderTopConstructorsChart();
+            this.renderChampionshipScenarios("constructors");
         }
+    }
+
+    getNextChampionshipEvent(mode) {
+        const config = this.getSeasonConfigSync();
+        const remainingRaces = Array.isArray(config.remainingRaces)
+            ? config.remainingRaces
+            : [];
+        if (!remainingRaces.length) return null;
+
+        const race = remainingRaces[0];
+        const getName = (item) =>
+            this.normalizeGrandPrixName(
+                item?.raceName ||
+                    item?.grandPrix ||
+                    item?.name ||
+                    item?.meetingName,
+            );
+        const raceName = getName(race);
+        const remainingSprints = Array.isArray(config.remainingSprints)
+            ? config.remainingSprints
+            : [];
+        const sprintRemaining = remainingSprints.some((item) => {
+            const sprintName =
+                typeof item === "string"
+                    ? this.normalizeGrandPrixName(item)
+                    : getName(item);
+            return (
+                raceName === sprintName ||
+                raceName.includes(sprintName.replace(" grand prix", "")) ||
+                sprintName.includes(raceName.replace(" grand prix", ""))
+            );
+        });
+        const raceRemaining = remainingRaces.some(
+            (item) => getName(item) === raceName,
+        );
+        const eventMax =
+            mode === "drivers"
+                ? (raceRemaining ? 25 : 0) + (sprintRemaining ? 8 : 0)
+                : (raceRemaining ? 43 : 0) + (sprintRemaining ? 15 : 0);
+        const totalRemaining =
+            mode === "drivers"
+                ? config.maxDriverPointsRemaining
+                : config.maxConstructorPointsRemaining;
+
+        return {
+            name:
+                race.raceName ||
+                race.grandPrix ||
+                race.name ||
+                race.meetingName ||
+                "Next Grand Prix",
+            race,
+            sprintRemaining,
+            eventMax,
+            futureMax: Math.max(0, totalRemaining - eventMax),
+            totalRacesLeft: remainingRaces.length,
+        };
+    }
+
+    getPossibleEventPoints(mode, sprintRemaining) {
+        const racePoints = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0];
+        const sprintPoints = [8, 7, 6, 5, 4, 3, 2, 1, 0];
+        const addSets = (a, b) => [
+            ...new Set(a.flatMap((x) => b.map((y) => x + y))),
+        ];
+        const teamPoints = (scores) => {
+            const totals = new Set();
+            for (let i = 0; i < scores.length; i++) {
+                for (let j = 0; j < scores.length; j++) {
+                    if (i !== j) totals.add(scores[i] + scores[j]);
+                }
+            }
+            return [...totals];
+        };
+        if (mode === "drivers") {
+            const points = sprintRemaining
+                ? addSets(racePoints, sprintPoints)
+                : racePoints;
+            return [...new Set(points)].sort((a, b) => a - b);
+        }
+        const raceTeamPoints = teamPoints(racePoints);
+        const sprintTeamPoints = teamPoints(sprintPoints);
+        const points = sprintRemaining
+            ? addSets(raceTeamPoints, sprintTeamPoints)
+            : raceTeamPoints;
+        return [...new Set(points)].sort((a, b) => a - b);
+    }
+
+    getChampionshipCountback(item, mode) {
+        const counts = Array(21).fill(0);
+        const drivers =
+            mode === "drivers"
+                ? [item]
+                : (this.data?.drivers || []).filter(
+                      (driver) => driver.car === item.teamName,
+                  );
+        drivers.forEach((driver) => {
+            (driver.raceResults || []).forEach((result) => {
+                const position = Number.parseInt(result.pos, 10);
+                if (
+                    Number.isInteger(position) &&
+                    position >= 1 &&
+                    position <= 20
+                )
+                    counts[position]++;
+            });
+        });
+        return counts.slice(1);
+    }
+
+    canRivalWinTiebreaker(rival, leader, mode, totalRacesLeft) {
+        const rCounts = [...this.getChampionshipCountback(rival.item, mode)];
+        const lCounts = [...this.getChampionshipCountback(leader.item, mode)];
+        rCounts[0] += totalRacesLeft;
+        for (let i = 0; i < rCounts.length; i++) {
+            if (rCounts[i] !== lCounts[i]) {
+                return rCounts[i] > lCounts[i];
+            }
+        }
+        return true;
+    }
+
+    renderChampionshipScenarios(mode) {
+        const info = this.getChampionshipInfo();
+        const isDrivers = mode === "drivers";
+        const entries = isDrivers ? info.driverAlive : info.constructorAlive;
+        const leaderPoints = isDrivers
+            ? info.leaderDriverPoints
+            : info.leaderConstructorPoints;
+        const alive = entries
+            .filter((entry) => entry.canWin)
+            .sort((a, b) => b.points - a.points);
+        const section = document.createElement("section");
+        section.className = "championship-scenarios-section";
+        const title = document.createElement("h3");
+        title.textContent = isDrivers
+            ? "Drivers still mathematically in contention"
+            : "Constructors still mathematically in contention";
+        Object.assign(title.style, {
+            fontSize: "1.1rem",
+            fontWeight: "700",
+            margin: "28px 0 12px",
+        });
+        section.appendChild(title);
+        if (!alive.length) {
+            const p = document.createElement("p");
+            p.textContent =
+                "No contenders remain mathematically in contention.";
+            section.appendChild(p);
+            this.contentWrapper.appendChild(section);
+            return;
+        }
+        const table = document.createElement("table");
+        table.className = "standings-table championship-scenarios-table";
+        Object.assign(table.style, {
+            width: "100%",
+            minWidth: "760px",
+            borderCollapse: "collapse",
+            fontSize: "0.88rem",
+        });
+        const headers = [
+            isDrivers ? "Driver" : "Constructor",
+            "Points",
+            "Gap to leader",
+        ];
+        const thead = document.createElement("thead");
+        const headRow = document.createElement("tr");
+        headers.forEach((label) => {
+            const th = document.createElement("th");
+            th.textContent = label;
+            Object.assign(th.style, {
+                textAlign: "left",
+                padding: "10px 12px",
+                borderBottom: `2px solid ${this.gridColor}`,
+                whiteSpace: "nowrap",
+            });
+            headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+        const tbody = document.createElement("tbody");
+        alive.forEach((entry) => {
+            const tr = document.createElement("tr");
+            const name = isDrivers
+                ? entry.item.driverName
+                : entry.item.teamName;
+            const gapText =
+                entry.points === leaderPoints
+                    ? "Leader"
+                    : `-${leaderPoints - entry.points}`;
+            const values = [name, entry.points, gapText];
+            values.forEach((value, index) => {
+                const td = document.createElement("td");
+                td.textContent = String(value);
+                Object.assign(td.style, {
+                    padding: "10px 12px",
+                    borderBottom: `1px solid ${this.gridColor}`,
+                    color: this.textColor,
+                    verticalAlign: "top",
+                    whiteSpace: "nowrap",
+                });
+                if (index === 0) td.style.fontWeight = "600";
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        const tableWrap = document.createElement("div");
+        tableWrap.className = "table-responsive standings-table-wrap";
+        tableWrap.style.overflowX = "auto";
+        tableWrap.appendChild(table);
+        section.appendChild(tableWrap);
+        this.renderNextRaceTitleCard(section, mode, info, alive);
+        this.contentWrapper.appendChild(section);
+    }
+
+    renderNextRaceTitleCard(section, mode, info, alive) {
+        const isDrivers = mode === "drivers";
+        const leader = alive[0];
+        if (!leader) return;
+
+        const nextEvent = this.getNextChampionshipEvent(mode);
+        if (!nextEvent || nextEvent.eventMax <= 0) return;
+
+        const rivals = alive.filter((entry) => entry.item !== leader.item);
+        if (!rivals.length) return;
+
+        const racePtsMap = isDrivers
+            ? [
+                { pos: "1st", pts: 25 },
+                { pos: "2nd", pts: 18 },
+                { pos: "3rd", pts: 15 },
+                { pos: "4th", pts: 12 },
+                { pos: "5th", pts: 10 },
+                { pos: "6th", pts: 8 },
+                { pos: "7th", pts: 6 },
+                { pos: "8th", pts: 4 },
+                { pos: "9th", pts: 2 },
+                { pos: "10th", pts: 1 },
+                { pos: "11th or lower / DNF", pts: 0 },
+              ]
+            : [
+                { pos: "1st+2nd", pts: 43 },
+                { pos: "1st+3rd", pts: 40 },
+                { pos: "1st+4th", pts: 37 },
+                { pos: "2nd+3rd", pts: 33 },
+                { pos: "2nd+4th", pts: 30 },
+                { pos: "3rd+4th", pts: 27 },
+                { pos: "No points / DNF", pts: 0 },
+              ];
+
+        const sprintPtsMap = nextEvent.sprintRemaining
+            ? isDrivers
+                ? [
+                    { pos: "1st in Sprint", pts: 8 },
+                    { pos: "2nd in Sprint", pts: 7 },
+                    { pos: "3rd in Sprint", pts: 6 },
+                    { pos: "4th in Sprint", pts: 5 },
+                    { pos: "5th in Sprint", pts: 4 },
+                    { pos: "6th in Sprint", pts: 3 },
+                    { pos: "7th in Sprint", pts: 2 },
+                    { pos: "8th in Sprint", pts: 1 },
+                    { pos: "No Sprint points", pts: 0 },
+                  ]
+                : [
+                    { pos: "Sprint 1st+2nd", pts: 15 },
+                    { pos: "Sprint 1st+3rd", pts: 14 },
+                    { pos: "Sprint 2nd+3rd", pts: 13 },
+                    { pos: "No Sprint points", pts: 0 },
+                  ]
+            : [{ pos: "", pts: 0 }];
+
+        const generatedScenarios = [];
+        const seenPts = new Set();
+
+        racePtsMap.forEach((r) => {
+            sprintPtsMap.forEach((s) => {
+                const totalPts = r.pts + s.pts;
+                if (!seenPts.has(totalPts)) {
+                    seenPts.add(totalPts);
+                    const labelParts = [r.pos !== "11th or lower / DNF" && r.pos !== "No points / DNF" ? `${r.pos} in GP (${r.pts} pts)` : `0 pts in GP`];
+                    if (nextEvent.sprintRemaining && s.pts > 0) {
+                        labelParts.push(`${s.pos} (${s.pts} pts)`);
+                    }
+                    generatedScenarios.push({
+                        label: labelParts.join(" + "),
+                        pts: totalPts,
+                    });
+                }
+            });
+        });
+
+        generatedScenarios.sort((a, b) => b.pts - a.pts);
+
+        const possibleScores = this.getPossibleEventPoints(
+            mode,
+            nextEvent.sprintRemaining,
+        );
+
+        const validScenarios = [];
+        let minGuaranteeScenario = null;
+
+        generatedScenarios.forEach((scenario) => {
+            const limits = rivals.map((rival) => {
+                const canRivalWinTie = this.canRivalWinTiebreaker(
+                    rival,
+                    leader,
+                    mode,
+                    nextEvent.totalRacesLeft,
+                );
+                const maxMathPoints =
+                    leader.points +
+                    scenario.pts -
+                    rival.points -
+                    nextEvent.futureMax -
+                    (canRivalWinTie ? 1 : 0);
+
+                let maxRealScore = -1;
+                for (let i = possibleScores.length - 1; i >= 0; i--) {
+                    if (possibleScores[i] <= maxMathPoints) {
+                        maxRealScore = possibleScores[i];
+                        break;
+                    }
+                }
+                return { rival, maxRealScore };
+            });
+
+            const isGuaranteed = limits.every((l) => l.maxRealScore >= nextEvent.eventMax);
+
+            if (isGuaranteed) {
+                if (!minGuaranteeScenario || scenario.pts < minGuaranteeScenario.pts) {
+                    minGuaranteeScenario = scenario;
+                }
+            } else if (limits.some((l) => l.maxRealScore >= 0)) {
+                validScenarios.push({ scenario, limits });
+            }
+        });
+
+        if (!minGuaranteeScenario && !validScenarios.length) return;
+
+        const leaderName = isDrivers
+            ? leader.item.driverName
+            : leader.item.teamName;
+
+        const card = document.createElement("div");
+        card.className = "championship-clinch-card";
+        Object.assign(card.style, {
+            marginTop: "18px",
+            padding: "16px",
+            border: `1px solid ${this.gridColor}`,
+            borderLeft: "4px solid #eab308",
+            borderRadius: "10px",
+            background: this.cardBg,
+        });
+
+        const heading = document.createElement("h3");
+        heading.textContent = `${leaderName} can clinch the title at the ${nextEvent.name}`;
+        Object.assign(heading.style, {
+            margin: "0 0 6px",
+            fontSize: "1.05rem",
+            fontWeight: "700",
+            color: this.textColor,
+        });
+        card.appendChild(heading);
+
+        const maxLabel = isDrivers
+            ? nextEvent.sprintRemaining
+                ? "33 points (25 for Grand Prix + 8 for Sprint)"
+                : "25 points for Grand Prix"
+            : nextEvent.sprintRemaining
+            ? "58 points (43 for Grand Prix + 15 for Sprint)"
+            : "43 points for Grand Prix";
+
+        const pDesc = document.createElement("p");
+        pDesc.textContent = `Maximum available this weekend: ${maxLabel}.`;
+        card.appendChild(pDesc);
+
+        if (minGuaranteeScenario) {
+            const guaranteeBox = document.createElement("div");
+            Object.assign(guaranteeBox.style, {
+                padding: "10px 12px",
+                marginBottom: "12px",
+                borderRadius: "6px",
+                background: "rgba(234, 179, 8, 0.15)",
+                border: "1px solid #eab308",
+                fontWeight: "600",
+                fontSize: "0.88rem",
+            });
+            guaranteeBox.textContent = `Guaranteed title: ${leaderName} clinches regardless of rivals' results by finishing at least ${minGuaranteeScenario.label}.`;
+            card.appendChild(guaranteeBox);
+        }
+
+        if (validScenarios.length) {
+            const table = document.createElement("table");
+            table.className = "standings-table championship-scenarios-table";
+            Object.assign(table.style, {
+                width: "100%",
+                minWidth: "520px",
+                borderCollapse: "collapse",
+                fontSize: "0.85rem",
+            });
+
+            const headers = [
+                "Leader's result",
+                ...rivals.map((rival) =>
+                    isDrivers ? rival.item.driverName : rival.item.teamName,
+                ),
+            ];
+            const thead = document.createElement("thead");
+            const headerRow = document.createElement("tr");
+            headers.forEach((label) => {
+                const th = document.createElement("th");
+                th.textContent = label;
+                Object.assign(th.style, {
+                    textAlign: "left",
+                    padding: "8px",
+                    borderBottom: `2px solid ${this.gridColor}`,
+                });
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const body = document.createElement("tbody");
+
+            validScenarios.forEach(({ scenario, limits }) => {
+                const tr = document.createElement("tr");
+                const cells = [
+                    scenario.label,
+                    ...limits.map((limit) => {
+                        const allowed = limit.maxRealScore;
+                        if (allowed < 0) {
+                            return isDrivers
+                                ? "Must score 0 points (11th or lower / DNF)"
+                                : "Both drivers must score 0 points (11th or lower / DNF)";
+                        }
+                        if (allowed >= nextEvent.eventMax) {
+                            return "Any result";
+                        }
+                        if (isDrivers) {
+                            return allowed === 0
+                                ? "Must score 0 points (11th or lower / DNF)"
+                                : `Must score no more than ${allowed} point${allowed === 1 ? "" : "s"}`;
+                        } else {
+                            return allowed === 0
+                                ? "Both drivers must score 0 points (11th or lower / DNF)"
+                                : `Team results must total no more than ${allowed} points`;
+                        }
+                    }),
+                ];
+
+                cells.forEach((value) => {
+                    const td = document.createElement("td");
+                    td.textContent = String(value);
+                    Object.assign(td.style, {
+                        padding: "8px",
+                        borderBottom: `1px solid ${this.gridColor}`,
+                        color: this.textColor,
+                        verticalAlign: "top",
+                    });
+                    tr.appendChild(td);
+                });
+                body.appendChild(tr);
+            });
+
+            table.appendChild(body);
+
+            const wrap = document.createElement("div");
+            wrap.className = "table-responsive";
+            wrap.style.overflowX = "auto";
+            wrap.appendChild(table);
+            card.appendChild(wrap);
+        }
+
+        section.appendChild(card);
     }
 
     renderDriversTotalTable() {
