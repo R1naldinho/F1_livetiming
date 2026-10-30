@@ -8,6 +8,7 @@ import crypto from "crypto";
 import fs from "fs";
 import { spawn } from "child_process";
 import { EventEmitter } from "events";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
@@ -1785,5 +1786,314 @@ app.post(
         });
     }
 );
+
+
+
+class SimpleRateLimiter {
+    constructor(limit, windowMs) {
+        this.limit = limit;
+        this.windowMs = windowMs;
+        this.hits = new Map();
+        setInterval(() => this.sweep(), windowMs).unref();
+    }
+
+    allow(key) {
+        const now = Date.now();
+        const recent = (this.hits.get(key) || []).filter(
+            (timestamp) => now - timestamp < this.windowMs,
+        );
+        if (recent.length >= this.limit) {
+            this.hits.set(key, recent);
+            return false;
+        }
+        recent.push(now);
+        this.hits.set(key, recent);
+        return true;
+    }
+
+    sweep() {
+        const now = Date.now();
+        this.hits.forEach((timestamps, key) => {
+            const recent = timestamps.filter(
+                (timestamp) => now - timestamp < this.windowMs,
+            );
+            if (recent.length === 0) {
+                this.hits.delete(key);
+            } else {
+                this.hits.set(key, recent);
+            }
+        });
+    }
+}
+
+const calibrationLimiter = new SimpleRateLimiter(20, 60 * 60 * 1000);
+const calibrationSlug = /^[a-z0-9-]{1,40}$/;
+const calibrationMethods = new Set(["clock", "lap"]);
+const calibrationSessionKinds = new Set(["practice", "qualifying", "race"]);
+
+function parseCalibration(body) {
+    if (!body || typeof body !== "object") return null;
+
+    const { series, service, device, method, sessionKind, delaySeconds, samples } = body;
+
+    if (series !== "f1") return null;
+    if (typeof service !== "string" || !calibrationSlug.test(service)) return null;
+    if (typeof device !== "string" || !calibrationSlug.test(device)) return null;
+    if (!calibrationMethods.has(method)) return null;
+    if (!calibrationSessionKinds.has(sessionKind)) return null;
+    if (typeof delaySeconds !== "number" || !Number.isFinite(delaySeconds)) return null;
+    if (delaySeconds < 0 || delaySeconds > 300) return null;
+    if (!Number.isInteger(samples) || samples < 1 || samples > 20) return null;
+
+    return {
+        series,
+        service,
+        device,
+        method,
+        sessionKind,
+        delaySeconds: Math.round(delaySeconds * 10) / 10,
+        samples,
+        createdAt: new Date().toISOString(),
+    };
+}
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+);
+
+function todayUtc() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function dayOffset(day, offset) {
+    const date = new Date(`${day}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + offset);
+    return date.toISOString().slice(0, 10);
+}
+
+function getClientIp(req) {
+    const forwarded = req.headers["x-forwarded-for"];
+    const first = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : "";
+    return first || req.socket.remoteAddress || "unknown";
+}
+
+class CalibrationRepository {
+    constructor(client) {
+        this.client = client;
+        this.cache = null;
+        this.cachedAt = 0;
+        this.cacheMs = 5 * 60 * 1000;
+    }
+
+    async save(record) {
+        const { error } = await this.client.from("delay_calibrations").insert({
+            series: record.series,
+            service: record.service,
+            device: record.device,
+            method: record.method,
+            session_kind: record.sessionKind,
+            delay_seconds: record.delaySeconds,
+            samples: record.samples,
+        });
+        if (error) throw error;
+    }
+
+    async getDefaults() {
+        if (this.cache && Date.now() - this.cachedAt < this.cacheMs) {
+            return this.cache;
+        }
+
+        const { data, error } = await this.client.rpc("calibration_medians", {
+            p_min: 3,
+        });
+        if (error) throw error;
+
+        this.cache = data.map((row) => ({
+            service: row.service,
+            device: row.device,
+            measurements: row.measurements,
+            delaySeconds: Number(row.median_seconds),
+        }));
+        this.cachedAt = Date.now();
+        return this.cache;
+    }
+}
+
+class VisitorHasher {
+    constructor(client) {
+        this.client = client;
+        this.day = null;
+        this.salt = null;
+        this.pending = null;
+    }
+
+    async getSalt(day) {
+        if (this.day === day && this.salt) return this.salt;
+
+        if (!this.pending) {
+            this.pending = this.client
+                .rpc("get_daily_salt", { p_day: day })
+                .then(({ data, error }) => {
+                    if (error || typeof data !== "string") {
+                        throw error || new Error("Missing daily salt");
+                    }
+                    this.day = day;
+                    this.salt = data;
+                    return data;
+                })
+                .finally(() => {
+                    this.pending = null;
+                });
+        }
+
+        return this.pending;
+    }
+
+    async hash(ip, userAgent, day) {
+        const salt = await this.getSalt(day);
+        return crypto
+            .createHmac("sha256", salt)
+            .update(`${ip}|${userAgent}`)
+            .digest("hex")
+            .slice(0, 32);
+    }
+}
+
+class MetricsRepository {
+    constructor(client) {
+        this.client = client;
+    }
+
+    async recordPageview(day, path, visitorHash) {
+        const { error } = await this.client.rpc("record_pageview", {
+            p_day: day,
+            p_path: path,
+            p_visitor: visitorHash,
+        });
+        if (error) throw error;
+    }
+
+    async summary(days) {
+        const today = todayUtc();
+        const since = dayOffset(today, -(days - 1));
+
+        const rollup = await this.client.rpc("rollup_visitors");
+        if (rollup.error) throw rollup.error;
+
+        const [totals, current, views, pages] = await Promise.all([
+            this.client.from("daily_totals").select("day, visitors").gte("day", since),
+            this.client
+                .from("daily_visitors")
+                .select("visitor_hash", { count: "exact", head: true })
+                .eq("day", today),
+            this.client.rpc("daily_views", { p_since: since }),
+            this.client.rpc("top_pages", { p_since: since, p_limit: 20 }),
+        ]);
+
+        const failure = totals.error || current.error || views.error || pages.error;
+        if (failure) throw failure;
+
+        const visitorsByDay = new Map(totals.data.map((row) => [row.day, row.visitors]));
+        visitorsByDay.set(today, (visitorsByDay.get(today) || 0) + (current.count || 0));
+        const viewsByDay = new Map(views.data.map((row) => [row.day, Number(row.views)]));
+
+        const daily = [];
+        for (let offset = days - 1; offset >= 0; offset--) {
+            const day = dayOffset(today, -offset);
+            daily.push({
+                day,
+                visitors: visitorsByDay.get(day) || 0,
+                views: viewsByDay.get(day) || 0,
+            });
+        }
+
+        return {
+            daily,
+            pages: pages.data.map((row) => ({
+                path: row.path,
+                views: Number(row.views),
+            })),
+        };
+    }
+}
+
+const calibrationRepository = new CalibrationRepository(supabase);
+const visitorHasher = new VisitorHasher(supabase);
+const metricsRepository = new MetricsRepository(supabase);
+const metricsLimiter = new SimpleRateLimiter(60, 60 * 1000);
+const metricsPathPattern = /^\/[a-zA-Z0-9/_-]{0,99}$/;
+
+app.post("/api/calibration", express.json({ limit: "2kb" }), async (req, res) => {
+    if (!calibrationLimiter.allow(getClientIp(req))) {
+        return res.status(429).json({ error: "Too many requests" });
+    }
+
+    const record = parseCalibration(req.body);
+    if (!record) {
+        return res.status(400).json({ error: "Invalid calibration" });
+    }
+
+    try {
+        await calibrationRepository.save(record);
+        res.status(201).json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Could not save calibration" });
+    }
+});
+
+app.get("/api/calibration/defaults", async (req, res) => {
+    try {
+        const defaults = await calibrationRepository.getDefaults();
+        res.set("Cache-Control", "public, max-age=300");
+        res.json(defaults);
+    } catch (error) {
+        res.status(500).json({ error: "Could not load defaults" });
+    }
+});
+
+app.post("/api/metrics/pageview", express.json({ limit: "1kb" }), async (req, res) => {
+    const ip = getClientIp(req);
+    if (!metricsLimiter.allow(ip)) {
+        return res.status(429).end();
+    }
+
+    const path = req.body?.path;
+    if (typeof path !== "string" || !metricsPathPattern.test(path)) {
+        return res.status(400).json({ error: "Invalid path" });
+    }
+
+    try {
+        const day = todayUtc();
+        const visitorHash = await visitorHasher.hash(
+            ip,
+            req.headers["user-agent"] || "",
+            day,
+        );
+        await metricsRepository.recordPageview(day, path, visitorHash);
+        res.status(204).end();
+    } catch (error) {
+        res.status(500).json({ error: "Could not record pageview" });
+    }
+});
+
+app.get("/api/metrics/summary", authorizeAdmin, async (req, res) => {
+    const days = Math.min(90, Math.max(1, Number.parseInt(req.query.days, 10) || 30));
+
+    try {
+        res.json(await metricsRepository.summary(days));
+    } catch (error) {
+        res.status(500).json({ error: "Could not load metrics" });
+    }
+});
+
+app.get("/api/health/db", async (req, res) => {
+    const { error } = await supabase.from("daily_totals").select("day").limit(1);
+    if (error) {
+        return res.status(503).json({ ok: false });
+    }
+    res.json({ ok: true });
+});
 
 server.listen(PORT, () => {});

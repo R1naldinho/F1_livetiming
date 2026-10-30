@@ -513,7 +513,6 @@ body.light-mode text.wind-text {
 
 .clickable-card:hover {
     border-color: #58a6ff;
-    transform: translateY(-2px);
 }
 
 .weather-title {
@@ -2928,4 +2927,183 @@ body.light-mode .nav-active-indicator {
     .nav-mobile-toggle.active span:nth-child(3) {
         transform: translateY(-7px) rotate(-45deg);
     }
+}
+
+.delay-calibrate-button {
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #3a3a42;
+    background: #26262c;
+    color: #f2f2f5;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.calibration-hidden {
+    display: none !important;
+}
+
+.calibration-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.calibration-dialog {
+    width: min(92vw, 420px);
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #33333a;
+    background: #1b1b1f;
+    color: #f2f2f5;
+}
+
+.calibration-title {
+    margin: 0;
+    font-size: 18px;
+}
+
+.calibration-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+}
+
+.calibration-field select,
+.calibration-clock-input {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #3a3a42;
+    background: #26262c;
+    color: inherit;
+    font-size: 14px;
+}
+
+.calibration-instruction,
+.calibration-hint,
+.calibration-status {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.calibration-hint,
+.calibration-status {
+    min-height: 1.2em;
+    opacity: 0.75;
+}
+
+.calibration-clock-row {
+    display: flex;
+    gap: 8px;
+}
+
+.calibration-clock-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 24px;
+    letter-spacing: 2px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.calibration-lap-button {
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    background: #e10600;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.calibration-result {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.calibration-share {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.calibration-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.calibration-primary,
+.calibration-secondary {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.calibration-primary {
+    border: none;
+    background: #e10600;
+    color: #ffffff;
+}
+
+.calibration-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.calibration-secondary {
+    border: 1px solid #3a3a42;
+    background: transparent;
+    color: inherit;
+}
+
+body.light-mode .delay-calibrate-button {
+    border-color: #c9c9d1;
+    background: #f1f1f4;
+    color: #1b1b1f;
+}
+
+body.light-mode .calibration-overlay {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+body.light-mode .calibration-dialog {
+    border-color: #d8d8df;
+    background: #ffffff;
+    color: #1b1b1f;
+}
+
+body.light-mode .calibration-field select,
+body.light-mode .calibration-clock-input {
+    border-color: #c9c9d1;
+    background: #f5f5f8;
+}
+
+body.light-mode .calibration-secondary {
+    border-color: #c9c9d1;
+}
+
+.gps-map-svg{
+    rotate: 180deg;
+}
+
+.gps-car-token text{
+    rotate: 180deg;
 }

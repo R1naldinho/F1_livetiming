@@ -287,8 +287,8 @@ class F1LiveTimingUI {
             if (p.y > maxY) maxY = p.y;
         });
 
-        const paddingX = (maxX - minX) * 0.035;
-        const paddingY = (maxY - minY) * 0.035;
+        const paddingX = (maxX - minX) * 0.08;
+        const paddingY = (maxY - minY) * 0.08;
         minX -= paddingX;
         maxX += paddingX;
         minY -= paddingY;

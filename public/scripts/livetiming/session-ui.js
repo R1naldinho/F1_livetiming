@@ -31,8 +31,7 @@ class SessionInfoUI {
         this.leftColumn.appendChild(this.progressElement);
         this.weatherCard = document.createElement("div");
         this.weatherCard.className = "weather-card clickable-card";
-        this.weatherCard.title =
-            "Click to open weather details, forecast & radar";
+        this.weatherCard.title = "Click to open weather details, forecast & radar";
         this.weatherCard.onclick = () => this.showWeatherModal();
         this.weatherTitle = document.createElement("div");
         this.weatherTitle.className = "weather-title";
@@ -50,6 +49,21 @@ class SessionInfoUI {
         this.weatherGrid.appendChild(this.windEl.container);
         this.weatherGrid.appendChild(this.rainEl.container);
         this.weatherCard.appendChild(this.weatherGrid);
+        
+        this.mainForecastContainer = document.createElement("div");
+        this.mainForecastContainer.className = "forecast-container main-forecast-inline";
+        const mainForecastTitle = document.createElement("div");
+        mainForecastTitle.className = "forecast-title";
+        mainForecastTitle.textContent = "3-Hour Forecast";
+        this.mainForecastItems = document.createElement("div");
+        this.mainForecastItems.className = "forecast-items";
+        const mainLoadingSpan = document.createElement("span");
+        mainLoadingSpan.textContent = "Awaiting circuit data...";
+        this.mainForecastItems.appendChild(mainLoadingSpan);
+        this.mainForecastContainer.appendChild(mainForecastTitle);
+        this.mainForecastContainer.appendChild(this.mainForecastItems);
+        this.weatherCard.appendChild(this.mainForecastContainer);
+
         this.mainContentRow.appendChild(this.leftColumn);
         this.mainContentRow.appendChild(this.weatherCard);
         this.root.appendChild(this.topRow);
@@ -63,69 +77,17 @@ class SessionInfoUI {
 
     static getFallbackTrackShape() {
         const sketch = [
-            [283, 73],
-            [319, 79],
-            [360, 86],
-            [392, 94],
-            [434, 105],
-            [475, 114],
-            [514, 92],
-            [535, 72],
-            [572, 70],
-            [597, 68],
-            [585, 101],
-            [573, 144],
-            [562, 180],
-            [551, 213],
-            [540, 246],
-            [527, 294],
-            [518, 333],
-            [506, 375],
-            [553, 370],
-            [602, 372],
-            [606, 414],
-            [561, 412],
-            [517, 412],
-            [470, 412],
-            [434, 410],
-            [405, 409],
-            [370, 408],
-            [371, 373],
-            [402, 374],
-            [444, 375],
-            [466, 304],
-            [483, 252],
-            [509, 174],
-            [524, 131],
-            [497, 149],
-            [466, 170],
-            [427, 163],
-            [379, 156],
-            [328, 146],
-            [296, 140],
-            [282, 176],
-            [323, 184],
-            [354, 190],
-            [389, 198],
-            [372, 240],
-            [327, 232],
-            [293, 225],
-            [261, 219],
-            [246, 256],
-            [226, 303],
-            [206, 353],
-            [195, 377],
-            [182, 402],
-            [156, 402],
-            [106, 402],
-            [125, 366],
-            [141, 322],
-            [161, 273],
-            [185, 219],
-            [201, 184],
-            [221, 136],
-            [235, 100],
-            [251, 67],
+            [283, 73], [319, 79], [360, 86], [392, 94], [434, 105], [475, 114],
+            [514, 92], [535, 72], [572, 70], [597, 68], [585, 101], [573, 144],
+            [562, 180], [551, 213], [540, 246], [527, 294], [518, 333], [506, 375],
+            [553, 370], [602, 372], [606, 414], [561, 412], [517, 412], [470, 412],
+            [434, 410], [405, 409], [370, 408], [371, 373], [402, 374], [444, 375],
+            [466, 304], [483, 252], [509, 174], [524, 131], [497, 149], [466, 170],
+            [427, 163], [379, 156], [328, 146], [296, 140], [282, 176], [323, 184],
+            [354, 190], [389, 198], [372, 240], [327, 232], [293, 225], [261, 219],
+            [246, 256], [226, 303], [206, 353], [195, 377], [182, 402], [156, 402],
+            [106, 402], [125, 366], [141, 322], [161, 273], [185, 219], [201, 184],
+            [221, 136], [235, 100], [251, 67]
         ];
 
         const outline = sketch.map(([x, y]) => [
@@ -138,18 +100,8 @@ class SessionInfoUI {
         const getInterpolatedPoint = (p0, p1, p2, p3, t) => {
             const t2 = t * t;
             const t3 = t2 * t;
-            const x =
-                0.5 *
-                (2 * p1[0] +
-                    (-p0[0] + p2[0]) * t +
-                    (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
-                    (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
-            const y =
-                0.5 *
-                (2 * p1[1] +
-                    (-p0[1] + p2[1]) * t +
-                    (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
-                    (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
+            const x = 0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
+            const y = 0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
             return [x, y];
         };
 
@@ -157,11 +109,9 @@ class SessionInfoUI {
             const p0 = outline[(i - 1 + len) % len];
             const p2 = outline[(i + 1) % len];
             const p3 = outline[(i + 2) % len];
-
             const dx = p2[0] - p1[0];
             const dy = p2[1] - p1[1];
             const count = Math.max(1, Math.round(Math.hypot(dx, dy) / 5));
-
             for (let k = 0; k < count; k++) {
                 const t = k / count;
                 points.push(getInterpolatedPoint(p0, p1, p2, p3, t));
@@ -264,8 +214,7 @@ class SessionInfoUI {
         this.mapWindSpeed = document.createElement("span");
         this.mapWindSpeed.textContent = "-- m/s";
         this.mapWindArrow = document.createElement("span");
-        this.mapWindArrow.style.cssText =
-            "display:inline-block; transition: transform 0.3s; font-size: 18px;";
+        this.mapWindArrow.style.cssText = "display:inline-block; transition: transform 0.3s; font-size: 18px;";
         this.mapWindArrow.textContent = "↑";
         this.mapWindOverlay.appendChild(this.mapWindSpeed);
         this.mapWindOverlay.appendChild(this.mapWindArrow);
@@ -292,77 +241,131 @@ class SessionInfoUI {
         if (this.map) {
             setTimeout(() => {
                 this.map.invalidateSize();
-                const targetZoom =
-                    this.currentCircuit?.weatherZoom ||
-                    this.currentCircuit?.zoom ||
-                    14;
+                const targetZoom = this.currentCircuit?.weatherZoom || this.currentCircuit?.zoom || 14;
                 if (this.circuitCenter) {
                     this.map.setView(this.circuitCenter, targetZoom);
                 } else if (this.currentCircuit) {
-                    this.map.setView(
-                        [this.currentCircuit.lat, this.currentCircuit.lon],
-                        targetZoom,
-                    );
+                    this.map.setView([this.currentCircuit.lat, this.currentCircuit.lon], targetZoom);
                 }
             }, 150);
         }
     }
 
+    getWeatherCondition(code, isNight) {
+        if (code === 0) {
+            return isNight ? "🌙" : "☀️";
+        } else if (code >= 1 && code <= 3) {
+            return isNight ? "☁️" : "⛅";
+        } else if (code >= 51 && code <= 67) {
+            return "🌧️";
+        } else if (code >= 71 && code <= 77) {
+            return "❄️";
+        } else if (code >= 95) {
+            return "⚡";
+        }
+        return isNight ? "🌙" : "☀️";
+    }
+
     async fetchForecast(lat, lon) {
         try {
-            const res = await fetch(
-                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,rain&timezone=auto`,
-            );
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,weathercode&daily=sunrise,sunset&timezone=auto`);
             const data = await res.json();
-            const nowIdx = new Date().getHours();
+            
+            const nowMs = Date.now();
+            let nowIdx = 0;
+            if (data.hourly && data.hourly.time) {
+                const foundIdx = data.hourly.time.findIndex(t => {
+                    const forecastUtcMs = new Date(t + ":00Z").getTime() - ((data.utc_offset_seconds || 0) * 1000);
+                    return forecastUtcMs >= nowMs;
+                });
+                if (foundIdx !== -1) {
+                    nowIdx = Math.max(0, foundIdx - 1);
+                }
+            }
+
             while (this.forecastItems.firstChild) {
                 this.forecastItems.removeChild(this.forecastItems.firstChild);
             }
-            for (let i = 1; i <= 3; i++) {
+            while (this.mainForecastItems.firstChild) {
+                this.mainForecastItems.removeChild(this.mainForecastItems.firstChild);
+            }
+
+            for (let i = 0; i < 3; i++) {
                 const index = nowIdx + i;
-                if (
-                    !data.hourly ||
-                    !data.hourly.temperature_2m ||
-                    index >= data.hourly.temperature_2m.length
-                ) {
+                if (!data.hourly || !data.hourly.temperature_2m || index >= data.hourly.temperature_2m.length) {
                     continue;
                 }
-                const timeDate = new Date(data.hourly.time[index]);
-                const timeStr = timeDate.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                });
+                
+                const timeString = data.hourly.time[index];
+                
+                const forecastUtcMs = new Date(timeString + ":00Z").getTime() - ((data.utc_offset_seconds || 0) * 1000);
+                const userDate = new Date(forecastUtcMs);
+                const timeStr = userDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+                
+                let isNight = false;
+                if (data.daily && data.daily.sunrise && data.daily.sunset) {
+                    const dateStr = timeString.split("T")[0];
+                    const dayIdx = data.daily.time.indexOf(dateStr);
+                    if (dayIdx !== -1) {
+                        const sunriseStr = data.daily.sunrise[dayIdx];
+                        const sunsetStr = data.daily.sunset[dayIdx];
+                        
+                        const forecastHour = parseInt(timeString.split("T")[1].split(":")[0], 10);
+                        const sunriseHour = parseInt(sunriseStr.split("T")[1].split(":")[0], 10);
+                        const sunsetHour = parseInt(sunsetStr.split("T")[1].split(":")[0], 10);
+
+                        isNight = forecastHour < sunriseHour || forecastHour >= sunsetHour;
+                    }
+                }
+
                 const temp = data.hourly.temperature_2m[index];
-                const rainProb = data.hourly.precipitation_probability[index];
-                const item = document.createElement("div");
-                item.className = "forecast-item";
-                const timeSpan = document.createElement("span");
-                timeSpan.className = "forecast-time";
-                timeSpan.textContent = timeStr;
-                const tempSpan = document.createElement("span");
-                tempSpan.className = "forecast-temp";
-                tempSpan.textContent = `${temp}°C`;
-                const rainSpan = document.createElement("span");
-                rainSpan.className = "forecast-rain";
-                rainSpan.textContent = `💧 ${rainProb}%`;
-                item.appendChild(timeSpan);
-                item.appendChild(tempSpan);
-                item.appendChild(rainSpan);
-                this.forecastItems.appendChild(item);
+                const rainProb = data.hourly.precipitation_probability ? data.hourly.precipitation_probability[index] : 0;
+                const weatherCode = data.hourly.weathercode ? data.hourly.weathercode[index] : 0;
+                const conditionIcon = this.getWeatherCondition(weatherCode, isNight);
+                
+                const createItem = () => {
+                    const item = document.createElement("div");
+                    item.className = "forecast-item";
+                    const timeSpan = document.createElement("span");
+                    timeSpan.className = "forecast-time";
+                    timeSpan.textContent = timeStr;
+                    const iconSpan = document.createElement("span");
+                    iconSpan.className = "forecast-icon";
+                    iconSpan.textContent = conditionIcon;
+                    const tempSpan = document.createElement("span");
+                    tempSpan.className = "forecast-temp";
+                    tempSpan.textContent = `${temp}°C`;
+                    const rainSpan = document.createElement("span");
+                    rainSpan.className = "forecast-rain";
+                    rainSpan.textContent = `💧 ${rainProb}%`;
+                    item.appendChild(timeSpan);
+                    item.appendChild(iconSpan);
+                    item.appendChild(tempSpan);
+                    item.appendChild(rainSpan);
+                    return item;
+                };
+
+                this.forecastItems.appendChild(createItem());
+                this.mainForecastItems.appendChild(createItem());
             }
         } catch (e) {
             while (this.forecastItems.firstChild) {
                 this.forecastItems.removeChild(this.forecastItems.firstChild);
             }
-            const errorSpan = document.createElement("span");
-            errorSpan.textContent = "Forecast unavailable";
-            this.forecastItems.appendChild(errorSpan);
+            while (this.mainForecastItems.firstChild) {
+                this.mainForecastItems.removeChild(this.mainForecastItems.firstChild);
+            }
+            const errorSpan1 = document.createElement("span");
+            errorSpan1.textContent = "Forecast unavailable";
+            this.forecastItems.appendChild(errorSpan1);
+            const errorSpan2 = document.createElement("span");
+            errorSpan2.textContent = "Forecast unavailable";
+            this.mainForecastItems.appendChild(errorSpan2);
         }
     }
 
     async update(data) {
-        const meetingName =
-            data?.Meeting?.OfficialName || data?.Meeting?.Name || "Formula 1";
+        const meetingName = data?.Meeting?.OfficialName || data?.Meeting?.Name || "Formula 1";
         const type = data?.Type || "Session";
         const name = data?.Name || "";
         const status = data?.SessionStatus || "Unknown";
@@ -376,17 +379,9 @@ class SessionInfoUI {
     findCircuit(locationName, meetingName) {
         return this.f1Circuits.find(
             (c) =>
-                (locationName &&
-                    c.location &&
-                    locationName.toLowerCase() === c.location.toLowerCase()) ||
-                (meetingName &&
-                    c.name &&
-                    meetingName.toLowerCase().includes(c.name.toLowerCase())) ||
-                (meetingName &&
-                    c.location &&
-                    meetingName
-                        .toLowerCase()
-                        .includes(c.location.toLowerCase())),
+                (locationName && c.location && locationName.toLowerCase() === c.location.toLowerCase()) ||
+                (meetingName && c.name && meetingName.toLowerCase().includes(c.name.toLowerCase())) ||
+                (meetingName && c.location && meetingName.toLowerCase().includes(c.location.toLowerCase()))
         );
     }
 
@@ -394,16 +389,11 @@ class SessionInfoUI {
         if (!locationName) {
             return null;
         }
-        if (
-            this.fallbackCircuit &&
-            this.fallbackCircuit.location === locationName
-        ) {
+        if (this.fallbackCircuit && this.fallbackCircuit.location === locationName) {
             return this.fallbackCircuit;
         }
         try {
-            const res = await fetch(
-                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName)}&count=1`,
-            );
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName)}&count=1`);
             if (!res.ok) {
                 throw new Error("Geocoding failed");
             }
@@ -431,17 +421,22 @@ class SessionInfoUI {
         while (this.forecastItems.firstChild) {
             this.forecastItems.removeChild(this.forecastItems.firstChild);
         }
-        const span = document.createElement("span");
-        span.textContent = text;
-        this.forecastItems.appendChild(span);
+        while (this.mainForecastItems.firstChild) {
+            this.mainForecastItems.removeChild(this.mainForecastItems.firstChild);
+        }
+        const span1 = document.createElement("span");
+        span1.textContent = text;
+        this.forecastItems.appendChild(span1);
+        const span2 = document.createElement("span");
+        span2.textContent = text;
+        this.mainForecastItems.appendChild(span2);
     }
 
     async initOrUpdateMap(data) {
         try {
             await this.circuitsPromise;
             const locationName = data?.Meeting?.Location || "";
-            const meetingName =
-                data?.Meeting?.OfficialName || data?.Meeting?.Name || "";
+            const meetingName = data?.Meeting?.OfficialName || data?.Meeting?.Name || "";
             let circuit = this.findCircuit(locationName, meetingName);
             if (!circuit) {
                 circuit = await this.buildFallbackCircuit(locationName);
@@ -450,11 +445,7 @@ class SessionInfoUI {
                 this.setForecastMessage("Forecast unavailable");
                 return;
             }
-            if (
-                this.currentCircuit &&
-                this.currentCircuit.id === circuit.id &&
-                this.map
-            ) {
+            if (this.currentCircuit && this.currentCircuit.id === circuit.id && this.map) {
                 return;
             }
             this.currentCircuit = circuit;
@@ -475,8 +466,7 @@ class SessionInfoUI {
 
                 this.baseMapLayer = L.tileLayer(tileUrl, {
                     maxZoom: 19,
-                    attribution:
-                        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
                 }).addTo(this.map);
 
                 this.loadRainViewerRadar();
@@ -489,9 +479,7 @@ class SessionInfoUI {
 
     async loadRainViewerRadar() {
         try {
-            const res = await fetch(
-                "https://api.rainviewer.com/public/weather-maps.json",
-            );
+            const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
             if (!res.ok) {
                 return;
             }
@@ -520,8 +508,7 @@ class SessionInfoUI {
         const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
         const metersPerUnit = 12;
         const metersPerDegreeLat = 111320;
-        const metersPerDegreeLon =
-            111320 * Math.cos((circuit.lat * Math.PI) / 180);
+        const metersPerDegreeLon = 111320 * Math.cos((circuit.lat * Math.PI) / 180);
         const latLngs = shape.map(([x, y]) => [
             circuit.lat - ((y - centerY) * metersPerUnit) / metersPerDegreeLat,
             circuit.lon + ((x - centerX) * metersPerUnit) / metersPerDegreeLon,
@@ -579,8 +566,7 @@ class SessionInfoUI {
     parseTime(str) {
         if (!str) return 0;
         const parts = str.split(":").map(Number);
-        if (parts.length === 3)
-            return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
         if (parts.length === 2) return parts[0] * 60 + parts[1];
         return 0;
     }
@@ -599,40 +585,27 @@ class SessionInfoUI {
     updateClock(data) {
         if (!data) return;
         this.clockData = data;
-
         if (data.Extrapolating) {
             const serverTimeMs = new Date(data.Utc).getTime();
             const initialRemainingMs = this.parseTime(data.Remaining) * 1000;
-
             const nowMs = Date.now();
             const elapsedMs = Math.max(0, nowMs - serverTimeMs);
-
-            const effectiveRemainingMs = Math.max(
-                0,
-                initialRemainingMs - elapsedMs,
-            );
-
+            const effectiveRemainingMs = Math.max(0, initialRemainingMs - elapsedMs);
             this.clockData.targetMs = nowMs + effectiveRemainingMs;
-
             if (!this.clockInterval) {
                 this.clockInterval = setInterval(() => this.tickClock(), 1000);
             }
         }
         this.tickClock();
     }
+
     tickClock() {
         if (!this.clockData) return;
-        if (
-            this.clockData.Extrapolating === false ||
-            this.clockData.Extrapolating === "0"
-        ) {
+        if (this.clockData.Extrapolating === false || this.clockData.Extrapolating === "0") {
             this.clockElement.textContent = this.clockData.Remaining || "--:--";
             return;
         }
-        const diffSeconds = Math.max(
-            0,
-            (this.clockData.targetMs - Date.now()) / 1000,
-        );
+        const diffSeconds = Math.max(0, (this.clockData.targetMs - Date.now()) / 1000);
         this.clockElement.textContent = this.formatTime(diffSeconds);
     }
 
@@ -649,50 +622,42 @@ class SessionInfoUI {
             this.clockElement.style.display = "none";
             this.progressElement.style.display = "block";
             this.progressElement.className = "clock-pill";
-            this.progressElement.textContent =
-                data.currentLap > 0
-                    ? `Lap ${data.currentLap}${totalLaps ? `/${totalLaps}` : ""}`
-                    : "Lap --";
+            this.progressElement.textContent = data.currentLap > 0 ? `Lap ${data.currentLap}${totalLaps ? `/${totalLaps}` : ""}` : "Lap --";
         } else {
             this.clockElement.style.display = "block";
             this.progressElement.style.display = "block";
             this.progressElement.className = "session-progress";
-            this.progressElement.textContent =
-                data.kind === "qualifying" ? "Qualifying" : "Practice";
+            this.progressElement.textContent = data.kind === "qualifying" ? "Qualifying" : "Practice";
         }
     }
 
     updateTrackStatus(data) {
-    if (!data) return;
-
-    const rawStatus = (typeof data === 'string' ? data : data.Message || data.Status || "CLEAR").toString().toUpperCase();
-
-    let label = "CLEAR";
-    let cssClass = "all-clear";
-
-    if (rawStatus.includes("RED") || rawStatus === "5") {
-        label = "RED FLAG";
-        cssClass = "red-flag";
-    } else if (rawStatus.includes("VSC") || rawStatus.includes("VIRTUAL") || rawStatus === "6" || rawStatus === "7") {
-        label = "VSC";
-        cssClass = "yellow-flag";
-    } else if (rawStatus.includes("SC") || rawStatus.includes("SAFETY") || rawStatus === "4") {
-        label = "SAFETY CAR";
-        cssClass = "yellow-flag";
-    } else if (rawStatus.includes("YELLOW") || rawStatus === "2") {
-        label = "YELLOW FLAG";
-        cssClass = "yellow-flag";
-    } else if (rawStatus.includes("CLEAR") || rawStatus.includes("GREEN") || rawStatus === "1") {
-        label = "GREEN FLAG";
-        cssClass = "green-flag";
-    } else {
-        label = rawStatus;
-        cssClass = rawStatus.toLowerCase().replace(/\s+/g, "-");
+        if (!data) return;
+        const rawStatus = (typeof data === 'string' ? data : data.Message || data.Status || "CLEAR").toString().toUpperCase();
+        let label = "CLEAR";
+        let cssClass = "all-clear";
+        if (rawStatus.includes("RED") || rawStatus === "5") {
+            label = "RED FLAG";
+            cssClass = "red-flag";
+        } else if (rawStatus.includes("VSC") || rawStatus.includes("VIRTUAL") || rawStatus === "6" || rawStatus === "7") {
+            label = "VSC";
+            cssClass = "yellow-flag";
+        } else if (rawStatus.includes("SC") || rawStatus.includes("SAFETY") || rawStatus === "4") {
+            label = "SAFETY CAR";
+            cssClass = "yellow-flag";
+        } else if (rawStatus.includes("YELLOW") || rawStatus === "2") {
+            label = "YELLOW FLAG";
+            cssClass = "yellow-flag";
+        } else if (rawStatus.includes("CLEAR") || rawStatus.includes("GREEN") || rawStatus === "1") {
+            label = "GREEN FLAG";
+            cssClass = "green-flag";
+        } else {
+            label = rawStatus;
+            cssClass = rawStatus.toLowerCase().replace(/\s+/g, "-");
+        }
+        this.trackStatusElement.textContent = label;
+        this.trackStatusElement.className = `track-status-badge status-${cssClass}`;
     }
-
-    this.trackStatusElement.textContent = label;
-    this.trackStatusElement.className = `track-status-badge status-${cssClass}`;
-}
 
     updateWeather(data) {
         if (!data) return;
@@ -709,8 +674,7 @@ class SessionInfoUI {
         }
         windArrow.style.transform = `rotate(${windDeg}deg)`;
         this.modalWind.valueEl.textContent = `${data.WindSpeed} m/s `;
-        let modalWindArrow =
-            this.modalWind.valueEl.querySelector(".wind-indicator");
+        let modalWindArrow = this.modalWind.valueEl.querySelector(".wind-indicator");
         if (!modalWindArrow) {
             modalWindArrow = document.createElement("span");
             modalWindArrow.className = "wind-indicator";
@@ -724,17 +688,19 @@ class SessionInfoUI {
         this.modalPressure.valueEl.textContent = `${data.Pressure} hPa`;
         const isRaining = data.Rainfall === "1" || data.Rainfall === 1;
         if (isRaining) {
-            this.rainEl.valueEl.textContent = "Rain ☔︎︎";
             this.rainEl.container.style.display = "flex";
+            this.rainEl.valueEl.textContent = "Rain ☔";
             this.rainEl.container.classList.add("rain-active");
-            this.modalRain.valueEl.textContent = "Rain ☔︎︎";
             this.modalRain.container.style.display = "flex";
+            this.modalRain.valueEl.textContent = "Rain ☔";
             this.modalRain.container.classList.add("rain-active");
+            this.weatherGrid.style.gridTemplateColumns = "repeat(4, minmax(0, 1fr))";
         } else {
             this.rainEl.container.style.display = "none";
-            this.modalRain.container.style.display = "none";
             this.rainEl.container.classList.remove("rain-active");
+            this.modalRain.container.style.display = "none";
             this.modalRain.container.classList.remove("rain-active");
+            this.weatherGrid.style.gridTemplateColumns = "repeat(3, minmax(0, 1fr))";
         }
         if (this.mapWindArrow && this.mapWindSpeed) {
             this.mapWindArrow.style.transform = `rotate(${windDeg}deg)`;
