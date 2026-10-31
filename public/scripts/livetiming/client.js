@@ -6,7 +6,6 @@ class F1LiveClient {
         this.isInitialized = false;
         this.countdownInterval = null;
         this.syncStartTime = null;
-        this.syncDurationMs = 30000;
 
         this.ui = uiManager;
         this.drivers = {};
@@ -19,6 +18,7 @@ class F1LiveClient {
         this.raceControlMessages = {};
         this.lapCount = null;
         this.isRefreshPending = false;
+        this.isSessionBootstrapped = false;
         this.reconnectTimer = null;
         this._resolveSessionReady = null;
         this.sessionReadyPromise = new Promise((resolve) => {
@@ -44,7 +44,6 @@ class F1LiveClient {
         if (this.delayMs === 0) {
             this.isInitialized = true;
         } else {
-            this.syncDurationMs = this.delayMs;
             this.syncStartTime = Date.now();
         }
 
@@ -62,11 +61,9 @@ class F1LiveClient {
             if (!isVisible && (!loadingDiv || loadingDiv.style.display === "none")) {
                 if (loadingDiv) loadingDiv.style.display = "none";
             } else {
-                const now = Date.now();
-                const elapsed = this.syncStartTime ? now - this.syncStartTime : this.syncDurationMs;
-                if (!this.isInitialized && elapsed < this.syncDurationMs) {
+                if (!this.isInitialized && this.getSyncRemainingMs() > 0) {
                     livetimingEl.style.display = "none";
-                    this.showSyncContainer(this.syncDurationMs - elapsed);
+                    this.showSyncContainer();
                 } else {
                     this.hideSyncContainer();
                 }
@@ -80,11 +77,8 @@ class F1LiveClient {
         }
 
         const handleInitialLoad = () => {
-            if (this.delayMs > 0 && !this.isInitialized) {
-                const elapsed = Date.now() - (this.syncStartTime || Date.now());
-                if (elapsed < this.syncDurationMs) {
-                    this.showSyncContainer(this.syncDurationMs - elapsed);
-                }
+            if (this.delayMs > 0 && !this.isInitialized && this.getSyncRemainingMs() > 0) {
+                this.showSyncContainer();
             }
         };
 
@@ -223,18 +217,12 @@ class F1LiveClient {
     }
 
     enqueueStream(type, data) {
-        if (type === "SessionInfo" || type === "WeatherData" || type === "SessionStatus" || type === "TrackStatus" || type === "ExtrapolatedClock") {
-            this.applyStream(type, data);
-        }
-
-        if (this.delayMs === 0) {
-            this.isInitialized = true;
-            if (type === "__snapshot") {
-                this.applySnapshotNow(data);
-            } else {
-                this.applyStream(type, data);
+        if (!this.isSessionBootstrapped) {
+            const bootstrapInfo = type === "SessionInfo" ? data : type === "__snapshot" ? data?.SessionInfo : null;
+            if (bootstrapInfo) {
+                this.isSessionBootstrapped = true;
+                this.applyStream("SessionInfo", bootstrapInfo);
             }
-            return;
         }
 
         this.streamQueue.push({
@@ -243,50 +231,52 @@ class F1LiveClient {
             receivedAt: Date.now(),
         });
 
-        if (type === "__snapshot" && data && data.SessionInfo) {
-            this.applyStream("SessionInfo", data.SessionInfo);
-        }
-
         this.processStreamQueue();
     }
 
     processStreamQueue() {
-        if (this.delayMs === 0) return;
+        if (this.streamTimer) {
+            clearTimeout(this.streamTimer);
+            this.streamTimer = null;
+        }
 
-        const now = Date.now();
-        const elapsed = now - this.syncStartTime;
+        while (
+            this.streamQueue.length > 0 &&
+            this.streamQueue[0].receivedAt + this.delayMs <= Date.now()
+        ) {
+            const item = this.streamQueue.shift();
 
-        if (!this.isInitialized) {
-            if (elapsed < this.syncDurationMs) {
-                const livetimingEl = document.getElementById("livetiming");
-                const isVisible = livetimingEl && getComputedStyle(livetimingEl).display !== "none";
-                if (isVisible) {
-                    this.showSyncContainer(this.syncDurationMs - elapsed);
-                }
-                if (!this.streamTimer) {
-                    this.streamTimer = setTimeout(
-                        () => this.processStreamQueue(),
-                        this.syncDurationMs - elapsed,
-                    );
-                }
-                return;
-            } else {
+            if (!this.isInitialized) {
                 this.isInitialized = true;
                 this.hideSyncContainer();
             }
+
+            try {
+                if (item.type === "__snapshot") {
+                    this.applySnapshotNow(item.data);
+                } else {
+                    this.applyStream(item.type, item.data);
+                }
+            } catch (error) {}
         }
 
-        while (this.streamQueue.length > 0) {
-            const item = this.streamQueue.shift();
-            if (item.type === "__snapshot") {
-                this.applySnapshotNow(item.data);
-            } else {
-                this.applyStream(item.type, item.data);
-            }
+        if (this.streamQueue.length > 0) {
+            const wait = this.streamQueue[0].receivedAt + this.delayMs - Date.now();
+            this.streamTimer = setTimeout(
+                () => this.processStreamQueue(),
+                Math.max(0, wait),
+            );
         }
     }
 
-    showSyncContainer(initialRemainingMs) {
+    getSyncRemainingMs() {
+        const anchor = this.streamQueue.length > 0
+            ? this.streamQueue[0].receivedAt
+            : this.syncStartTime || Date.now();
+        return Math.max(0, anchor + this.delayMs - Date.now());
+    }
+
+    showSyncContainer() {
         const livetimingEl = document.getElementById("livetiming");
         const appDiv = document.getElementById("app") || document.body;
 
@@ -328,8 +318,7 @@ class F1LiveClient {
         }
 
         const updateView = () => {
-            const now = Date.now();
-            const currentRemaining = Math.max(0, (this.syncStartTime + this.syncDurationMs) - now);
+            const currentRemaining = this.getSyncRemainingMs();
             const totalSec = currentRemaining / 1000;
             const secs = Math.floor(totalSec);
             const ms = Math.floor(currentRemaining % 1000);
@@ -356,10 +345,11 @@ class F1LiveClient {
             }
 
             if (currentRemaining <= 0) {
-                clearInterval(this.countdownInterval);
-                this.isInitialized = true;
-                this.hideSyncContainer();
                 this.processStreamQueue();
+                if (!this.isInitialized) {
+                    this.isInitialized = true;
+                    this.hideSyncContainer();
+                }
             }
         };
 
@@ -371,10 +361,6 @@ class F1LiveClient {
         if (this.countdownInterval) {
             clearInterval(this.countdownInterval);
             this.countdownInterval = null;
-        }
-        if (this.streamTimer) {
-            clearTimeout(this.streamTimer);
-            this.streamTimer = null;
         }
         const loadingDiv = document.getElementById("loading_livetiming");
         if (loadingDiv) {
@@ -398,22 +384,25 @@ class F1LiveClient {
         this.delayMs = value * 1000;
         localStorage.setItem("f1_live_delay", String(value));
 
-        this.syncDurationMs = this.delayMs;
-        this.syncStartTime = Date.now();
+        this.processStreamQueue();
 
-        if (this.delayMs === 0) {
+        if (this.delayMs === 0 && !this.isInitialized) {
             this.isInitialized = true;
             this.hideSyncContainer();
-        } else {
-            this.isInitialized = false;
-            const livetimingEl = document.getElementById("livetiming");
-            const isVisible = livetimingEl && getComputedStyle(livetimingEl).display !== "none";
-            if (isVisible) {
-                this.showSyncContainer(this.syncDurationMs);
-            }
         }
 
-        this.processStreamQueue();
+        this.applyClock();
+    }
+
+    applyClock() {
+        if (!this.ui || !this.isInitialized || !this.lastExtrapolatedClock) return;
+
+        const clock = { ...this.lastExtrapolatedClock };
+        const serverTimeMs = new Date(clock.Utc).getTime();
+        if (Number.isFinite(serverTimeMs)) {
+            clock.Utc = new Date(serverTimeMs + this.delayMs).toISOString();
+        }
+        this.ui.updateClock(clock);
     }
 
     getDelay() {
@@ -457,8 +446,7 @@ class F1LiveClient {
         if (this.sessionInfo) {
             await this.ui.updateSession(this.sessionInfo);
         }
-        if (this.lastExtrapolatedClock)
-            this.ui.updateClock(this.lastExtrapolatedClock);
+        this.applyClock();
         if (this.lastSessionStatus)
             this.ui.updateSessionStatus(this.lastSessionStatus);
         if (this.lastTrackStatus)
@@ -517,7 +505,7 @@ class F1LiveClient {
             }
             case "ExtrapolatedClock":
                 this.lastExtrapolatedClock = data;
-                if (this.ui && this.isInitialized) this.ui.updateClock(data);
+                this.applyClock();
                 break;
             case "SessionStatus":
                 this.lastSessionStatus = data;
@@ -591,7 +579,6 @@ class F1LiveClient {
     }
 
     resetSessionState() {
-        this.streamQueue = [];
         this.timingData = {};
         this.timingStats = {};
         this.timingAppData = {};
